@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>业务线设置 - 后台管理系统</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: #f5f5f5;
+            color: #333;
+        }
+
+        .header {
+            background: #fff;
+            padding: 0 24px;
+            height: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid #e8e8e8;
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            z-index: 100;
+        }
+        .header-title { font-size: 16px; font-weight: 600; }
+        .header-back { color: #666; text-decoration: none; font-size: 14px; cursor: pointer; }
+        .header-back:hover { color: #1890ff; }
+
+        .main { margin-top: 56px; padding: 20px 24px; max-width: 1200px; }
+
+        .page-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        .page-bar h1 { font-size: 18px; font-weight: 600; }
+
+        .btn {
+            padding: 6px 16px;
+            border-radius: 4px;
+            font-size: 13px;
+            cursor: pointer;
+            border: 1px solid #d9d9d9;
+            background: #fff;
+            color: #666;
+            transition: all 0.2s;
+        }
+        .btn:hover { border-color: #1890ff; color: #1890ff; }
+        .btn-primary {
+            background: #1890ff;
+            border-color: #1890ff;
+            color: #fff;
+        }
+        .btn-primary:hover { background: #40a9ff; border-color: #40a9ff; color: #fff; }
+        .btn-text {
+            border: none;
+            background: none;
+            color: #1890ff;
+            padding: 4px 8px;
+        }
+        .btn-text:hover { background: #e6f7ff; }
+
+        .card {
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        th {
+            background: #fafafa;
+            padding: 12px 16px;
+            text-align: left;
+            font-weight: 600;
+            color: #666;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        td {
+            padding: 14px 16px;
+            border-bottom: 1px solid #f0f0f0;
+            vertical-align: top;
+        }
+        tr:hover { background: #fafafa; }
+        tr:last-child td { border-bottom: none; }
+
+        .person-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 8px 3px 10px;
+            background: #f5f5f5;
+            border-radius: 4px;
+            font-size: 12px;
+            margin: 2px 4px 2px 0;
+        }
+        .person-tag .del {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 14px; height: 14px;
+            border-radius: 50%;
+            cursor: pointer;
+            color: #999;
+            font-size: 12px;
+            line-height: 1;
+        }
+        .person-tag .del:hover { background: #ff4d4f; color: #fff; }
+        .badge {
+            display: inline-block;
+            padding: 1px 5px;
+            border-radius: 3px;
+            font-size: 11px;
+            line-height: 1.4;
+        }
+        .badge-blue { background: #e6f7ff; color: #096dd9; }
+
+        .empty { text-align: center; padding: 60px; color: #bbb; }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.45);
+            z-index: 2000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-overlay.show { display: flex; }
+        .modal-box {
+            background: #fff;
+            border-radius: 8px;
+            width: 520px;
+            max-width: 90vw;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .modal-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal-title { font-size: 15px; font-weight: 600; }
+        .modal-close {
+            border: none; background: none;
+            font-size: 18px; color: #999;
+            cursor: pointer;
+        }
+        .modal-body { padding: 20px; }
+        .modal-footer {
+            padding: 12px 20px;
+            border-top: 1px solid #f0f0f0;
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+        }
+
+        .form-row { margin-bottom: 16px; }
+        .form-label {
+            display: block;
+            font-size: 13px;
+            color: #555;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .select-dropdown {
+            position: relative;
+        }
+        .select-trigger {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 12px;
+            border: 1px solid #d9d9d9;
+            border-radius: 4px;
+            font-size: 13px;
+            cursor: pointer;
+            background: #fff;
+            color: #999;
+            transition: border-color 0.2s;
+        }
+        .select-trigger:hover, .select-dropdown.open .select-trigger {
+            border-color: #1890ff;
+        }
+        .select-trigger .arrow {
+            font-size: 10px;
+            color: #999;
+            transition: transform 0.2s;
+        }
+        .select-dropdown.open .select-trigger .arrow {
+            transform: rotate(180deg);
+        }
+        .select-options {
+            position: absolute;
+            top: 100%;
+            left: 0; right: 0;
+            margin-top: 4px;
+            background: #fff;
+            border: 1px solid #e8e8e8;
+            border-radius: 4px;
+            max-height: 200px;
+            overflow-y: auto;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            z-index: 10;
+            display: none;
+        }
+        .select-dropdown.open .select-options {
+            display: block;
+        }
+        .select-option {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 14px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .select-option:hover { background: #f5f5f5; }
+        .select-option.added {
+            opacity: 0.45;
+            cursor: default;
+        }
+        .select-option .dept { color: #999; font-size: 12px; margin-left: 6px; }
+        .select-option .status { font-size: 12px; color: #999; }
+
+        .result-list {
+            border: 1px solid #e8e8e8;
+            border-radius: 4px;
+            max-height: 180px;
+            overflow-y: auto;
+            margin-top: 8px;
+        }
+        .result-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 14px;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 13px;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .result-item:last-child { border-bottom: none; }
+        .result-item:hover { background: #f5f5f5; }
+        .result-item.added { opacity: 0.45; cursor: default; }
+        .result-item .info { display: flex; align-items: center; gap: 6px; }
+        .result-item .dept { color: #999; font-size: 12px; }
+        .result-item .add-btn {
+            color: #1890ff;
+            font-size: 12px;
+            padding: 2px 8px;
+            border: 1px solid #1890ff;
+            border-radius: 4px;
+            background: #fff;
+            cursor: pointer;
+        }
+        .result-item .add-btn:hover { background: #e6f7ff; }
+        .result-item.added .add-btn { display: none; }
+        .result-item.added::after { content: "已添加"; font-size: 12px; color: #999; }
+
+        .selected-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            min-height: 36px;
+            padding: 10px 12px;
+            border: 1px dashed #d9d9d9;
+            border-radius: 4px;
+            background: #fafafa;
+        }
+        .selected-list .empty-hint {
+            color: #bbb;
+            font-size: 12px;
+            width: 100%;
+            text-align: center;
+            padding: 4px 0;
+        }
+        .selected-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            background: #fff;
+            border: 1px solid #e8e8e8;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        .selected-tag .del {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 14px; height: 14px;
+            border-radius: 50%;
+            cursor: pointer;
+            color: #999;
+        }
+        .selected-tag .del:hover { background: #ff4d4f; color: #fff; }
+
+        .toggle-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 14px;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 13px;
+        }
+        .toggle-row:last-child { border-bottom: none; }
+        .toggle-row .name { font-weight: 500; }
+        .toggle-row .dept { color: #999; font-size: 12px; margin-left: 4px; }
+        .toggle-switch {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: #888;
+            cursor: pointer;
+        }
+        .toggle-switch input { accent-color: #1890ff; cursor: pointer; }
+
+        .section-title {
+            font-size: 12px;
+            color: #888;
+            margin: 16px 0 8px;
+        }
+
+        .no-result {
+            text-align: center;
+            padding: 20px;
+            color: #bbb;
+            font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <span class="header-back" onclick="alert('返回上一页')">← 返回</span>
+        <span class="header-title">业务线设置</span>
+        <span></span>
+    </header>
+
+    <div class="main">
+        <div class="page-bar">
+            <h1>业务线列表</h1>
+        </div>
+
+        <div class="card">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width:100px;">业务线</th>
+                        <th>相关人员</th>
+                        <th style="width:100px;">操作</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 添加人员弹窗 -->
+    <div class="modal-overlay" id="editModal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <div class="modal-title" id="editModalTitle">添加人员</div>
+                <button class="modal-close" onclick="closeModal('editModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-row">
+                    <label class="form-label">已选人员</label>
+                    <div class="selected-list" id="selectedList">
+                        <div class="empty-hint">请在下方搜索并添加人员</div>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <label class="form-label">选择用户</label>
+                    <div class="select-dropdown" id="userDropdown">
+                        <div class="select-trigger" onclick="toggleDropdown()">
+                            <span id="selectPlaceholder">请选择用户</span>
+                            <span class="arrow">▼</span>
+                        </div>
+                        <div class="select-options" id="selectOptions">
+                            <!-- JS 渲染 -->
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section-title">审批权限设置</div>
+                <div class="result-list" id="approveList">
+                    <!-- JS 渲染 -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" onclick="closeModal('editModal')">取消</button>
+                <button class="btn btn-primary" onclick="saveBizLine()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    const BIZ_LINES = ['咨询', '倾诉', '督导', '此刻', '初心咨询', '初始访谈', '课程师资', '线下咨询', '其它'];
+
+    // 模拟从用户管理拉取的全量用户
+    const USER_DB = [
+        { id: 1, name: '李晓雯', phone: '13800138001' },
+        { id: 2, name: '王海涛', phone: '13800138002' },
+        { id: 3, name: '陈志远', phone: '13800138003' },
+        { id: 4, name: '张敏', phone: '13800138004' },
+        { id: 5, name: '刘建国', phone: '13800138005' },
+        { id: 6, name: '赵雪', phone: '13800138006' },
+        { id: 7, name: '孙伟', phone: '13800138007' },
+        { id: 8, name: '周芳', phone: '13800138008' },
+        { id: 9, name: '吴磊', phone: '13800138009' },
+        { id: 10, name: '郑丽', phone: '13800138010' },
+    ];
+
+    // Mock 数据
+    let configs = {
+        '咨询': {
+            members: [
+                { userId: 1, isApprover: true },
+                { userId: 2, isApprover: true },
+                { userId: 3, isApprover: false }
+            ]
+        },
+        '倾诉': {
+            members: [
+                { userId: 3, isApprover: true },
+                { userId: 4, isApprover: false }
+            ]
+        }
+    };
+
+    let editingBiz = null;
+    let tempMembers = []; // 弹窗内临时数据
+
+    function getUser(userId) {
+        return USER_DB.find(u => u.id === userId);
+    }
+
+    function render() {
+        const tbody = document.getElementById('tableBody');
+        tbody.innerHTML = BIZ_LINES.map(name => {
+            const cfg = configs[name] || { members: [] };
+            const personsHtml = cfg.members.map(m => {
+                const u = getUser(m.userId);
+                if (!u) return '';
+                return `<span class="person-tag">
+                    ${u.name}（${u.phone}）
+                    ${m.isApprover ? '<span class="badge badge-blue">审</span>' : ''}
+                    <span class="del" onclick="removePerson('${name}', ${m.userId}, event)">&times;</span>
+                </span>`;
+            }).join('');
+
+            return `
+                <tr>
+                    <td><strong>${name}</strong></td>
+                    <td>${personsHtml || '<span style="color:#bbb;">—</span>'}</td>
+                    <td>
+                        <button class="btn-text" onclick="openEdit('${name}')">添加人员</button>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    function removePerson(bizName, userId, event) {
+        event.stopPropagation();
+        if (!confirm('确定移除该人员？')) return;
+        const cfg = configs[bizName];
+        if (cfg) {
+            cfg.members = cfg.members.filter(m => m.userId !== userId);
+            if (cfg.members.length === 0) delete configs[bizName];
+        }
+        render();
+    }
+
+    function openEdit(name) {
+        editingBiz = name;
+        const cfg = configs[name] || { members: [] };
+        tempMembers = JSON.parse(JSON.stringify(cfg.members));
+
+        document.getElementById('editModalTitle').textContent = '添加人员：' + name;
+        document.getElementById('userDropdown').classList.remove('open');
+
+        renderSelected();
+        renderApproveList();
+        openModal('editModal');
+    }
+
+    function renderSelected() {
+        const box = document.getElementById('selectedList');
+        if (tempMembers.length === 0) {
+            box.innerHTML = '<div class="empty-hint">请在下方搜索并添加人员</div>';
+            return;
+        }
+        box.innerHTML = tempMembers.map(m => {
+            const u = getUser(m.userId);
+            if (!u) return '';
+            return `<span class="selected-tag">
+                ${u.name}（${u.phone}）
+                <span class="del" onclick="removeTempPerson(${m.userId})">&times;</span>
+            </span>`;
+        }).join('');
+    }
+
+    function removeTempPerson(userId) {
+        tempMembers = tempMembers.filter(m => m.userId !== userId);
+        renderSelected();
+        renderApproveList();
+        // 如果下拉框展开，刷新选项
+        const dd = document.getElementById('userDropdown');
+        if (dd.classList.contains('open')) {
+            renderDropdownOptions();
+        }
+    }
+
+    function toggleDropdown() {
+        const dd = document.getElementById('userDropdown');
+        dd.classList.toggle('open');
+        if (dd.classList.contains('open')) {
+            renderDropdownOptions();
+        }
+    }
+
+    function renderDropdownOptions() {
+        const box = document.getElementById('selectOptions');
+        const available = USER_DB.filter(u => !tempMembers.some(m => m.userId === u.id));
+        if (available.length === 0) {
+            box.innerHTML = '<div class="no-result">暂无可选用户</div>';
+            return;
+        }
+        box.innerHTML = available.map(u => `
+            <div class="select-option" onclick="selectUser(${u.id})">
+                <span>${u.name}（${u.phone}）</span>
+            </div>
+        `).join('');
+    }
+
+    function selectUser(userId) {
+        if (tempMembers.some(m => m.userId === userId)) return;
+        tempMembers.push({ userId, isApprover: true });
+        renderSelected();
+        renderApproveList();
+        renderDropdownOptions();
+        // 如果全部选完则关闭下拉
+        const available = USER_DB.filter(u => !tempMembers.some(m => m.userId === u.id));
+        if (available.length === 0) {
+            document.getElementById('userDropdown').classList.remove('open');
+        }
+    }
+
+    // 点击外部关闭下拉
+    document.addEventListener('click', function(e) {
+        const dd = document.getElementById('userDropdown');
+        if (dd && !dd.contains(e.target)) {
+            dd.classList.remove('open');
+        }
+    });
+
+    function renderApproveList() {
+        const box = document.getElementById('approveList');
+        if (tempMembers.length === 0) {
+            box.innerHTML = '<div class="no-result">请先添加人员</div>';
+            return;
+        }
+        box.innerHTML = tempMembers.map(m => {
+            const u = getUser(m.userId);
+            if (!u) return '';
+            return `
+                <div class="toggle-row">
+                    <div>
+                        <span class="name">${u.name}（${u.phone}）</span>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" ${m.isApprover ? 'checked' : ''}
+                            onchange="toggleTempApprove(${m.userId}, this.checked)">
+                        <span>审批权限</span>
+                    </label>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function toggleTempApprove(userId, checked) {
+        const m = tempMembers.find(x => x.userId === userId);
+        if (m) m.isApprover = checked;
+    }
+
+    function saveBizLine() {
+        if (tempMembers.filter(m => m.isApprover).length === 0) {
+            alert('请至少设置一位审批人');
+            return;
+        }
+        configs[editingBiz] = { members: tempMembers };
+        closeModal('editModal');
+        render();
+    }
+
+    function openModal(id) { document.getElementById(id).classList.add('show'); }
+    function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+
+    document.querySelectorAll('.modal-overlay').forEach(el => {
+        el.addEventListener('click', function(e) { if (e.target === el) el.classList.remove('show'); });
+    });
+
+    render();
+    </script>
+</body>
+</html>
