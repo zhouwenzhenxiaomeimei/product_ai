@@ -339,6 +339,100 @@
             color: #bbb;
             font-size: 13px;
         }
+
+        .contact-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 8px 3px 10px;
+            background: #fff7e6;
+            border: 1px solid #ffd591;
+            border-radius: 4px;
+            font-size: 12px;
+            margin: 2px 4px 2px 0;
+        }
+        .contact-tag .del {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 14px; height: 14px;
+            border-radius: 50%;
+            cursor: pointer;
+            color: #999;
+            font-size: 12px;
+            line-height: 1;
+        }
+        .contact-tag .del:hover { background: #ff4d4f; color: #fff; }
+
+        .form-input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #d9d9d9;
+            border-radius: 4px;
+            font-size: 13px;
+            transition: border-color 0.2s;
+            outline: none;
+        }
+        .form-input:focus { border-color: #1890ff; }
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        .contact-card {
+            border: 1px solid #f0f0f0;
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 8px;
+            position: relative;
+            background: #fafafa;
+        }
+        .contact-card .contact-card-del {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 20px; height: 20px;
+            border-radius: 50%;
+            border: none;
+            background: #fff;
+            color: #999;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .contact-card .contact-card-del:hover { background: #ff4d4f; color: #fff; }
+        .contact-card .field { margin-bottom: 8px; }
+        .contact-card .field:last-child { margin-bottom: 0; }
+        .contact-card .field label {
+            display: block;
+            font-size: 12px;
+            color: #888;
+            margin-bottom: 4px;
+        }
+        .contact-card .field input {
+            width: 100%;
+            padding: 6px 10px;
+            border: 1px solid #d9d9d9;
+            border-radius: 4px;
+            font-size: 13px;
+            outline: none;
+        }
+        .contact-card .field input:focus { border-color: #1890ff; }
+
+        .btn-add-contact {
+            width: 100%;
+            padding: 8px;
+            border: 1px dashed #d9d9d9;
+            border-radius: 4px;
+            background: #fff;
+            color: #1890ff;
+            font-size: 13px;
+            cursor: pointer;
+            margin-top: 4px;
+        }
+        .btn-add-contact:hover { border-color: #1890ff; background: #e6f7ff; }
     </style>
 </head>
 <body>
@@ -358,12 +452,34 @@
                 <thead>
                     <tr>
                         <th style="width:100px;">业务线</th>
-                        <th>相关人员</th>
-                        <th style="width:100px;">操作</th>
+                        <th>相关人员 <span style="font-weight:400;color:#999;font-size:11px;">（用于权限控制和配置审核人）</span></th>
+                        <th>乙方联系人 <span style="font-weight:400;color:#999;font-size:11px;">（用于合同签署）</span></th>
+                        <th style="width:100px;">联系人操作</th>
+                        <th style="width:100px;">人员操作</th>
                     </tr>
                 </thead>
                 <tbody id="tableBody"></tbody>
             </table>
+        </div>
+    </div>
+
+    <!-- 乙方联系人弹窗 -->
+    <div class="modal-overlay" id="contactModal">
+        <div class="modal-box" style="width:580px;">
+            <div class="modal-header">
+                <div class="modal-title" id="contactModalTitle">乙方联系人设置</div>
+                <button class="modal-close" onclick="closeModal('contactModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="contactCards">
+                    <!-- JS 渲染 -->
+                </div>
+                <button class="btn-add-contact" onclick="addTempContact()">+ 添加联系人</button>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" onclick="closeModal('contactModal')">取消</button>
+                <button class="btn btn-primary" onclick="saveContacts()">保存</button>
+            </div>
         </div>
     </div>
 
@@ -431,18 +547,27 @@
                 { userId: 1, isApprover: true },
                 { userId: 2, isApprover: true },
                 { userId: 3, isApprover: false }
+            ],
+            contacts: [
+                { name: '林小芳', phone: '13900139001', wechat: 'linxf01', email: 'linxf@example.com' },
+                { name: '黄大伟', phone: '13900139002', wechat: 'huangdw02', email: 'huangdw@example.com' }
             ]
         },
         '倾诉': {
             members: [
                 { userId: 3, isApprover: true },
                 { userId: 4, isApprover: false }
+            ],
+            contacts: [
+                { name: '陈晓明', phone: '13900139003', wechat: 'chenxm03', email: 'chenxm@example.com' }
             ]
         }
     };
 
     let editingBiz = null;
     let tempMembers = []; // 弹窗内临时数据
+    let editingContactBiz = null;
+    let tempContacts = []; // 乙方联系人临时数据
 
     function getUser(userId) {
         return USER_DB.find(u => u.id === userId);
@@ -451,7 +576,7 @@
     function render() {
         const tbody = document.getElementById('tableBody');
         tbody.innerHTML = BIZ_LINES.map(name => {
-            const cfg = configs[name] || { members: [] };
+            const cfg = configs[name] || { members: [], contacts: [] };
             const personsHtml = cfg.members.map(m => {
                 const u = getUser(m.userId);
                 if (!u) return '';
@@ -462,10 +587,21 @@
                 </span>`;
             }).join('');
 
+            const contactsHtml = (cfg.contacts || []).map((c, i) => {
+                return `<span class="contact-tag">
+                    ${c.name}（${c.phone}）
+                    <span class="del" onclick="removeContact('${name}', ${i}, event)">&times;</span>
+                </span>`;
+            }).join('');
+
             return `
                 <tr>
                     <td><strong>${name}</strong></td>
                     <td>${personsHtml || '<span style="color:#bbb;">—</span>'}</td>
+                    <td>${contactsHtml || '<span style="color:#bbb;">—</span>'}</td>
+                    <td>
+                        <button class="btn-text" onclick="openContactEdit('${name}')">设置联系人</button>
+                    </td>
                     <td>
                         <button class="btn-text" onclick="openEdit('${name}')">添加人员</button>
                     </td>
@@ -609,6 +745,91 @@
 
     function openModal(id) { document.getElementById(id).classList.add('show'); }
     function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+
+    // ===== 乙方联系人功能 =====
+    function openContactEdit(name) {
+        editingContactBiz = name;
+        const cfg = configs[name] || { members: [], contacts: [] };
+        tempContacts = JSON.parse(JSON.stringify(cfg.contacts || []));
+        document.getElementById('contactModalTitle').textContent = '乙方联系人设置：' + name;
+        renderContactCards();
+        openModal('contactModal');
+    }
+
+    function renderContactCards() {
+        const box = document.getElementById('contactCards');
+        if (tempContacts.length === 0) {
+            box.innerHTML = '<div class="no-result">暂无联系人，请点击下方按钮添加</div>';
+            return;
+        }
+        box.innerHTML = tempContacts.map((c, i) => `
+            <div class="contact-card">
+                <button class="contact-card-del" onclick="removeTempContact(${i})">&times;</button>
+                <div class="form-grid">
+                    <div class="field">
+                        <label>联系人</label>
+                        <input type="text" placeholder="请输入姓名" value="${c.name}" oninput="updateTempContact(${i}, 'name', this.value)">
+                    </div>
+                    <div class="field">
+                        <label>联系电话</label>
+                        <input type="text" placeholder="请输入手机号" value="${c.phone}" oninput="updateTempContact(${i}, 'phone', this.value)">
+                    </div>
+                    <div class="field">
+                        <label>微信号</label>
+                        <input type="text" placeholder="请输入微信号" value="${c.wechat}" oninput="updateTempContact(${i}, 'wechat', this.value)">
+                    </div>
+                    <div class="field">
+                        <label>联系邮箱</label>
+                        <input type="text" placeholder="请输入邮箱" value="${c.email}" oninput="updateTempContact(${i}, 'email', this.value)">
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function addTempContact() {
+        tempContacts.push({ name: '', phone: '', wechat: '', email: '' });
+        renderContactCards();
+        // 滚动到底部
+        const box = document.getElementById('contactCards');
+        box.lastElementChild && box.lastElementChild.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    function removeTempContact(index) {
+        tempContacts.splice(index, 1);
+        renderContactCards();
+    }
+
+    function updateTempContact(index, field, value) {
+        tempContacts[index][field] = value;
+    }
+
+    function removeContact(bizName, index, event) {
+        event.stopPropagation();
+        if (!confirm('确定删除该联系人？')) return;
+        const cfg = configs[bizName];
+        if (cfg && cfg.contacts) {
+            cfg.contacts.splice(index, 1);
+            if (cfg.contacts.length === 0 && cfg.members.length === 0) delete configs[bizName];
+        }
+        render();
+    }
+
+    function saveContacts() {
+        // 过滤掉完全空的联系人
+        const valid = tempContacts.filter(c => c.name.trim() || c.phone.trim());
+        if (valid.length < tempContacts.length) {
+            const empty = tempContacts.length - valid.length;
+            if (!confirm(`${empty} 条联系人姓名和电话均为空，将被忽略，是否继续？`)) return;
+        }
+        if (!configs[editingContactBiz]) {
+            configs[editingContactBiz] = { members: [], contacts: valid };
+        } else {
+            configs[editingContactBiz].contacts = valid;
+        }
+        closeModal('contactModal');
+        render();
+    }
 
     document.querySelectorAll('.modal-overlay').forEach(el => {
         el.addEventListener('click', function(e) { if (e.target === el) el.classList.remove('show'); });
