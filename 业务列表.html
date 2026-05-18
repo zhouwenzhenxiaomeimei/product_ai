@@ -120,6 +120,7 @@
             line-height: 1.4;
         }
         .badge-blue { background: #e6f7ff; color: #096dd9; }
+        .badge-green { background: #f6ffed; color: #389e0d; }
 
         .empty { text-align: center; padding: 60px; color: #bbb; }
 
@@ -326,6 +327,19 @@
             cursor: pointer;
         }
         .toggle-switch input { accent-color: #1890ff; cursor: pointer; }
+        .radio-group {
+            display: flex;
+            gap: 10px;
+        }
+        .radio-label {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 12px;
+            color: #666;
+            cursor: pointer;
+        }
+        .radio-label input { cursor: pointer; }
 
         .section-title {
             font-size: 12px;
@@ -492,13 +506,6 @@
             </div>
             <div class="modal-body">
                 <div class="form-row">
-                    <label class="form-label">已选人员</label>
-                    <div class="selected-list" id="selectedList">
-                        <div class="empty-hint">请在下方搜索并添加人员</div>
-                    </div>
-                </div>
-
-                <div class="form-row">
                     <label class="form-label">选择用户</label>
                     <div class="select-dropdown" id="userDropdown">
                         <div class="select-trigger" onclick="toggleDropdown()">
@@ -511,7 +518,12 @@
                     </div>
                 </div>
 
-                <div class="section-title">审批权限设置</div>
+                <div class="section-title" style="margin-bottom:4px;">角色设置</div>
+                <div style="font-size:11px;color:#888;line-height:1.8;padding:0 14px 10px;">
+                    <div>添加到业务线的用户即拥有该业务线的操作权限，需选择角色：</div>
+                    <div><span class="badge badge-blue" style="vertical-align:middle;">审核人</span> 承担合同审核职责，可审核合同并接收相关通知</div>
+                    <div><span class="badge badge-green" style="vertical-align:middle;">通知人</span> 不参与合同审核，但接收合同通知消息，以便知晓该业务线下的合同签署情况（如与哪位老师签署了合同等）</div>
+                </div>
                 <div class="result-list" id="approveList">
                     <!-- JS 渲染 -->
                 </div>
@@ -544,9 +556,9 @@
     let configs = {
         '咨询': {
             members: [
-                { userId: 1, isApprover: true },
-                { userId: 2, isApprover: true },
-                { userId: 3, isApprover: false }
+                { userId: 1, role: 'approver' },
+                { userId: 2, role: 'approver' },
+                { userId: 3, role: 'notifier' }
             ],
             contacts: [
                 { name: '林小芳', phone: '13900139001', wechat: 'linxf01', email: 'linxf@example.com' },
@@ -555,8 +567,8 @@
         },
         '倾诉': {
             members: [
-                { userId: 3, isApprover: true },
-                { userId: 4, isApprover: false }
+                { userId: 3, role: 'approver' },
+                { userId: 4, role: 'notifier' }
             ],
             contacts: [
                 { name: '陈晓明', phone: '13900139003', wechat: 'chenxm03', email: 'chenxm@example.com' }
@@ -582,7 +594,7 @@
                 if (!u) return '';
                 return `<span class="person-tag">
                     ${u.name}（${u.phone}）
-                    ${m.isApprover ? '<span class="badge badge-blue">审</span>' : ''}
+                    ${m.role === 'approver' ? '<span class="badge badge-blue">审</span>' : m.role === 'notifier' ? '<span class="badge badge-green">知</span>' : ''}
                     <span class="del" onclick="removePerson('${name}', ${m.userId}, event)">&times;</span>
                 </span>`;
             }).join('');
@@ -629,30 +641,14 @@
         document.getElementById('editModalTitle').textContent = '添加人员：' + name;
         document.getElementById('userDropdown').classList.remove('open');
 
-        renderSelected();
         renderApproveList();
         openModal('editModal');
     }
 
-    function renderSelected() {
-        const box = document.getElementById('selectedList');
-        if (tempMembers.length === 0) {
-            box.innerHTML = '<div class="empty-hint">请在下方搜索并添加人员</div>';
-            return;
-        }
-        box.innerHTML = tempMembers.map(m => {
-            const u = getUser(m.userId);
-            if (!u) return '';
-            return `<span class="selected-tag">
-                ${u.name}（${u.phone}）
-                <span class="del" onclick="removeTempPerson(${m.userId})">&times;</span>
-            </span>`;
-        }).join('');
-    }
+    // renderSelected removed - 已选人员区域已去掉
 
     function removeTempPerson(userId) {
         tempMembers = tempMembers.filter(m => m.userId !== userId);
-        renderSelected();
         renderApproveList();
         // 如果下拉框展开，刷新选项
         const dd = document.getElementById('userDropdown');
@@ -685,8 +681,7 @@
 
     function selectUser(userId) {
         if (tempMembers.some(m => m.userId === userId)) return;
-        tempMembers.push({ userId, isApprover: true });
-        renderSelected();
+        tempMembers.push({ userId, role: 'none' });
         renderApproveList();
         renderDropdownOptions();
         // 如果全部选完则关闭下拉
@@ -713,29 +708,41 @@
         box.innerHTML = tempMembers.map(m => {
             const u = getUser(m.userId);
             if (!u) return '';
+            const role = m.role || 'none';
             return `
                 <div class="toggle-row">
                     <div>
                         <span class="name">${u.name}（${u.phone}）</span>
+                        ${role === 'approver' ? '<span class="badge badge-blue" style="margin-left:4px;">审核人</span>' : role === 'notifier' ? '<span class="badge badge-green" style="margin-left:4px;">通知人</span>' : '<span style="margin-left:4px;font-size:11px;color:#bbb;">未设置</span>'}
                     </div>
-                    <label class="toggle-switch">
-                        <input type="checkbox" ${m.isApprover ? 'checked' : ''}
-                            onchange="toggleTempApprove(${m.userId}, this.checked)">
-                        <span>审批权限</span>
-                    </label>
+                    <div style="display:flex;align-items:center;gap:10px;">
+                        <div class="radio-group">
+                            <label class="radio-label">
+                                <input type="radio" name="role_${m.userId}" value="approver" ${role === 'approver' ? 'checked' : ''}
+                                    onchange="setTempRole(${m.userId}, 'approver')">
+                                <span>审核人</span>
+                            </label>
+                            <label class="radio-label">
+                                <input type="radio" name="role_${m.userId}" value="notifier" ${role === 'notifier' ? 'checked' : ''}
+                                    onchange="setTempRole(${m.userId}, 'notifier')">
+                                <span>通知人</span>
+                            </label>
+                        </div>
+                        <span class="del" style="font-size:16px;cursor:pointer;color:#999;" onclick="removeTempPerson(${m.userId})">&times;</span>
+                    </div>
                 </div>
             `;
         }).join('');
     }
 
-    function toggleTempApprove(userId, checked) {
+    function setTempRole(userId, role) {
         const m = tempMembers.find(x => x.userId === userId);
-        if (m) m.isApprover = checked;
+        if (m) m.role = role;
     }
 
     function saveBizLine() {
-        if (tempMembers.filter(m => m.isApprover).length === 0) {
-            alert('请至少设置一位审批人');
+        if (tempMembers.filter(m => m.role === 'approver').length === 0 && tempMembers.filter(m => m.role === 'notifier').length === 0) {
+            alert('请至少设置一位审核人或通知人');
             return;
         }
         configs[editingBiz] = { members: tempMembers };
