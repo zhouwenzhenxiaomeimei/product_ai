@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>项目配置 - 后台管理系统</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: #f5f5f5;
+            color: #333;
+        }
+        .header {
+            background: #fff;
+            padding: 0 24px;
+            height: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid #e8e8e8;
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            z-index: 100;
+        }
+        .header-title { font-size: 16px; font-weight: 600; }
+        .header-back { color: #666; font-size: 14px; cursor: pointer; }
+        .header-back:hover { color: #1890ff; }
+
+        .main { margin-top: 56px; padding: 20px 24px; max-width: 1300px; }
+
+        .page-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        .page-bar h1 { font-size: 18px; font-weight: 600; }
+        .page-bar-right { display: flex; gap: 8px; align-items: center; }
+
+        .btn {
+            padding: 6px 16px;
+            border-radius: 4px;
+            font-size: 13px;
+            cursor: pointer;
+            border: 1px solid #d9d9d9;
+            background: #fff;
+            color: #666;
+            transition: all 0.2s;
+        }
+        .btn:hover { border-color: #1890ff; color: #1890ff; }
+        .btn-primary {
+            background: #1890ff;
+            border-color: #1890ff;
+            color: #fff;
+        }
+        .btn-primary:hover { background: #40a9ff; border-color: #40a9ff; color: #fff; }
+        .btn-text {
+            border: none;
+            background: none;
+            color: #1890ff;
+            padding: 4px 6px;
+            font-size: 13px;
+            cursor: pointer;
+        }
+        .btn-text:hover { background: #e6f7ff; border-radius: 4px; }
+        .btn-text.danger { color: #ff4d4f; }
+        .btn-text.danger:hover { background: #fff1f0; }
+
+        .card {
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+        }
+
+        .search-bar {
+            display: flex;
+            gap: 12px;
+            padding: 16px;
+            border-bottom: 1px solid #f0f0f0;
+            align-items: center;
+        }
+        .search-input {
+            padding: 6px 12px;
+            border: 1px solid #d9d9d9;
+            border-radius: 4px;
+            font-size: 13px;
+            width: 220px;
+            outline: none;
+        }
+        .search-input:focus { border-color: #1890ff; }
+        .filter-select {
+            padding: 6px 12px;
+            border: 1px solid #d9d9d9;
+            border-radius: 4px;
+            font-size: 13px;
+            width: 120px;
+            outline: none;
+            background: #fff;
+            cursor: pointer;
+        }
+        .filter-select:focus { border-color: #1890ff; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        th {
+            background: #fafafa;
+            padding: 12px 16px;
+            text-align: left;
+            font-weight: 600;
+            color: #555;
+            border-bottom: 1px solid #f0f0f0;
+            white-space: nowrap;
+        }
+        td {
+            padding: 14px 16px;
+            border-bottom: 1px solid #f0f0f0;
+            vertical-align: top;
+        }
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background: #fafafa; }
+
+        /* Toggle 开关 */
+        .toggle-wrap {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            user-select: none;
+        }
+        .toggle-track {
+            position: relative;
+            width: 36px;
+            height: 20px;
+            border-radius: 10px;
+            background: #d9d9d9;
+            transition: background 0.25s;
+            flex-shrink: 0;
+        }
+        .toggle-track.on { background: #52c41a; }
+        .toggle-thumb {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #fff;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            transition: left 0.25s;
+        }
+        .toggle-track.on .toggle-thumb { left: 18px; }
+        .toggle-label {
+            font-size: 12px;
+            color: #999;
+            min-width: 24px;
+        }
+        .toggle-track.on + .toggle-label { color: #52c41a; }
+        
+                /* 标注红点 */
+                .annotation-dot {
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    width: 16px;
+                    height: 16px;
+                    border-radius: 50%;
+                    background: #ff4d4f;
+                    color: #fff;
+                    font-size: 10px;
+                    font-style: normal;
+                    cursor: pointer;
+                    margin-left: 4px;
+                    position: relative;
+                    vertical-align: middle;
+                    flex-shrink: 0;
+                }
+                .annotation-popup {
+                    display: none;
+                    position: absolute;
+                    top: 24px;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    background: #333;
+                    color: #fff;
+                    font-size: 12px;
+                    font-weight: normal;
+                    line-height: 1.6;
+                    padding: 8px 12px;
+                    border-radius: 6px;
+                    white-space: nowrap;
+                    z-index: 9999;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+                    pointer-events: none;
+                }
+                .annotation-popup::before {
+                    content: '';
+                    position: absolute;
+                    top: -5px;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    border: 5px solid transparent;
+                    border-top: none;
+                    border-bottom-color: #333;
+                }
+                .annotation-dot.open .annotation-popup { display: block; }
+
+        .detail-text {
+            color: #555;
+            line-height: 1.6;
+            max-width: 320px;
+        }
+
+        .template-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 8px;
+            background: #e6f7ff;
+            border: 1px solid #91d5ff;
+            border-radius: 4px;
+            font-size: 12px;
+            color: #096dd9;
+            margin: 2px 2px 2px 0;
+            cursor: pointer;
+        }
+        .template-tag:hover { background: #bae7ff; }
+
+        .op-group { display: flex; gap: 4px; white-space: nowrap; }
+
+        .pagination {
+            padding: 16px;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: #666;
+            border-top: 1px solid #f0f0f0;
+        }
+        .page-btn {
+            padding: 4px 10px;
+            border: 1px solid #d9d9d9;
+            border-radius: 4px;
+            background: #fff;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        .page-btn:hover { border-color: #1890ff; color: #1890ff; }
+        .page-btn.active { background: #1890ff; border-color: #1890ff; color: #fff; }
+
+        /* ===== 弹窗 ===== */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.45);
+            z-index: 2000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-overlay.show { display: flex; }
+        .modal-box {
+            background: #fff;
+            border-radius: 8px;
+            width: 600px;
+            max-width: 92vw;
+            max-height: 85vh;
+            overflow-y: auto;
+        }
+        .modal-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            background: #fff;
+            z-index: 1;
+        }
+        .modal-title { font-size: 15px; font-weight: 600; }
+        .modal-close { border: none; background: none; font-size: 18px; color: #999; cursor: pointer; }
+        .modal-body { padding: 20px; }
+        .modal-footer {
+            padding: 12px 20px;
+            border-top: 1px solid #f0f0f0;
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            position: sticky;
+            bottom: 0;
+            background: #fff;
+        }
+
+        .form-row { margin-bottom: 18px; }
+        .form-label {
+            display: block;
+            font-size: 13px;
+            color: #555;
+            margin-bottom: 6px;
+            font-weight: 500;
+        }
+        .form-label .req { color: #ff4d4f; margin-left: 2px; }
+        .form-control {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #d9d9d9;
+            border-radius: 4px;
+            font-size: 13px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .form-control:focus { border-color: #1890ff; }
+        textarea.form-control { resize: vertical; min-height: 90px; }
+        select.form-control { background: #fff; cursor: pointer; }
+
+        /* 关联模板区域 */
+        .template-section {
+            border: 1px solid #e8e8e8;
+            border-radius: 6px;
+            padding: 12px;
+        }
+        .template-section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .template-section-title { font-size: 13px; font-weight: 500; color: #555; }
+        .template-list { display: flex; flex-wrap: wrap; gap: 6px; min-height: 32px; }
+        .template-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            background: #e6f7ff;
+            border: 1px solid #91d5ff;
+            border-radius: 4px;
+            font-size: 12px;
+            color: #096dd9;
+        }
+        .template-item .del {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 14px; height: 14px;
+            border-radius: 50%;
+            cursor: pointer;
+            color: #096dd9;
+            font-size: 12px;
+        }
+        .template-item .del:hover { background: #ff4d4f; color: #fff; }
+        .template-empty { color: #bbb; font-size: 12px; padding: 4px 0; }
+
+        /* 关联模板下拉 */
+        .select-dropdown { position: relative; }
+        .select-trigger {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 7px 12px;
+            border: 1px solid #d9d9d9;
+            border-radius: 4px;
+            font-size: 13px;
+            cursor: pointer;
+            background: #fff;
+            color: #999;
+        }
+        .select-trigger:hover, .select-dropdown.open .select-trigger { border-color: #1890ff; }
+        .select-trigger .arrow { font-size: 10px; transition: transform 0.2s; }
+        .select-dropdown.open .select-trigger .arrow { transform: rotate(180deg); }
+        .select-options {
+            position: absolute;
+            top: 100%;
+            left: 0; right: 0;
+            margin-top: 4px;
+            background: #fff;
+            border: 1px solid #e8e8e8;
+            border-radius: 4px;
+            max-height: 200px;
+            overflow-y: auto;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            z-index: 10;
+            display: none;
+        }
+        .select-dropdown.open .select-options { display: block; }
+        .select-option {
+            padding: 9px 14px;
+            font-size: 13px;
+            cursor: pointer;
+            color: #333;
+        }
+        .select-option:hover { background: #f5f5f5; }
+        .select-option.added { opacity: 0.4; cursor: default; }
+
+        /* 详情弹窗 */
+        .detail-modal-box { width: 700px; }
+        .detail-section { margin-bottom: 16px; }
+        .detail-label { font-size: 12px; color: #888; margin-bottom: 4px; }
+        .detail-value { font-size: 14px; color: #333; line-height: 1.7; }
+
+        .empty { text-align: center; padding: 60px; color: #bbb; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <span class="header-back" onclick="alert('返回上一页')">← 返回</span>
+        <span class="header-title">项目配置</span>
+        <span></span>
+    </header>
+
+    <div class="main">
+        <div class="page-bar">
+            <h1>项目列表</h1>
+            <div class="page-bar-right">
+                <button class="btn btn-primary" onclick="openAdd()">+ 新增项目</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="search-bar">
+                <input class="search-input" type="text" id="searchName" placeholder="搜索项目名称" oninput="filterTable()">
+                <select class="filter-select" id="filterStatus" onchange="filterTable()">
+                    <option value="">全部状态</option>
+                    <option value="valid">有效</option>
+                    <option value="invalid">失效</option>
+                </select>
+                <button class="btn" onclick="resetFilter()">重置</button>
+            </div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width:180px;">项目名称</th>
+                        <th style="width:80px;">状态</th>
+                        <th>详细内容</th>
+                        <th style="width:220px;">已关联模板</th>
+                        <th style="width:100px;">操作</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody"></tbody>
+            </table>
+            <div class="pagination" id="pagination"></div>
+        </div>
+    </div>
+
+    <!-- 新增/编辑弹窗 -->
+    <div class="modal-overlay" id="editModal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <div class="modal-title" id="editModalTitle">新增项目</div>
+                <button class="modal-close" onclick="closeModal('editModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-row">
+                    <label class="form-label">项目名称 <span class="req">*</span></label>
+                    <input class="form-control" type="text" id="fieldName" placeholder="请输入项目名称">
+                </div>
+                <div class="form-row">
+                    <label class="form-label">状态 <span class="req">*</span></label>
+                    <select class="form-control" id="fieldStatus">
+                        <option value="valid">有效</option>
+                        <option value="invalid">失效</option>
+                    </select>
+                </div>
+                <div class="form-row">
+                    <label class="form-label">详细内容</label>
+                    <textarea class="form-control" id="fieldDetail" placeholder="请输入项目详细说明，如服务内容、报酬标准等"></textarea>
+                </div>
+                <div class="form-row">
+                    <label class="form-label">关联模板</label>
+                    <div class="template-section">
+                        <div class="template-section-header">
+                            <span class="template-section-title">已关联（<span id="tplCount">0</span>个）</span>
+                        </div>
+                        <div class="template-list" id="tplList">
+                            <span class="template-empty">暂未关联模板，请在下方选择</span>
+                        </div>
+                        <div style="margin-top:10px;">
+                            <div class="select-dropdown" id="tplDropdown">
+                                <div class="select-trigger" onclick="toggleTplDropdown()">
+                                    <span>选择模板添加</span>
+                                    <span class="arrow">▼</span>
+                                </div>
+                                <div class="select-options" id="tplOptions"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" onclick="closeModal('editModal')">取消</button>
+                <button class="btn btn-primary" onclick="saveProject()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 详情弹窗 -->
+    <div class="modal-overlay" id="detailModal">
+        <div class="modal-box detail-modal-box">
+            <div class="modal-header">
+                <div class="modal-title">项目详情</div>
+                <button class="modal-close" onclick="closeModal('detailModal')">&times;</button>
+            </div>
+            <div class="modal-body" id="detailBody"></div>
+            <div class="modal-footer">
+                <button class="btn" onclick="closeModal('detailModal')">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // ===== 模板库 Mock =====
+    const TEMPLATE_DB = [
+        { id: 't1', name: '[新手]此刻心理咨询师合作协议202605' },
+        { id: 't2', name: '[实习]此刻心理咨询师合作协议202605' },
+        { id: 't3', name: '[正式]咨询师合作协议202601' },
+        { id: 't4', name: '[督导]个体督导合作协议202604' },
+        { id: 't5', name: '[初心]初心咨询师合作协议202602' },
+    ];
+
+    // ===== 项目数据 =====
+    let projects = [
+        {
+            id: 1,
+            name: '朝阳项目个体督导项服务价格',
+            status: 'valid',
+            notify: false,
+            detail: '乙方为甲方朝阳计划课程项目学员提供个体督导服务的，甲方按¥100元/向乙方支付朝阳计划个体督导报酬',
+            templates: ['t1', 't2']
+        },
+        {
+            id: 2,
+            name: '朝阳项目个体督导项服务价格',
+            status: 'invalid',
+            notify: false,
+            detail: '乙方为甲方朝阳计划课程项目学员提供个体督导服务的，甲方按¥200元/向乙方支付朝阳计划个体督导报酬',
+            templates: []
+        },
+        {
+            id: 3,
+            name: '初心咨询项目',
+            status: 'valid',
+            notify: false,
+            detail: '乙方为甲方初心项目来访者提供心理咨询服务，甲方按约定标准向乙方支付报酬',
+            templates: ['t5']
+        },
+        {
+            id: 4,
+            name: '倾诉陪伴项目',
+            status: 'invalid',
+            notify: false,
+            detail: '',
+            templates: ['t3']
+        },
+        {
+            id: 5,
+            name: '此刻督导项目',
+            status: 'valid',
+            notify: false,
+            detail: '乙方为甲方此刻计划课程学员提供督导服务，甲方按季度结算报酬',
+            templates: ['t4']
+        },
+    ];
+    let nextId = 100;
+    let editingId = null;
+    let tempTemplates = [];
+
+    const statusMap = {
+        valid:   { label: '有效',  cls: 'status-valid' },
+        invalid: { label: '失效',  cls: 'status-invalid' },
+    };
+
+    function toggleStatus(id) {
+        const p = projects.find(x => x.id === id);
+        if (!p) return;
+        p.status = p.status === 'valid' ? 'invalid' : 'valid';
+        render();
+    }
+
+    function toggleNotify(id) {}
+
+    function toggleAnnotation(e) {
+        e.stopPropagation();
+        const dot = e.currentTarget;
+        const isOpen = dot.classList.contains('open');
+        document.querySelectorAll('.annotation-dot.open').forEach(d => d.classList.remove('open'));
+        if (!isOpen) dot.classList.add('open');
+    }
+    document.addEventListener('click', () => {
+        document.querySelectorAll('.annotation-dot.open').forEach(d => d.classList.remove('open'));
+    });
+
+    function getTemplate(id) {
+        return TEMPLATE_DB.find(t => t.id === id);
+    }
+
+    // ===== 渲染 =====
+    let currentPage = 1;
+    const pageSize = 8;
+
+    function getFilteredData() {
+        const name = document.getElementById('searchName').value.trim().toLowerCase();
+        const status = document.getElementById('filterStatus').value;
+        return projects.filter(p => {
+            if (name && !p.name.toLowerCase().includes(name)) return false;
+            if (status && p.status !== status) return false;
+            return true;
+        });
+    }
+
+    function render() {
+        const data = getFilteredData();
+        const total = data.length;
+        const totalPages = Math.ceil(total / pageSize) || 1;
+        if (currentPage > totalPages) currentPage = totalPages;
+        const paged = data.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
+        const tbody = document.getElementById('tableBody');
+        if (paged.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="5" class="empty">暂无数据</td></tr>`;
+        } else {
+            tbody.innerHTML = paged.map(p => {
+                const st = statusMap[p.status] || statusMap.invalid;
+                const tplHtml = p.templates.length === 0
+                    ? '<span style="color:#bbb;">—</span>'
+                    : p.templates.map(tid => {
+                        const t = getTemplate(tid);
+                        return t ? `<span class="template-tag" title="${t.name}">${t.name.length > 16 ? t.name.slice(0,16)+'…' : t.name}</span>` : '';
+                    }).join('');
+                const detail = p.detail || '—';
+                const detailShort = detail.length > 60 ? detail.slice(0, 60) + '…' : detail;
+                return `
+                    <tr>
+                        <td><strong>${p.name}</strong></td>
+                        <td>
+                            <label class="toggle-wrap" onclick="toggleStatus(${p.id})" title="点击切换状态">
+                                <div class="toggle-track ${p.status === 'valid' ? 'on' : ''}">
+                                    <div class="toggle-thumb"></div>
+                                </div>
+                                <span class="toggle-label">${p.status === 'valid' ? '有效' : '失效'}</span>
+                            </label>
+                        </td>
+                        <td><div class="detail-text">${detailShort}${detail.length > 60 ? `<button class="btn-text" style="padding:0 4px;" onclick="viewDetail(${p.id})">查看更多</button>` : ''}</div></td>
+                        <td>${tplHtml}</td>
+                        <td>
+                            <div class="op-group">
+                                <button class="btn-text" onclick="linkTemplate(${p.id})">关联模板</button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // 分页
+        const pg = document.getElementById('pagination');
+        pg.innerHTML = `<span>共 ${total} 条</span>`;
+        for (let i = 1; i <= totalPages; i++) {
+            pg.innerHTML += `<button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="goPage(${i})">${i}</button>`;
+        }
+        pg.innerHTML += `<span>第 ${currentPage}/${totalPages} 页</span>`;
+    }
+
+    function goPage(p) { currentPage = p; render(); }
+    function filterTable() { currentPage = 1; render(); }
+    function resetFilter() {
+        document.getElementById('searchName').value = '';
+        document.getElementById('filterStatus').value = '';
+        filterTable();
+    }
+
+    // ===== 新增/编辑 =====
+    function openAdd() {
+        editingId = null;
+        tempTemplates = [];
+        document.getElementById('editModalTitle').textContent = '新增项目';
+        document.getElementById('fieldName').value = '';
+        document.getElementById('fieldStatus').value = 'valid';
+        document.getElementById('fieldDetail').value = '';
+        renderTplList();
+        renderTplOptions();
+        openModal('editModal');
+    }
+
+    function openEdit(id) {
+        const p = projects.find(x => x.id === id);
+        if (!p) return;
+        editingId = id;
+        tempTemplates = [...p.templates];
+        document.getElementById('editModalTitle').textContent = '编辑项目';
+        document.getElementById('fieldName').value = p.name;
+        document.getElementById('fieldStatus').value = p.status;
+        document.getElementById('fieldDetail').value = p.detail;
+        renderTplList();
+        renderTplOptions();
+        openModal('editModal');
+    }
+
+    function saveProject() {
+        const name = document.getElementById('fieldName').value.trim();
+        if (!name) { alert('请输入项目名称'); return; }
+        const status = document.getElementById('fieldStatus').value;
+        const detail = document.getElementById('fieldDetail').value.trim();
+        if (editingId) {
+            const p = projects.find(x => x.id === editingId);
+            if (p) { p.name = name; p.status = status; p.detail = detail; p.templates = [...tempTemplates]; }
+        } else {
+            projects.unshift({ id: nextId++, name, status, detail, templates: [...tempTemplates] });
+        }
+        closeModal('editModal');
+        render();
+    }
+
+    function deleteProject(id) {
+        if (!confirm('确定删除该项目？')) return;
+        projects = projects.filter(p => p.id !== id);
+        render();
+    }
+
+    // ===== 关联模板（快捷入口直接打开编辑弹窗并聚焦模板区）=====
+    function linkTemplate(id) {
+        openEdit(id);
+        setTimeout(() => {
+            document.getElementById('tplDropdown').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 100);
+    }
+
+    // ===== 模板选择 =====
+    function renderTplList() {
+        const box = document.getElementById('tplList');
+        document.getElementById('tplCount').textContent = tempTemplates.length;
+        if (tempTemplates.length === 0) {
+            box.innerHTML = '<span class="template-empty">暂未关联模板，请在下方选择</span>';
+            return;
+        }
+        box.innerHTML = tempTemplates.map(tid => {
+            const t = getTemplate(tid);
+            return t ? `<span class="template-item">${t.name}<span class="del" onclick="removeTpl('${tid}')">&times;</span></span>` : '';
+        }).join('');
+    }
+
+    function removeTpl(tid) {
+        tempTemplates = tempTemplates.filter(x => x !== tid);
+        renderTplList();
+        renderTplOptions();
+    }
+
+    function toggleTplDropdown() {
+        const dd = document.getElementById('tplDropdown');
+        dd.classList.toggle('open');
+        if (dd.classList.contains('open')) renderTplOptions();
+    }
+
+    function renderTplOptions() {
+        const box = document.getElementById('tplOptions');
+        box.innerHTML = TEMPLATE_DB.map(t => {
+            const added = tempTemplates.includes(t.id);
+            return `<div class="select-option ${added ? 'added' : ''}" onclick="${added ? '' : `addTpl('${t.id}')`}">${t.name}${added ? ' ✓' : ''}</div>`;
+        }).join('');
+    }
+
+    function addTpl(tid) {
+        if (tempTemplates.includes(tid)) return;
+        tempTemplates.push(tid);
+        renderTplList();
+        renderTplOptions();
+        document.getElementById('tplDropdown').classList.remove('open');
+    }
+
+    document.addEventListener('click', function(e) {
+        const dd = document.getElementById('tplDropdown');
+        if (dd && !dd.contains(e.target)) dd.classList.remove('open');
+    });
+
+    // ===== 详情 =====
+    function viewDetail(id) {
+        const p = projects.find(x => x.id === id);
+        if (!p) return;
+        const st = statusMap[p.status] || statusMap.draft;
+        const tplHtml = p.templates.length === 0
+            ? '<span style="color:#bbb;">暂未关联</span>'
+            : p.templates.map(tid => {
+                const t = getTemplate(tid);
+                return t ? `<span class="template-tag">${t.name}</span>` : '';
+            }).join('');
+        document.getElementById('detailBody').innerHTML = `
+            <div class="detail-section">
+                <div class="detail-label">项目名称</div>
+                <div class="detail-value"><strong>${p.name}</strong></div>
+            </div>
+            <div class="detail-section">
+                <div class="detail-label">状态</div>
+                <div class="detail-value"><span class="status-tag ${st.cls}">${st.label}</span></div>
+            </div>
+            <div class="detail-section">
+                <div class="detail-label">详细内容</div>
+                <div class="detail-value" style="white-space:pre-wrap;">${p.detail || '—'}</div>
+            </div>
+            <div class="detail-section">
+                <div class="detail-label">已关联模板</div>
+                <div class="detail-value">${tplHtml}</div>
+            </div>
+        `;
+        openModal('detailModal');
+    }
+
+    function openModal(id) { document.getElementById(id).classList.add('show'); }
+    function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+
+    document.querySelectorAll('.modal-overlay').forEach(el => {
+        el.addEventListener('click', e => { if (e.target === el) el.classList.remove('show'); });
+    });
+
+    render();
+    </script>
+</body>
+</html>
