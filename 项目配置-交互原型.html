@@ -214,6 +214,89 @@
             max-width: 320px;
         }
 
+        /* 选项编辑器 */
+        .options-editor { display: flex; flex-direction: column; gap: 8px; min-height: 32px; }
+        .option-edit-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+        }
+        .option-edit-num {
+            width: 22px;
+            min-width: 22px;
+            height: 32px;
+            line-height: 32px;
+            text-align: center;
+            font-size: 12px;
+            color: #bbb;
+            flex-shrink: 0;
+        }
+        .option-edit-input {
+            flex: 1;
+            min-height: 34px;
+            padding: 6px 10px;
+            border: 1px solid #d9d9d9;
+            border-radius: 4px;
+            font-size: 13px;
+            outline: none;
+            resize: horizontal;
+            transition: border-color 0.2s;
+            line-height: 1.5;
+            font-family: inherit;
+        }
+        .option-edit-input:focus { border-color: #1890ff; box-shadow: 0 0 0 2px rgba(24,144,255,0.1); }
+        .option-del-btn {
+            width: 28px;
+            min-width: 28px;
+            height: 32px;
+            border: none;
+            background: none;
+            color: #bbb;
+            font-size: 18px;
+            cursor: pointer;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: color 0.15s, background 0.15s;
+            flex-shrink: 0;
+        }
+        .option-del-btn:hover { color: #ff4d4f; background: #fff1f0; }
+        .type-tag {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .type-tag.type-single { background: #e6f7ff; color: #1890ff; border: 1px solid #91d5ff; }
+        .type-tag.type-multi  { background: #f9f0ff; color: #722ed1; border: 1px solid #d3adf7; }
+
+        /* 选项值标签 */
+        .option-tag {
+            display: inline-block;
+            background: #f5f5f5;
+            border: 1px solid #d9d9d9;
+            border-radius: 3px;
+            padding: 1px 7px;
+            font-size: 12px;
+            color: #555;
+            margin: 2px 3px 2px 0;
+        }
+        .options-cell { display: flex; flex-wrap: wrap; gap: 2px; }
+
+                /* 单选按鈕组 */
+        .radio-group { display: flex; gap: 20px; padding-top: 4px; }
+        .radio-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            color: #333;
+        }
+        .radio-item input[type=radio] { cursor: pointer; accent-color: #1890ff; width: 15px; height: 15px; }
+
         .template-tag {
             display: inline-flex;
             align-items: center;
@@ -266,7 +349,7 @@
         .modal-box {
             background: #fff;
             border-radius: 8px;
-            width: 600px;
+            width: 720px;
             max-width: 92vw;
             max-height: 85vh;
             overflow-y: auto;
@@ -437,7 +520,8 @@
                     <tr>
                         <th style="width:180px;">项目名称</th>
                         <th style="width:80px;">状态</th>
-                        <th>详细内容</th>
+                        <th style="width:80px;">类型</th>
+                        <th style="width:160px;">选项值</th>
                         <th style="width:220px;">已关联模板</th>
                         <th style="width:100px;">操作</th>
                     </tr>
@@ -457,7 +541,7 @@
             </div>
             <div class="modal-body">
                 <div class="form-row">
-                    <label class="form-label">项目名称 <span class="req">*</span></label>
+                    <label class="form-label">项目名称 <span class="req">*</span> <span style="font-size:11px;color:#999;font-weight:normal;margin-left:4px;">（全局唯一）</span></label>
                     <input class="form-control" type="text" id="fieldName" placeholder="请输入项目名称">
                 </div>
                 <div class="form-row">
@@ -468,8 +552,20 @@
                     </select>
                 </div>
                 <div class="form-row">
-                    <label class="form-label">详细内容</label>
-                    <textarea class="form-control" id="fieldDetail" placeholder="请输入项目详细说明，如服务内容、报酬标准等"></textarea>
+                    <label class="form-label">类型 <span class="req">*</span></label>
+                    <div class="radio-group">
+                        <label class="radio-item">
+                            <input type="radio" name="fieldType" value="单选" id="typeRadioSingle"> 单选
+                        </label>
+                        <label class="radio-item">
+                            <input type="radio" name="fieldType" value="多选" id="typeRadioMulti"> 多选
+                        </label>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <label class="form-label">选项值</label>
+                    <div class="options-editor" id="optionsEditor"></div>
+                    <button class="btn" style="margin-top:8px;font-size:12px;padding:4px 12px;" onclick="addOptionItem()">✚ 添加选项</button>
                 </div>
                 <div class="form-row">
                     <label class="form-label">关联模板</label>
@@ -530,14 +626,18 @@
             name: '朝阳项目个体督导项服务价格',
             status: 'valid',
             notify: false,
+            type: '单选',
+            options: ['小时制', '次制', '月制'],
             detail: '乙方为甲方朝阳计划课程项目学员提供个体督导服务的，甲方按¥100元/向乙方支付朝阳计划个体督导报酬',
             templates: ['t1', 't2']
         },
         {
             id: 2,
-            name: '朝阳项目个体督导项服务价格',
+            name: '朝阳项目课程分组配置',
             status: 'invalid',
             notify: false,
+            type: '多选',
+            options: ['小白组', '进阶组', '资深组'],
             detail: '乙方为甲方朝阳计划课程项目学员提供个体督导服务的，甲方按¥200元/向乙方支付朝阳计划个体督导报酬',
             templates: []
         },
@@ -546,6 +646,8 @@
             name: '初心咨询项目',
             status: 'valid',
             notify: false,
+            type: '单选',
+            options: ['个人咨询', '团体咨询'],
             detail: '乙方为甲方初心项目来访者提供心理咨询服务，甲方按约定标准向乙方支付报酬',
             templates: ['t5']
         },
@@ -554,6 +656,8 @@
             name: '倾诉陪伴项目',
             status: 'invalid',
             notify: false,
+            type: '多选',
+            options: [],
             detail: '',
             templates: ['t3']
         },
@@ -562,6 +666,8 @@
             name: '此刻督导项目',
             status: 'valid',
             notify: false,
+            type: '单选',
+            options: ['个体督导', '团体督导'],
             detail: '乙方为甲方此刻计划课程学员提供督导服务，甲方按季度结算报酬',
             templates: ['t4']
         },
@@ -622,7 +728,7 @@
 
         const tbody = document.getElementById('tableBody');
         if (paged.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="5" class="empty">暂无数据</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="6" class="empty">暂无数据</td></tr>`;
         } else {
             tbody.innerHTML = paged.map(p => {
                 const st = statusMap[p.status] || statusMap.invalid;
@@ -632,8 +738,6 @@
                         const t = getTemplate(tid);
                         return t ? `<span class="template-tag" title="${t.name}">${t.name.length > 16 ? t.name.slice(0,16)+'…' : t.name}</span>` : '';
                     }).join('');
-                const detail = p.detail || '—';
-                const detailShort = detail.length > 60 ? detail.slice(0, 60) + '…' : detail;
                 return `
                     <tr>
                         <td><strong>${p.name}</strong></td>
@@ -645,11 +749,12 @@
                                 <span class="toggle-label">${p.status === 'valid' ? '有效' : '失效'}</span>
                             </label>
                         </td>
-                        <td><div class="detail-text">${detailShort}${detail.length > 60 ? `<button class="btn-text" style="padding:0 4px;" onclick="viewDetail(${p.id})">查看更多</button>` : ''}</div></td>
+                        <td><span class="type-tag type-${p.type === '单选' ? 'single' : 'multi'}">${p.type || '单选'}</span></td>
+                        <td><div class="options-cell">${(p.options && p.options.length > 0) ? p.options.map(o => `<span class="option-tag">${o}</span>`).join('') : '<span style="color:#bbb;">—</span>'}</div></td>
                         <td>${tplHtml}</td>
                         <td>
                             <div class="op-group">
-                                <button class="btn-text" onclick="linkTemplate(${p.id})">关联模板</button>
+                                <button class="btn-text" onclick="linkTemplate(${p.id})">修改项目</button>
                             </div>
                         </td>
                     </tr>
@@ -675,13 +780,54 @@
     }
 
     // ===== 新增/编辑 =====
+    let tempOptions = [];
+
+    function renderOptionsEditor() {
+        const box = document.getElementById('optionsEditor');
+        if (tempOptions.length === 0) {
+            box.innerHTML = '<div style="color:#bbb;font-size:13px;padding:6px 0;">暂无选项，点击“添加选项”添加</div>';
+            return;
+        }
+        box.innerHTML = tempOptions.map((opt, idx) => `
+            <div class="option-edit-row" data-idx="${idx}">
+                <span class="option-edit-num">${idx + 1}.</span>
+                <textarea class="option-edit-input" rows="2"
+                    onchange="updateOption(${idx}, this.value)"
+                    onblur="updateOption(${idx}, this.value)"
+                    placeholder="输入选项内容">${opt}</textarea>
+                <button class="option-del-btn" onclick="removeOption(${idx})" title="删除">&times;</button>
+            </div>
+        `).join('');
+    }
+
+    function addOptionItem() {
+        tempOptions.push('');
+        renderOptionsEditor();
+        // 自动聚焦到新弹出的输入框
+        setTimeout(() => {
+            const inputs = document.querySelectorAll('.option-edit-input');
+            if (inputs.length) inputs[inputs.length - 1].focus();
+        }, 50);
+    }
+
+    function updateOption(idx, val) {
+        tempOptions[idx] = val.trim();
+    }
+
+    function removeOption(idx) {
+        tempOptions.splice(idx, 1);
+        renderOptionsEditor();
+    }
+
     function openAdd() {
         editingId = null;
         tempTemplates = [];
+        tempOptions = [];
         document.getElementById('editModalTitle').textContent = '新增项目';
         document.getElementById('fieldName').value = '';
         document.getElementById('fieldStatus').value = 'valid';
-        document.getElementById('fieldDetail').value = '';
+        document.querySelector('input[name="fieldType"][value="单选"]').checked = true;
+        renderOptionsEditor();
         renderTplList();
         renderTplOptions();
         openModal('editModal');
@@ -692,10 +838,14 @@
         if (!p) return;
         editingId = id;
         tempTemplates = [...p.templates];
+        tempOptions = [...(p.options || [])];
         document.getElementById('editModalTitle').textContent = '编辑项目';
         document.getElementById('fieldName').value = p.name;
         document.getElementById('fieldStatus').value = p.status;
-        document.getElementById('fieldDetail').value = p.detail;
+        const typeVal = p.type || '单选';
+        const typeRadio = document.querySelector(`input[name="fieldType"][value="${typeVal}"]`);
+        if (typeRadio) typeRadio.checked = true;
+        renderOptionsEditor();
         renderTplList();
         renderTplOptions();
         openModal('editModal');
@@ -704,13 +854,17 @@
     function saveProject() {
         const name = document.getElementById('fieldName').value.trim();
         if (!name) { alert('请输入项目名称'); return; }
+        const duplicate = projects.find(x => x.name === name && x.id !== editingId);
+        if (duplicate) { alert('项目名称已存在，请使用不同的名称'); return; }
         const status = document.getElementById('fieldStatus').value;
-        const detail = document.getElementById('fieldDetail').value.trim();
+        const typeRadio = document.querySelector('input[name="fieldType"]:checked');
+        const type = typeRadio ? typeRadio.value : '单选';
+        const options = tempOptions.filter(Boolean);
         if (editingId) {
             const p = projects.find(x => x.id === editingId);
-            if (p) { p.name = name; p.status = status; p.detail = detail; p.templates = [...tempTemplates]; }
+            if (p) { p.name = name; p.status = status; p.templates = [...tempTemplates]; p.type = type; p.options = options; }
         } else {
-            projects.unshift({ id: nextId++, name, status, detail, templates: [...tempTemplates] });
+            projects.unshift({ id: nextId++, name, status, templates: [...tempTemplates], notify: false, type, options, detail: '' });
         }
         closeModal('editModal');
         render();
@@ -798,8 +952,12 @@
                 <div class="detail-value"><span class="status-tag ${st.cls}">${st.label}</span></div>
             </div>
             <div class="detail-section">
-                <div class="detail-label">详细内容</div>
-                <div class="detail-value" style="white-space:pre-wrap;">${p.detail || '—'}</div>
+                <div class="detail-label">类型</div>
+                <div class="detail-value"><span class="type-tag type-${p.type === '单选' ? 'single' : 'multi'}">${p.type || '单选'}</span></div>
+            </div>
+            <div class="detail-section">
+                <div class="detail-label">选项值</div>
+                <div class="detail-value">${(p.options && p.options.length > 0) ? p.options.map(o => `<span class="option-tag">${o}</span>`).join('') : '—'}</div>
             </div>
             <div class="detail-section">
                 <div class="detail-label">已关联模板</div>
