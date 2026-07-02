@@ -1,0 +1,2318 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>资金管理 - 老师端</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: #f5f5f5;
+            color: #333;
+            line-height: 1.5;
+        }
+        .app-container {
+            max-width: 430px;
+            margin: 0 auto;
+            min-height: 100vh;
+            background: #f5f5f5;
+            position: relative;
+        }
+        .page { display: none; }
+        .page.active { display: block; }
+
+        /* 顶部导航 */
+        .nav-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            background: #fff;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 1px solid #eee;
+        }
+        .nav-back {
+            width: 24px;
+            height: 24px;
+            font-size: 20px;
+            color: #666;
+            cursor: pointer;
+        }
+        .nav-title {
+            font-size: 17px;
+            font-weight: 600;
+            color: #333;
+        }
+        .nav-action {
+            font-size: 14px;
+            color: #666;
+            cursor: pointer;
+        }
+
+        /* 业务线Tab */
+        .biz-tabs {
+            display: flex;
+            background: #fff;
+            border-bottom: 1px solid #eee;
+        }
+        .biz-tab {
+            flex: 1;
+            text-align: center;
+            padding: 14px 0;
+            font-size: 14px;
+            color: #666;
+            cursor: pointer;
+            position: relative;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+        .biz-tab.active {
+            color: #333;
+            font-weight: 600;
+            border-bottom-color: #4a7dff;
+        }
+
+        /* 数据卡片 */
+        .data-card {
+            margin: 12px 16px;
+            padding: 20px 16px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #4a7dff 100%);
+            color: #fff;
+            position: relative;
+        }
+        .data-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .data-card-label {
+            font-size: 13px;
+            opacity: 0.9;
+        }
+        .data-card-help {
+            font-size: 12px;
+            opacity: 0.85;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .data-card-help .icon-help {
+            width: 14px;
+            height: 14px;
+            border: 1px solid rgba(255,255,255,0.6);
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+        }
+        .data-card-amount {
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            letter-spacing: -1px;
+        }
+        .data-card-withdraw {
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        .btn-withdraw {
+            background: #fff;
+            color: #4a7dff;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .data-card-real {
+            font-size: 12px;
+            opacity: 0.85;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .data-card-stats {
+            display: flex;
+            border-top: 1px solid rgba(255,255,255,0.2);
+            padding-top: 12px;
+        }
+        .stat-item {
+            flex: 1;
+            text-align: center;
+        }
+        .stat-item:not(:last-child) {
+            border-right: 1px solid rgba(255,255,255,0.2);
+        }
+        .stat-label {
+            font-size: 11px;
+            opacity: 0.8;
+            margin-bottom: 4px;
+        }
+        .stat-value {
+            font-size: 15px;
+            font-weight: 600;
+        }
+
+        /* 状态Tab */
+        .status-tabs {
+            display: flex;
+            background: #fff;
+            margin-top: 8px;
+            border-bottom: 1px solid #eee;
+        }
+        .status-tab {
+            flex: 1;
+            text-align: center;
+            padding: 14px 0;
+            font-size: 14px;
+            color: #666;
+            cursor: pointer;
+            position: relative;
+        }
+        .status-tab.active {
+            color: #4a7dff;
+            font-weight: 600;
+        }
+        .status-tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 25%;
+            right: 25%;
+            height: 2px;
+            background: #4a7dff;
+        }
+
+        /* 提示文字 */
+        .tips-text {
+            padding: 12px 16px;
+            font-size: 12px;
+            color: #999;
+            background: #f5f5f5;
+        }
+
+        /* 流水卡片 */
+        .flow-list {
+            padding: 0 16px 20px;
+        }
+        .flow-card {
+            background: #fff;
+            border-radius: 10px;
+            padding: 16px;
+            margin-bottom: 10px;
+        }
+        .flow-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        .flow-card-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: #333;
+        }
+        .flow-card-amount {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+        }
+        .flow-card-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 0;
+            font-size: 13px;
+            color: #666;
+        }
+        .flow-card-row .label { color: #999; }
+        .flow-card-row .value { color: #666; text-align: right; max-width: 60%; }
+        .flow-card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #f0f0f0;
+        }
+        .flow-card-tax {
+            font-size: 12px;
+            color: #999;
+            flex: 1;
+        }
+        .collapse-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+            padding: 2px 0;
+        }
+        .collapse-header .collapse-title {
+            font-size: 12px;
+            color: #999;
+            font-weight: 500;
+        }
+        .collapse-header .collapse-arrow {
+            font-size: 12px;
+            color: #bbb;
+            transition: transform 0.2s;
+            display: inline-block;
+        }
+        .collapse-header.open .collapse-arrow {
+            transform: rotate(180deg);
+        }
+        .collapse-body {
+            overflow: hidden;
+            max-height: 0;
+            transition: max-height 0.25s ease;
+        }
+        .collapse-body.open {
+            max-height: 500px;
+        }
+        .flow-card-divider {
+            height: 1px;
+            background: #f5f5f5;
+            margin: 10px 0;
+        }
+        .flow-card-section-title {
+            font-size: 12px;
+            color: #999;
+            margin-bottom: 6px;
+            font-weight: 500;
+        }
+        .flow-card-row.highlight {
+            background: #f9f9f9;
+            margin: 0 -12px;
+            padding: 6px 12px;
+            border-radius: 4px;
+        }
+        .flow-card-row .value.primary {
+            color: #FF6B35;
+            font-weight: 600;
+            font-size: 15px;
+        }
+        .calc-tip {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .tip-badge {
+            background: #FFF3E0;
+            color: #F57C00;
+            font-size: 11px;
+            padding: 1px 6px;
+            border-radius: 8px;
+            font-weight: normal;
+        }
+        .btn-detail {
+            background: #fff;
+            border: 1px solid #ddd;
+            color: #666;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        /* 空状态 */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+        }
+        .empty-icon {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 16px;
+            background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 60px;
+        }
+        .empty-text {
+            font-size: 14px;
+            color: #999;
+        }
+
+        /* 底部提示 */
+        .bottom-text {
+            text-align: center;
+            padding: 20px;
+            font-size: 12px;
+            color: #ccc;
+        }
+
+        /* 弹窗 */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 200;
+            align-items: flex-end;
+            justify-content: center;
+        }
+        .modal-overlay.active {
+            display: flex;
+        }
+        /* 说明类弹窗（可从其他弹窗内触发，需更高层级） */
+        #modal-share-amount, #modal-share-amount-chuxin, #modal-real-amount, #modal-income-rule, #modal-share-rule, #modal-tax-type {
+            z-index: 300;
+        }
+        /* 提现确认弹窗（最高层级+居中显示） */
+        #modal-withdraw-confirm {
+            z-index: 400;
+            align-items: center;
+        }
+        .modal-content {
+            background: #fff;
+            width: 100%;
+            max-width: 430px;
+            max-height: 80vh;
+            border-radius: 16px 16px 0 0;
+            overflow-y: auto;
+            animation: slideUp 0.3s ease;
+        }
+        @keyframes slideUp {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
+        .modal-header {
+            padding: 16px;
+            text-align: center;
+            font-size: 16px;
+            font-weight: 600;
+            border-bottom: 1px solid #eee;
+            position: relative;
+        }
+        .modal-close {
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 20px;
+            color: #999;
+            cursor: pointer;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-body {
+            padding: 16px;
+            font-size: 14px;
+            line-height: 1.8;
+            color: #666;
+        }
+        .modal-body h4 {
+            font-size: 15px;
+            color: #333;
+            margin: 16px 0 8px;
+        }
+        .modal-body h4:first-child { margin-top: 0; }
+        .modal-body p {
+            margin-bottom: 8px;
+        }
+        .modal-footer {
+            padding: 12px 16px 24px;
+        }
+        /* 分成比例规则表格 */
+        .rule-table { margin: 6px 0; }
+        .rule-table table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12.5px;
+            color: #333;
+        }
+        .rule-table th, .rule-table td {
+            border: 1px solid #e5e5e5;
+            padding: 6px 8px;
+            text-align: center;
+        }
+        .rule-table th {
+            background: #f5f9ff;
+            color: #4a7dff;
+            font-weight: 600;
+        }
+        .rule-table td strong { color: #4a7dff; }
+
+        /* 行内帮助图标 */
+        .help-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 14px;
+            height: 14px;
+            border: 1px solid #b8b8b8;
+            border-radius: 50%;
+            font-size: 10px;
+            color: #999;
+            margin-left: 4px;
+            cursor: pointer;
+            font-style: normal;
+            line-height: 1;
+            vertical-align: middle;
+            user-select: none;
+        }
+        .help-icon:hover { color: #4a7dff; border-color: #4a7dff; }
+
+        /* 计酬规则弹窗专用样式 */
+        .rule-intro {
+            background: #f5f9ff;
+            border-left: 3px solid #4a7dff;
+            padding: 10px 12px;
+            border-radius: 4px;
+            font-size: 13px;
+            color: #555;
+            line-height: 1.6;
+            margin-bottom: 14px;
+        }
+        .rule-list { list-style: none; padding: 0; margin: 0; }
+        .rule-item {
+            border: 1px solid #eee;
+            border-radius: 8px;
+            padding: 10px 12px;
+            margin-bottom: 10px;
+            background: #fff;
+        }
+        .rule-item-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+        }
+        .rule-item-tag {
+            display: inline-block;
+            background: #4a7dff;
+            color: #fff;
+            font-size: 11px;
+            font-weight: 500;
+            padding: 1px 6px;
+            border-radius: 4px;
+            margin-right: 6px;
+        }
+        .rule-item-formula {
+            background: #fafafa;
+            border-radius: 4px;
+            padding: 8px 10px;
+            font-size: 12.5px;
+            color: #4a7dff;
+            font-family: 'Menlo', 'Consolas', monospace;
+            margin-bottom: 4px;
+            word-break: break-all;
+        }
+        .rule-item-tip {
+            font-size: 12px;
+            color: #999;
+            line-height: 1.5;
+        }
+        .rule-srv-list {
+            font-size: 12.5px;
+            color: #555;
+            line-height: 1.7;
+            background: #fafafa;
+            border-radius: 4px;
+            padding: 8px 10px;
+        }
+        .btn-primary {
+            width: 100%;
+            background: #4a7dff;
+            color: #fff;
+            border: none;
+            padding: 14px;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        /* 提现申请页 */
+        .withdrawal-section {
+            background: #fff;
+            margin-bottom: 10px;
+            padding: 16px;
+        }
+        .withdrawal-section-title {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #333;
+        }
+        .form-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #f5f5f5;
+            font-size: 14px;
+        }
+        .form-row:last-child { border-bottom: none; }
+        .form-label { color: #666; }
+        .form-value { color: #333; font-weight: 500; }
+        .form-value.amount { color: #ff6b6b; font-size: 16px; font-weight: 600; }
+        .form-value.highlight { color: #4a7dff; }
+        .info-banner {
+            background: #fff8e6;
+            border: 1px solid #ffe4b3;
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin: 0 16px 12px;
+            font-size: 13px;
+            color: #996b00;
+            line-height: 1.6;
+        }
+        .upload-area {
+            border: 2px dashed #ddd;
+            border-radius: 8px;
+            padding: 30px;
+            text-align: center;
+            margin-top: 10px;
+            cursor: pointer;
+        }
+        .upload-area .upload-icon {
+            font-size: 36px;
+            color: #ccc;
+            margin-bottom: 8px;
+        }
+        .upload-area .upload-text {
+            font-size: 13px;
+            color: #999;
+        }
+        .upload-area .upload-hint {
+            font-size: 11px;
+            color: #ccc;
+            margin-top: 4px;
+        }
+
+        /* 提现设置页 */
+        .setting-list {
+            background: #fff;
+        }
+        .setting-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px;
+            border-bottom: 1px solid #f5f5f5;
+            cursor: pointer;
+        }
+        .setting-item:last-child { border-bottom: none; }
+        .setting-label { font-size: 14px; color: #333; }
+        .setting-value {
+            font-size: 14px;
+            color: #999;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .arrow {
+            width: 8px;
+            height: 8px;
+            border-top: 2px solid #ccc;
+            border-right: 2px solid #ccc;
+            transform: rotate(45deg);
+        }
+
+        /* 响应式 */
+        @media (min-width: 431px) {
+            body { background: #e8e8e8; }
+            .app-container { box-shadow: 0 0 20px rgba(0,0,0,0.1); }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- ========== 资金管理首页 ========== -->
+        <div class="page active" id="page-home">
+            <div class="nav-header">
+                <div class="nav-back">&#x2039;</div>
+                <div class="nav-title">资金管理</div>
+                <div class="nav-action" onclick="goToSettings()">提现设置</div>
+            </div>
+
+            <!-- 业务线Tab -->
+            <div class="biz-tabs">
+                <div class="biz-tab active" data-biz="consult" onclick="switchBiz(this)">此刻咨询收入</div>
+                <div class="biz-tab" data-biz="live" onclick="switchBiz(this)">初心咨询收入</div>
+            </div>
+
+            <!-- 咨询业务数据卡片 -->
+            <div class="biz-content" id="biz-consult">
+                <div class="data-card">
+                    <div class="data-card-header">
+                        <span class="data-card-label">可提现余额(元)</span>
+                        <span class="data-card-help" onclick="showModal('explain')">
+                            结算/提现说明
+                            <span class="icon-help">?</span>
+                        </span>
+                    </div>
+                    <div class="data-card-amount">1,520.54</div>
+                    <div class="data-card-withdraw">
+                        <button class="btn-withdraw" onclick="showModal('withdraw-confirm')">提现</button>
+                    </div>
+                    <div class="data-card-real">
+                        &#23454;&#25910;&#37329;&#39069;&#65306;&#165;1448.49
+                        <span class="icon-help" onclick="showModal('real-amount')" style="cursor:pointer;">?</span>
+                    </div>
+                    <div class="data-card-stats">
+                        <div class="stat-item">
+                            <div class="stat-label">待结算(元)</div>
+                            <div class="stat-value">0.01</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">提现中(元)</div>
+                            <div class="stat-value">0</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">已提现(元)</div>
+                            <div class="stat-value">719.02</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 状态Tab -->
+                <div class="status-tabs">
+                    <div class="status-tab active" onclick="switchStatus(this, 'pending')">待结算</div>
+                    <div class="status-tab" onclick="switchStatus(this, 'available')">可提现</div>
+                    <div class="status-tab" onclick="switchStatus(this, 'withdrawing')">提现中</div>
+                    <div class="status-tab" onclick="switchStatus(this, 'records')">&#24050;&#25552;&#29616;</div>
+                </div>
+
+                <div class="tips-text" id="tips-consult">完成服务后，可在资金管理页「待结算」列表查看结算明细；当月完成的预约单，次月 1 日凌晨 2 点起支持提现</div>
+
+                <!-- 待结算列表 -->
+                <div class="flow-list" id="flow-pending">
+                    <div class="flow-card">
+                        <div class="flow-card-header">
+                            <span class="flow-card-title">咨询服务费</span>
+                            <span class="flow-card-amount">&#165; 300.00</span>
+                        </div>
+                        <div class="flow-card-row">
+                            <span class="label">业务类型</span>
+                            <span class="value">&#27492;&#21051;&#21672;&#35810;</span>
+                        </div>
+                        <div class="flow-card-row">
+                            <span class="label">订单编号</span>
+                            <span class="value">202605290626322A17C7</span>
+                        </div>
+                        <div class="flow-card-row">
+                            <span class="label">咨询服务名称</span>
+                            <span class="value">4 次深度咨询 × 名师带练「情绪日记」</span>
+                        </div>
+                        <div class="flow-card-row">
+                            <span class="label">预约时间</span>
+                            <span class="value">2026-06-01 10:00-11:00</span>
+                        </div>
+                        <div class="flow-card-divider"></div>
+                        <div class="collapse-header" onclick="toggleCollapse(this)">
+                            <span class="collapse-title">&#25910;&#20837;&#26126;&#32454;</span>
+                            <span class="collapse-arrow">&#8964;</span>
+                        </div>
+                        <div class="collapse-body">
+                        <div class="flow-card-row">
+                            <span class="label">订单实付金额</span>
+                            <span class="value">&#165;500.00</span>
+                        </div>
+                        <div class="flow-card-row">
+                            <span class="label">优惠金额</span>
+                            <span class="value">&#165;0.00</span>
+                        </div>
+                        <div class="flow-card-row">
+                            <span class="label">&#21672;&#35810;&#24635;&#25968;</span>
+                            <span class="value">120</span>
+                        </div>
+                        <div class="flow-card-row highlight">
+                            <span class="label">实际计酬收入<i class="help-icon" onclick="showModal('income-rule')" title="了解计酬规则">?</i></span>
+                            <span class="value">&#165;500.00</span>
+                        </div>
+                        <div class="flow-card-row">
+                            <span class="label">交易费</span>
+                            <span class="value">0.6%（&#165;3.00）</span>
+                        </div>
+                        <div class="flow-card-row">
+                            <span class="label">分成比例<i class="help-icon" onclick="showModal('share-rule')" title="了解分成比例规则">?</i></span>
+                            <span class="value">60%</span>
+                        </div>
+                        <div class="flow-card-row highlight">
+                            <span class="label">应结算金额<i class="help-icon" onclick="showModal('share-amount')" title="查看应结算金额计算公式">?</i></span>
+                            <span class="value primary">&#165;300.00</span>
+                        </div>
+                        </div>
+                        <div class="flow-card-footer">
+                            <span class="flow-card-tax">劳务税费，对公税差于提现时统一核算，不单独核算</span>
+                            <button class="btn-detail" onclick="showToast('&#35746;&#21333;&#35814;&#32454;')">订单详情</button>
+                        </div>
+                    </div>
+                    <div class="flow-card">
+                        <div class="flow-card-header">
+                            <span class="flow-card-title">咨询服务费</span>
+                            <span class="flow-card-amount">&#165; 560.00</span>
+                        </div>
+                        <div class="flow-card-row">
+                            <span class="label">业务类型</span>
+                            <span class="value">&#27492;&#21051;&#21672;&#35810;</span>
+                        </div>
+                        <div class="flow-card-row">
+                            <span class="label">订单编号</span>
+                            <span class="value">202605280512100B33F1</span>
+                        </div>
+                        <div class="flow-card-row">
+                            <span class="label">咨询服务名称</span>
+                            <span class="value">单次 咨询服务</span>
+                        </div>
+                        <div class="flow-card-row">
+                            <span class="label">预约时间</span>
+                            <span class="value">2026-05-28 14:00-15:00</span>
+                        </div>
+                        <div class="flow-card-divider"></div>
+                        <div class="collapse-header" onclick="toggleCollapse(this)">
+                            <span class="collapse-title">&#25910;&#20837;&#26126;&#32454;</span>
+                            <span class="collapse-arrow">&#8964;</span>
+                        </div>
+                        <div class="collapse-body">
+                        <div class="flow-card-row">
+                            <span class="label">订单实付金额</span>
+                            <span class="value">&#165;800.00</span>
+                        </div>
+                        <div class="flow-card-row">
+                            <span class="label">优惠金额</span>
+                            <span class="value">&#165;0.00</span>
+                        </div>
+                        <div class="flow-card-row">
+                            <span class="label">&#21672;&#35810;&#24635;&#25968;</span>
+                            <span class="value">210</span>
+                        </div>
+                        <div class="flow-card-row highlight">
+                            <span class="label">实际计酬收入<i class="help-icon" onclick="showModal('income-rule')" title="了解计酬规则">?</i></span>
+                            <span class="value">&#165;800.00</span>
+                        </div>
+                        <div class="flow-card-row">
+                            <span class="label">交易费</span>
+                            <span class="value">0.6%（&#165;4.80）</span>
+                        </div>
+                        <div class="flow-card-row">
+                            <span class="label">分成比例<i class="help-icon" onclick="showModal('share-rule')" title="了解分成比例规则">?</i></span>
+                            <span class="value">70%</span>
+                        </div>
+                        <div class="flow-card-row highlight">
+                            <span class="label">应结算金额<i class="help-icon" onclick="showModal('share-amount')" title="查看应结算金额计算公式">?</i></span>
+                            <span class="value primary">&#165;560.00</span>
+                        </div>
+                        </div>
+                        <div class="flow-card-footer">
+                            <span class="flow-card-tax">劳务税费，对公税差于提现时统一核算，不单独核算</span>
+                            <button class="btn-detail" onclick="showToast('&#35746;&#21333;&#35814;&#32454;')">订单详情</button>
+                        </div>
+                    </div>
+                    <!-- 返现类型 item -->
+                    <div class="flow-card">
+                        <div class="flow-card-header">
+                            <span class="flow-card-title">返现</span>
+                            <span class="flow-card-amount" style="color:#fa5151;">-&#165;7.5</span>
+                        </div>
+                        <div class="flow-card-row">
+                            <span class="label">业务类型</span>
+                            <span class="value">此刻咨询</span>
+                        </div>
+                        <div class="flow-card-row">
+                            <span class="label">订单编号</span>
+                            <span class="value">202605270512100B33F2</span>
+                        </div>
+                        <div class="flow-card-row">
+                            <span class="label">咨询服务名称</span>
+                            <span class="value">5次咨询·成长套餐</span>
+                        </div>
+                        <div class="flow-card-row">
+                            <span class="label">预约时间</span>
+                            <span class="value">2026-05-27 14:00-15:00</span>
+                        </div>
+                        <div class="flow-card-row highlight">
+                            <span class="label">应结算金额（返现金额）</span>
+                            <span class="value" style="color:#fa5151;">-&#165;7.5</span>
+                        </div>
+                        <div class="flow-card-footer">
+                            <span class="flow-card-tax">劳务税费，对公税差于提现时统一核算，不单独核算</span>
+                            <button class="btn-detail" onclick="showToast('订单详情')">订单详情</button>
+                        </div>
+                    </div>
+                    <!-- 激励金类型 item -->
+                    <div class="flow-card">
+                        <div class="flow-card-header">
+                            <span class="flow-card-title">激励金</span>
+                            <span class="flow-card-amount">&#165;400.00</span>
+                        </div>
+                        <div class="flow-card-row">
+                            <span class="label">业务类型</span>
+                            <span class="value">此刻咨询</span>
+                        </div>
+                        <div class="flow-card-row">
+                            <span class="label">备注</span>
+                            <span class="value">202504月激励金</span>
+                        </div>
+                        <div class="flow-card-row highlight">
+                            <span class="label">应结算金额</span>
+                            <span class="value primary">&#165;400.00</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 可提现列表 -->
+                <div class="flow-list" id="flow-available" style="display:none;">
+                    <div class="flow-card">
+                        <div class="flow-card-header">
+                            <span class="flow-card-title">&#21672;&#35810;&#26381;&#21153;&#36153;</span>
+                            <span class="flow-card-amount">&#165; 560.00</span>
+                        </div>
+                        <div class="flow-card-row">
+                            <span class="label">业务类型</span>
+                            <span class="value">&#27492;&#21051;&#21672;&#35810;</span>
+                        </div>
+                        <div class="flow-card-row">
+                            <span class="label">订单编号</span>
+                            <span class="value">202604300512100B33F1</span>
+                        </div>
+                        <div class="flow-card-row">
+                            <span class="label">咨询服务名称</span>
+                            <span class="value">单次 咨询服务</span>
+                        </div>
+                        <div class="flow-card-row">
+                            <span class="label">预约时间</span>
+                            <span class="value">2026-04-30 14:00-15:00</span>
+                        </div>
+                        <div class="flow-card-divider"></div>
+                        <div class="collapse-header" onclick="toggleCollapse(this)">
+                            <span class="collapse-title">&#25910;&#20837;&#26126;&#32454;</span>
+                            <span class="collapse-arrow">&#8964;</span>
+                        </div>
+                        <div class="collapse-body">
+                        <div class="flow-card-row">
+                            <span class="label">订单实付金额</span>
+                            <span class="value">&#165;800.00</span>
+                        </div>
+                        <div class="flow-card-row">
+                            <span class="label">优惠金额</span>
+                            <span class="value">&#165;0.00</span>
+                        </div>
+                        <div class="flow-card-row">
+                            <span class="label">&#21672;&#35810;&#24635;&#25968;</span>
+                            <span class="value">210</span>
+                        </div>
+                        <div class="flow-card-row highlight">
+                            <span class="label">实际计酬收入<i class="help-icon" onclick="showModal('income-rule')" title="了解计酬规则">?</i></span>
+                            <span class="value">&#165;800.00</span>
+                        </div>
+                        <div class="flow-card-row">
+                            <span class="label">交易费</span>
+                            <span class="value">0.6%&#xFF08;&#165;4.80&#xFF09;</span>
+                        </div>
+                        <div class="flow-card-row">
+                            <span class="label">分成比例<i class="help-icon" onclick="showModal('share-rule')" title="了解分成比例规则">?</i></span>
+                            <span class="value">70%</span>
+                        </div>
+                        <div class="flow-card-row highlight">
+                            <span class="label">应结算金额<i class="help-icon" onclick="showModal('share-amount')" title="查看应结算金额计算公式">?</i></span>
+                            <span class="value primary">&#165;560.00</span>
+                        </div>
+                        </div>
+                        <div class="flow-card-footer">
+                            <span class="flow-card-tax">劳务税费，对公税差于提现时统一核算，不单独核算</span>
+                            <button class="btn-detail" onclick="showToast('订单详情')">订单详情</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 提现中列表 -->
+                <div class="flow-list" id="flow-withdrawing" style="display:none;">
+                    <div class="flow-card">
+                        <div class="flow-card-header">
+                            <span class="flow-card-title">&#25552;&#29616;&#20013;</span>
+                            <span class="flow-card-amount">&#165; 3.00</span>
+                        </div>
+                        <div class="flow-card-row">
+                            <span class="label">&#30003;&#35831;&#25552;&#29616;</span>
+                            <span class="value">2026-06-15 17:34:11</span>
+                        </div>
+                        <div class="flow-card-row">
+                            <span class="label">&#25552;&#29616;&#21333;&#21495;</span>
+                            <span class="value">TX20260615001</span>
+                        </div>
+                        <div class="flow-card-footer" style="justify-content:flex-end;">
+                            <button class="btn-detail" onclick="showModal('withdrawing-detail')">&#35814;&#24773;</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 已提现列表 -->
+                <div class="flow-list" id="flow-records" style="display:none;">
+                    <div class="flow-card">
+                        <div class="flow-card-header">
+                            <span class="flow-card-title">&#25552;&#29616;&#25104;&#21151;</span>
+                            <span class="flow-card-amount">&#165; 560.00</span>
+                        </div>
+                        <div class="flow-card-row">
+                            <span class="label">&#30003;&#35831;&#25552;&#29616;</span>
+                            <span class="value">2026-05-03 10:12:00</span>
+                        </div>
+                        <div class="flow-card-row">
+                            <span class="label">&#25552;&#29616;&#25104;&#21151;</span>
+                            <span class="value">2026-05-05 14:30:22</span>
+                        </div>
+                        <div class="flow-card-footer" style="justify-content:flex-end;">
+                            <button class="btn-detail" onclick="showModal('withdrawn-detail')">&#35814;&#24773;</button>
+                        </div>
+                    </div>
+                    <div class="flow-card">
+                        <div class="flow-card-header">
+                            <span class="flow-card-title">&#25552;&#29616;&#25104;&#21151;</span>
+                            <span class="flow-card-amount">&#165; 300.00</span>
+                        </div>
+                        <div class="flow-card-row">
+                            <span class="label">&#30003;&#35831;&#25552;&#29616;</span>
+                            <span class="value">2026-04-01 09:05:11</span>
+                        </div>
+                        <div class="flow-card-row">
+                            <span class="label">&#25552;&#29616;&#25104;&#21151;</span>
+                            <span class="value">2026-04-03 16:20:05</span>
+                        </div>
+                        <div class="flow-card-footer" style="justify-content:flex-end;">
+                            <button class="btn-detail" onclick="showModal('withdrawn-detail')">&#35814;&#24773;</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bottom-text">已全部展示</div>
+            </div>
+
+            <!-- 直播业务内容 -->
+            <div class="biz-content" id="biz-live" style="display:none;">
+                <div class="data-card">
+                    <div class="data-card-header">
+                        <span class="data-card-label">可提现余额(元）</span>
+                        <span class="data-card-help" onclick="showModal('explain')">
+                            结算/提现说明
+                            <span class="icon-help">?</span>
+                        </span>
+                    </div>
+                    <div class="data-card-amount">860.00</div>
+                    <div class="data-card-withdraw">
+                        <button class="btn-withdraw" onclick="showModal('withdraw-confirm')">提现</button>
+                    </div>
+                    <div class="data-card-real">
+                        &#23454;&#25910;&#37329;&#39069;&#65306;&#165;817.00
+                        <span class="icon-help" onclick="showModal('real-amount')" style="cursor:pointer;">?</span>
+                    </div>
+                    <div class="data-card-stats">
+                        <div class="stat-item">
+                            <div class="stat-label">待结算(元)</div>
+                            <div class="stat-value">120.00</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">提现中(元)</div>
+                            <div class="stat-value">0</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">已提现(元)</div>
+                            <div class="stat-value">430.00</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 状态Tab -->
+                <div class="status-tabs">
+                    <div class="status-tab active" onclick="switchStatus(this, 'live-pending')">待结算</div>
+                    <div class="status-tab" onclick="switchStatus(this, 'live-available')">可提现</div>
+                    <div class="status-tab" onclick="switchStatus(this, 'live-withdrawing')">提现中</div>
+                    <div class="status-tab" onclick="switchStatus(this, 'live-records')">&#24050;&#25552;&#29616;</div>
+                </div>
+
+                <div class="tips-text" id="tips-live">完成服务后，可在资金管理页「待结算」列表查看结算明细；当月完成的预约单，次月 1 日凌晨 2 点起支持提现</div>
+
+                <!-- 待结算列表 -->
+                <div class="flow-list" id="flow-live-pending">
+                    <div class="flow-card">
+                        <div class="flow-card-header">
+                            <span class="flow-card-title">咨询服务费</span>
+                            <span class="flow-card-amount">&#165; 120.00</span>
+                        </div>
+                        <div class="flow-card-row">
+                            <span class="label">业务类型</span>
+                            <span class="value">初心咨询</span>
+                        </div>
+                        <div class="flow-card-row">
+                            <span class="label">订单编号</span>
+                            <span class="value">CX2026060800123456</span>
+                        </div>
+                        <div class="flow-card-row">
+                            <span class="label">预约时间</span>
+                            <span class="value">2026-06-08 14:00-15:00</span>
+                        </div>
+                        <div class="flow-card-divider"></div>
+                        <div class="collapse-header" onclick="toggleCollapse(this)">
+                            <span class="collapse-title">收入明细</span>
+                            <span class="collapse-arrow">&#8964;</span>
+                        </div>
+                        <div class="collapse-body">
+                        <div class="flow-card-row">
+                            <span class="label">订单实付金额</span>
+                            <span class="value">&#165;200.00</span>
+                        </div>
+                        <div class="flow-card-row">
+                            <span class="label">优惠金额</span>
+                            <span class="value">&#165;0.00</span>
+                        </div>
+                        <div class="flow-card-row">
+                            <span class="label">咨询总数</span>
+                            <span class="value">50</span>
+                        </div>
+                        <div class="flow-card-row highlight">
+                            <span class="label">应结算金额<i class="help-icon" onclick="showModal('share-amount-chuxin')" title="查看应结算金额计算公式">?</i></span>
+                            <span class="value primary">&#165;120.00</span>
+                        </div>
+                        </div>
+                        <div class="flow-card-footer">
+                            <span class="flow-card-tax">劳务税费，对公税差于提现时统一核算，不单独核算</span>
+                            <button class="btn-detail" onclick="showToast('&#35746;&#21333;&#35814;&#32454;')">订单详情</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 可提现列表 -->
+                <div class="flow-list" id="flow-live-available" style="display:none;">
+                    <div class="flow-card">
+                        <div class="flow-card-header">
+                            <span class="flow-card-title">&#21672;&#35810;&#26381;&#21153;&#36153;</span>
+                            <span class="flow-card-amount">&#165; 72.00</span>
+                        </div>
+                        <div class="flow-card-row">
+                            <span class="label">业务类型</span>
+                            <span class="value">&#21021;&#24515;&#21672;&#35810;</span>
+                        </div>
+                        <div class="flow-card-row">
+                            <span class="label">订单编号</span>
+                            <span class="value">CX2026050100098765</span>
+                        </div>
+                        <div class="flow-card-row">
+                            <span class="label">预约时间</span>
+                            <span class="value">2026-05-01 10:00-11:00</span>
+                        </div>
+                        <div class="flow-card-divider"></div>
+                        <div class="collapse-header" onclick="toggleCollapse(this)">
+                            <span class="collapse-title">收入明细</span>
+                            <span class="collapse-arrow">&#8964;</span>
+                        </div>
+                        <div class="collapse-body">
+                        <div class="flow-card-row">
+                            <span class="label">订单实付金额</span>
+                            <span class="value">&#165;120.00</span>
+                        </div>
+                        <div class="flow-card-row">
+                            <span class="label">优惠金额</span>
+                            <span class="value">&#165;0.00</span>
+                        </div>
+                        <div class="flow-card-row">
+                            <span class="label">咨询总数</span>
+                            <span class="value">30</span>
+                        </div>
+                        <div class="flow-card-row highlight">
+                            <span class="label">应结算金额<i class="help-icon" onclick="showModal('share-amount-chuxin')" title="查看应结算金额计算公式">?</i></span>
+                            <span class="value primary">&#165;72.00</span>
+                        </div>
+                        </div>
+                        <div class="flow-card-footer">
+                            <span class="flow-card-tax">劳务税费，对公税差于提现时统一核算，不单独核算</span>
+                            <button class="btn-detail" onclick="showToast('订单详情')">订单详情</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 提现中列表 -->
+                <div class="flow-list" id="flow-live-withdrawing" style="display:none;">
+                    <div class="flow-card">
+                        <div class="flow-card-header">
+                            <span class="flow-card-title">&#25552;&#29616;&#20013;</span>
+                            <span class="flow-card-amount">&#165; 43.20</span>
+                        </div>
+                        <div class="flow-card-row">
+                            <span class="label">&#30003;&#35831;&#25552;&#29616;</span>
+                            <span class="value">2026-06-10 09:22:05</span>
+                        </div>
+                        <div class="flow-card-row">
+                            <span class="label">&#25552;&#29616;&#21333;&#21495;</span>
+                            <span class="value">TX20260610002</span>
+                        </div>
+                        <div class="flow-card-footer" style="justify-content:flex-end;">
+                            <button class="btn-detail" onclick="showModal('withdrawing-detail-chuxin')">&#35814;&#24773;</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 已提现列表 -->
+                <div class="flow-list" id="flow-live-records" style="display:none;">
+                    <div class="flow-card">
+                        <div class="flow-card-header">
+                            <span class="flow-card-title">&#25552;&#29616;&#25104;&#21151;</span>
+                            <span class="flow-card-amount">&#165; 72.00</span>
+                        </div>
+                        <div class="flow-card-row">
+                            <span class="label">&#30003;&#35831;&#25552;&#29616;</span>
+                            <span class="value">2026-04-05 11:00:00</span>
+                        </div>
+                        <div class="flow-card-row">
+                            <span class="label">&#25552;&#29616;&#25104;&#21151;</span>
+                            <span class="value">2026-04-07 09:15:33</span>
+                        </div>
+                        <div class="flow-card-footer" style="justify-content:flex-end;">
+                            <button class="btn-detail" onclick="showModal('withdrawn-detail-chuxin')">&#35814;&#24773;</button>
+                        </div>
+                    </div>
+                    <div class="flow-card">
+                        <div class="flow-card-header">
+                            <span class="flow-card-title">&#25552;&#29616;&#25104;&#21151;</span>
+                            <span class="flow-card-amount">&#165; 43.20</span>
+                        </div>
+                        <div class="flow-card-row">
+                            <span class="label">&#30003;&#35831;&#25552;&#29616;</span>
+                            <span class="value">2026-03-10 08:30:00</span>
+                        </div>
+                        <div class="flow-card-row">
+                            <span class="label">&#25552;&#29616;&#25104;&#21151;</span>
+                            <span class="value">2026-03-12 14:05:18</span>
+                        </div>
+                        <div class="flow-card-footer" style="justify-content:flex-end;">
+                            <button class="btn-detail" onclick="showModal('withdrawn-detail-chuxin')">&#35814;&#24773;</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bottom-text">已全部展示</div>
+            </div>
+
+
+        </div>
+
+        <!-- ========== 提现设置页 ========== -->
+        <div class="page" id="page-settings">
+            <div class="nav-header">
+                <div class="nav-back" onclick="goHome()">&#x2039;</div>
+                <div class="nav-title">提现设置</div>
+                <div class="nav-action"></div>
+            </div>
+
+            <div class="setting-list">
+                <div class="setting-item" onclick="window.open('https://static.xinli001.com/msite/index.html#/settlement/contract/teacher-info','_blank')">
+                    <span class="setting-label">收款账号</span>
+                    <span class="setting-value">未设置 <span class="arrow"></span></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== 提现确认弹窗 ========== -->
+        <div class="modal-overlay" id="modal-withdraw-confirm">
+            <div class="modal-content" style="max-width:360px;">
+                <div class="modal-header">
+                    提现确认
+                    <span class="modal-close" onclick="hideModal('withdraw-confirm')">&#10005;</span>
+                </div>
+                <div class="modal-body" style="padding:24px 20px;text-align:center;">
+                    <div style="font-size:48px;margin-bottom:12px;">&#9888;&#65039;</div>
+                    <p style="font-size:16px;color:#21252d;font-weight:500;line-height:1.6;margin:0;">请认真核对金额，再发起提现？</p>
+                </div>
+                <div class="modal-footer" style="display:flex;gap:12px;">
+                    <button class="btn-primary" style="flex:1;background:#f0f1f5;color:#6c798c;" onclick="hideModal('withdraw-confirm')">取消</button>
+                    <button class="btn-primary" style="flex:1;" onclick="confirmWithdraw()">确认提现</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== 说明弹窗 ========== -->
+        <div class="modal-overlay" id="modal-share-amount">
+            <div class="modal-content">
+                <div class="modal-header">
+                    应结算金额计算说明
+                    <span class="modal-close" onclick="hideModal('share-amount')">&#10005;</span>
+                </div>
+                <div class="modal-body">
+                    <h4 style="color:#6982fa;">劳务结算</h4>
+                    <p>应结算金额 = （实际计酬收入 &divide; 1.06 &minus; 交易费）&times; 分成比例</p>
+                    <h4 style="color:#6982fa;">对公结算</h4>
+                    <p>应结算金额 = （实际计酬收入 &minus; 交易费）&times; 分成比例</p>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-primary" onclick="hideModal('share-amount')">我知道了</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== 初心咨询应结算金额说明弹窗 ========== -->
+        <div class="modal-overlay" id="modal-share-amount-chuxin">
+            <div class="modal-content">
+                <div class="modal-header">
+                    应结算金额计算说明
+                    <span class="modal-close" onclick="hideModal('share-amount-chuxin')">&#10005;</span>
+                </div>
+                <div class="modal-body">
+                    <h4 style="color:#6982fa;">劳务结算</h4>
+                    <p>应结算金额 = ((订单支付金额 + 优惠金额 &times; 平台共担比例) / 咨询总数) / 1.06&times;80%</p>
+                    <h4 style="color:#6982fa;">对公结算</h4>
+                    <p>应结算金额 = ((订单支付金额 + 优惠金额 &times; 平台共担比例) / 咨询总数)&times;80%</p>
+                    <p style="color:#9aa3b2;font-size:12px;">若约定好其它价格，则按照约定的价格结算即可</p>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-primary" onclick="hideModal('share-amount-chuxin')">我知道了</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== 实收金额说明弹窗 ========== -->
+        <div class="modal-overlay" id="modal-real-amount">
+            <div class="modal-content">
+                <div class="modal-header">
+                    &#23454;&#25910;&#37329;&#39069;&#35828;&#26126;
+                    <span class="modal-close" onclick="hideModal('real-amount')">&#10005;</span>
+                </div>
+                <div class="modal-body" style="padding:8px 16px 4px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-bottom:1px solid #f0f0f0;">
+                        <span style="font-size:14px;color:#333;">应结算金额</span>
+                        <span style="font-size:14px;color:#4a90d9;">&#165; 853.25</span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-bottom:1px solid #f0f0f0;">
+                        <span style="font-size:14px;color:#333;">劳务/对公 <i class="help-icon" onclick="showModal('tax-type')" style="cursor:pointer;">?</i></span>
+                        <span style="font-size:14px;color:#4a90d9;">劳务</span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-bottom:1px solid #f0f0f0;">
+                        <span style="font-size:14px;color:#333;">代扣个人增值税</span>
+                        <span style="font-size:14px;color:#4a90d9;">&#165; 3.00</span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-bottom:1px solid #f0f0f0;">
+                        <span style="font-size:14px;color:#333;">代扣境内劳务个税</span>
+                        <span style="font-size:14px;color:#4a90d9;">&#165; 4.76</span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-bottom:1px solid #f0f0f0;">
+                        <span style="font-size:14px;color:#333;">代扣境外劳务个税</span>
+                        <span style="font-size:14px;color:#4a90d9;">&#165; 0.00</span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-bottom:1px solid #f0f0f0;">
+                        <span style="font-size:14px;color:#333;">发票税差金额</span>
+                        <span style="font-size:14px;color:#4a90d9;">&#165; 0.00</span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-bottom:1px solid #f0f0f0;">
+                        <span style="font-size:14px;color:#333;">扣除项合计金额</span>
+                        <span style="font-size:14px;color:#4a90d9;">&#165; 7.76</span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 0;">
+                        <span style="font-size:14px;color:#333;">实收金额</span>
+                        <span style="font-size:14px;color:#4a90d9;">&#165; 845.49</span>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-primary" onclick="hideModal('real-amount')">&#25105;&#30693;&#36947;&#20102;</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== 提现详情弹窗 ========== -->
+        <div class="modal-overlay" id="modal-withdrawing-detail">
+            <div class="modal-content" style="max-height:90vh;overflow-y:auto;padding:0;background:#f5f6fa;">
+                <!-- 顶部蓝紫区域 -->
+                <div style="background:#6982fa;padding:20px 20px 52px;text-align:center;border-radius:16px 16px 0 0;">
+                    <p style="font-size:13px;color:rgba(255,255,255,0.85);margin:0 0 6px;">&#26412;&#27425;&#25552;&#29616;&#23454;&#25910;&#37329;&#39069;</p>
+                    <p style="font-size:36px;font-weight:700;color:#fff;margin:0 0 10px;line-height:1;">
+                        <span style="font-size:20px;vertical-align:middle;margin-right:2px;">&#165;</span>845.49
+                    </p>
+                    <p style="font-size:13px;color:#ffa202;margin:0;cursor:pointer;" onclick="showModal('real-amount')">&#23454;&#25910;&#37329;&#39069;&#35828;&#26126; &gt;</p>
+                </div>
+                <!-- 进度卡片（上浮叠加蓝紫区） -->
+                <div style="background:#fff;margin:-24px 16px 0;border-radius:12px;padding:20px 16px;box-shadow:0 2px 12px rgba(0,0,0,0.08);margin-bottom:12px;">
+                    <!-- step1: 申请提现（已完成，蓝紫实心圆+勾） -->
+                    <div style="display:flex;align-items:flex-start;">
+                        <div style="display:flex;flex-direction:column;align-items:center;margin-right:14px;">
+                            <span style="width:22px;height:22px;border-radius:50%;background:#6982fa;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                <span style="color:#fff;font-size:13px;">&#10003;</span>
+                            </span>
+                            <!-- 虚线连接线 -->
+                            <span style="width:0;border-left:2px dashed #c8d0fa;flex:1;min-height:28px;margin-top:3px;"></span>
+                        </div>
+                        <div style="flex:1;padding-top:2px;">
+                            <div style="display:flex;justify-content:space-between;align-items:center;">
+                                <span style="font-size:15px;color:#21252d;font-weight:500;">&#30003;&#35831;&#25552;&#29616;</span>
+                                <span style="font-size:12px;color:#bcc2cf;">2026-06-15 17:34:11</span>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- step2: 处理中（空心圆） -->
+                    <div style="display:flex;align-items:flex-start;margin-top:12px;">
+                        <div style="display:flex;flex-direction:column;align-items:center;margin-right:14px;">
+                            <span style="width:22px;height:22px;border-radius:50%;background:#fff;border:2px solid #dde0e8;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                <span style="width:8px;height:8px;border-radius:50%;background:#c8cad0;"></span>
+                            </span>
+                        </div>
+                        <div style="flex:1;padding-top:2px;">
+                            <span style="font-size:15px;color:#21252d;font-weight:500;">&#22788;&#29702;&#20013;</span>
+                            <p style="font-size:13px;color:#7c8790;margin:4px 0 0;">&#36164;&#37329;&#39044;&#35745;&#20110;&#27425;&#26376;15&#21495;&#24038;&#21491;&#21040;&#36134;</p>
+                        </div>
+                    </div>
+                </div>
+                <!-- 关联订单 + 其它 并列Tab -->
+                <div style="background:#fff;margin:0 0 2px;display:flex;border-bottom:1px solid #f0f0f0;">
+                    <div style="flex:1;text-align:center;padding:14px 0;cursor:pointer;border-bottom:2px solid #6982fa;" id="dtab-orders" onclick="switchDetailTab(this,'orders')">
+                        <span style="font-size:14px;font-weight:600;color:#6982fa;">关联订单 <span style="font-size:12px;font-weight:400;">(2&#20010;)</span></span>
+                    </div>
+                    <div style="flex:1;text-align:center;padding:14px 0;cursor:pointer;border-bottom:2px solid transparent;" id="dtab-others" onclick="switchDetailTab(this,'others')">
+                        <span style="font-size:14px;font-weight:600;color:#9aa3b2;">其它 <span style="font-size:12px;font-weight:400;">(2&#20010;)</span></span>
+                    </div>
+                </div>
+                <!-- 关联订单列表 -->
+                <div id="dlist-orders" style="padding:0 16px 8px;">
+                    <div class="flow-card">
+                        <div class="flow-card-header">
+                            <span class="flow-card-title">咨询服务费</span>
+                            <span class="flow-card-amount">&#165; 300.00</span>
+                        </div>
+                        <div class="flow-card-row">
+                            <span class="label">业务类型</span>
+                            <span class="value">此刻咨询</span>
+                        </div>
+                        <div class="flow-card-row">
+                            <span class="label">订单编号</span>
+                            <span class="value" style="color:#6982fa;">202606150512100B33F1</span>
+                        </div>
+                        <div class="flow-card-row">
+                            <span class="label">咨询服务名称</span>
+                            <span class="value">4 次深度咨询 × 名师带练「情绪日记」</span>
+                        </div>
+                        <div class="flow-card-row">
+                            <span class="label">预约时间</span>
+                            <span class="value">2026-06-15 14:00-15:00</span>
+                        </div>
+                        <div class="flow-card-divider"></div>
+                        <div class="collapse-header" onclick="toggleCollapse(this)">
+                            <span class="collapse-title">收入明细</span>
+                            <span class="collapse-arrow">&#8964;</span>
+                        </div>
+                        <div class="collapse-body">
+                            <div class="flow-card-row">
+                                <span class="label">订单实付金额</span>
+                                <span class="value">&#165;500.00</span>
+                            </div>
+                            <div class="flow-card-row">
+                                <span class="label">优惠金额</span>
+                                <span class="value">&#165;0.00</span>
+                            </div>
+                            <div class="flow-card-row">
+                                <span class="label">咨询总数</span>
+                                <span class="value">120</span>
+                            </div>
+                            <div class="flow-card-row highlight">
+                                <span class="label">实际计酬收入<i class="help-icon" onclick="showModal('income-rule')" title="了解计酬规则">?</i></span>
+                                <span class="value">&#165;500.00</span>
+                            </div>
+                            <div class="flow-card-row">
+                                <span class="label">交易费</span>
+                                <span class="value">0.6%（&#165;3.00）</span>
+                            </div>
+                            <div class="flow-card-row">
+                                <span class="label">分成比例<i class="help-icon" onclick="showModal('share-rule')" title="了解分成比例规则">?</i></span>
+                                <span class="value">60%</span>
+                            </div>
+                            <div class="flow-card-row highlight">
+                                <span class="label">应结算金额<i class="help-icon" onclick="showModal('share-amount')" title="查看应结算金额计算公式">?</i></span>
+                                <span class="value primary">&#165;300.00</span>
+                            </div>
+                        </div>
+                        <div class="flow-card-footer">
+                            <span class="flow-card-tax">劳务税费，对公税差于提现时统一核算，不单独核算</span>
+                            <button class="btn-detail" onclick="showToast('订单详情')">订单详情</button>
+                        </div>
+                    </div>
+                    <div class="flow-card">
+                        <div class="flow-card-header">
+                            <span class="flow-card-title">咨询服务费</span>
+                            <span class="flow-card-amount">&#165; 560.00</span>
+                        </div>
+                        <div class="flow-card-row">
+                            <span class="label">业务类型</span>
+                            <span class="value">此刻咨询</span>
+                        </div>
+                        <div class="flow-card-row">
+                            <span class="label">订单编号</span>
+                            <span class="value" style="color:#6982fa;">202606140512100B33F2</span>
+                        </div>
+                        <div class="flow-card-row">
+                            <span class="label">咨询服务名称</span>
+                            <span class="value">单次 咨询服务</span>
+                        </div>
+                        <div class="flow-card-row">
+                            <span class="label">预约时间</span>
+                            <span class="value">2026-06-14 20:00-21:00</span>
+                        </div>
+                        <div class="flow-card-divider"></div>
+                        <div class="collapse-header" onclick="toggleCollapse(this)">
+                            <span class="collapse-title">收入明细</span>
+                            <span class="collapse-arrow">&#8964;</span>
+                        </div>
+                        <div class="collapse-body">
+                            <div class="flow-card-row">
+                                <span class="label">订单实付金额</span>
+                                <span class="value">&#165;800.00</span>
+                            </div>
+                            <div class="flow-card-row">
+                                <span class="label">优惠金额</span>
+                                <span class="value">&#165;0.00</span>
+                            </div>
+                            <div class="flow-card-row">
+                                <span class="label">咨询总数</span>
+                                <span class="value">210</span>
+                            </div>
+                            <div class="flow-card-row highlight">
+                                <span class="label">实际计酬收入<i class="help-icon" onclick="showModal('income-rule')" title="了解计酬规则">?</i></span>
+                                <span class="value">&#165;800.00</span>
+                            </div>
+                            <div class="flow-card-row">
+                                <span class="label">交易费</span>
+                                <span class="value">0.6%（&#165;4.80）</span>
+                            </div>
+                            <div class="flow-card-row">
+                                <span class="label">分成比例<i class="help-icon" onclick="showModal('share-rule')" title="了解分成比例规则">?</i></span>
+                                <span class="value">70%</span>
+                            </div>
+                            <div class="flow-card-row highlight">
+                                <span class="label">应结算金额<i class="help-icon" onclick="showModal('share-amount')" title="查看应结算金额计算公式">?</i></span>
+                                <span class="value primary">&#165;560.00</span>
+                            </div>
+                        </div>
+                        <div class="flow-card-footer">
+                            <span class="flow-card-tax">劳务税费，对公税差于提现时统一核算，不单独核算</span>
+                            <button class="btn-detail" onclick="showToast('订单详情')">订单详情</button>
+                        </div>
+                    </div>
+                    <div style="text-align:center;font-size:12px;color:#bbb;padding:14px 0 20px;">已全部展示</div>
+                </div>
+
+                <!-- 其它列表 -->
+                <div id="dlist-others" style="padding:0 16px 8px;display:none;">
+                    <!-- 返现类型 item -->
+                    <div class="flow-card">
+                        <div class="flow-card-header">
+                            <span class="flow-card-title">返现</span>
+                            <span class="flow-card-amount" style="color:#fa5151;">-&#165;7.5</span>
+                        </div>
+                        <div class="flow-card-row">
+                            <span class="label">业务类型</span>
+                            <span class="value">此刻咨询</span>
+                        </div>
+                        <div class="flow-card-row">
+                            <span class="label">订单编号</span>
+                            <span class="value" style="color:#6982fa;">202606120512100B33F4</span>
+                        </div>
+                        <div class="flow-card-row">
+                            <span class="label">咨询服务名称</span>
+                            <span class="value">5次咨询·成长套餐</span>
+                        </div>
+                        <div class="flow-card-row">
+                            <span class="label">预约时间</span>
+                            <span class="value">2026-06-12 10:00-11:00</span>
+                        </div>
+                        <div class="flow-card-row highlight">
+                            <span class="label">应结算金额（返现金额）</span>
+                            <span class="value" style="color:#fa5151;">-&#165;7.5</span>
+                        </div>
+                        <div class="flow-card-footer">
+                            <span class="flow-card-tax">劳务税费，对公税差于提现时统一核算，不单独核算</span>
+                            <button class="btn-detail" onclick="showToast('订单详情')">订单详情</button>
+                        </div>
+                    </div>
+                    <!-- 激励金类型 item -->
+                    <div class="flow-card">
+                        <div class="flow-card-header">
+                            <span class="flow-card-title">激励金</span>
+                            <span class="flow-card-amount">&#165;400.00</span>
+                        </div>
+                        <div class="flow-card-row">
+                            <span class="label">业务类型</span>
+                            <span class="value">此刻咨询</span>
+                        </div>
+                        <div class="flow-card-row">
+                            <span class="label">备注</span>
+                            <span class="value">202504月激励金</span>
+                        </div>
+                        <div class="flow-card-row highlight">
+                            <span class="label">应结算金额</span>
+                            <span class="value primary">&#165;400.00</span>
+                        </div>
+                    </div>
+                    <div style="text-align:center;font-size:12px;color:#bbb;padding:14px 0 20px;">已全部展示</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== 已提现详情弹窗 ========== -->
+        <div class="modal-overlay" id="modal-withdrawn-detail">
+            <div class="modal-content" style="max-height:90vh;overflow-y:auto;padding:0;background:#f5f6fa;">
+                <!-- 顶部蓝紫区域 -->
+                <div style="background:#6982fa;padding:20px 20px 52px;text-align:center;border-radius:16px 16px 0 0;">
+                    <p style="font-size:13px;color:rgba(255,255,255,0.85);margin:0 0 6px;">本次提现实收金额</p>
+                    <p style="font-size:36px;font-weight:700;color:#fff;margin:0 0 10px;line-height:1;">
+                        <span style="font-size:20px;vertical-align:middle;margin-right:2px;">&#165;</span>845.49
+                    </p>
+                    <p style="font-size:13px;color:#ffa202;margin:0;cursor:pointer;" onclick="showModal('real-amount')">实收金额说明 &gt;</p>
+                </div>
+                <!-- 进度卡片（上浮叠加蓝紫区） -->
+                <div style="background:#fff;margin:-24px 16px 0;border-radius:12px;padding:20px 16px;box-shadow:0 2px 12px rgba(0,0,0,0.08);margin-bottom:12px;">
+                    <!-- step1: 申请提现（已完成，蓝紫实心圆+勾） -->
+                    <div style="display:flex;align-items:flex-start;">
+                        <div style="display:flex;flex-direction:column;align-items:center;margin-right:14px;">
+                            <span style="width:22px;height:22px;border-radius:50%;background:#6982fa;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                <span style="color:#fff;font-size:13px;">&#10003;</span>
+                            </span>
+                            <!-- 实线连接线 -->
+                            <span style="width:0;border-left:2px solid #c8d0fa;flex:1;min-height:28px;margin-top:3px;"></span>
+                        </div>
+                        <div style="flex:1;padding-top:2px;">
+                            <div style="display:flex;justify-content:space-between;align-items:center;">
+                                <span style="font-size:15px;color:#21252d;font-weight:500;">申请提现</span>
+                                <span style="font-size:12px;color:#bcc2cf;">2026-06-15 17:34:11</span>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- step2: 已提现（已完成，蓝紫实心圆+勾） -->
+                    <div style="display:flex;align-items:flex-start;margin-top:12px;">
+                        <div style="display:flex;flex-direction:column;align-items:center;margin-right:14px;">
+                            <span style="width:22px;height:22px;border-radius:50%;background:#6982fa;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                <span style="color:#fff;font-size:13px;">&#10003;</span>
+                            </span>
+                        </div>
+                        <div style="flex:1;padding-top:2px;">
+                            <div style="display:flex;justify-content:space-between;align-items:center;">
+                                <span style="font-size:15px;color:#21252d;font-weight:500;">已提现</span>
+                                <span style="font-size:12px;color:#bcc2cf;">2026-06-17 09:15:33</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- 关联订单 -->
+                <div style="background:#fff;margin:0 0 2px;padding:0 16px;">
+                    <div style="display:flex;align-items:center;padding-top:14px;padding-bottom:10px;border-bottom:1px solid #f0f0f0;">
+                        <span style="font-size:14px;font-weight:600;color:#6982fa;">关联订单 <span style="font-size:12px;font-weight:400;">(2&#20010;)</span></span>
+                    </div>
+                </div>
+                <!-- 关联订单列表 -->
+                <div style="padding:0 16px 8px;">
+                    <div class="flow-card">
+                        <div class="flow-card-header">
+                            <span class="flow-card-title">咨询服务费</span>
+                            <span class="flow-card-amount">&#165; 300.00</span>
+                        </div>
+                        <div class="flow-card-row">
+                            <span class="label">业务类型</span>
+                            <span class="value">此刻咨询</span>
+                        </div>
+                        <div class="flow-card-row">
+                            <span class="label">订单编号</span>
+                            <span class="value" style="color:#6982fa;">202606150512100B33F1</span>
+                        </div>
+                        <div class="flow-card-row">
+                            <span class="label">咨询服务名称</span>
+                            <span class="value">4 次深度咨询 × 名师带练「情绪日记」</span>
+                        </div>
+                        <div class="flow-card-row">
+                            <span class="label">预约时间</span>
+                            <span class="value">2026-06-15 14:00-15:00</span>
+                        </div>
+                        <div class="flow-card-divider"></div>
+                        <div class="collapse-header" onclick="toggleCollapse(this)">
+                            <span class="collapse-title">收入明细</span>
+                            <span class="collapse-arrow">&#8964;</span>
+                        </div>
+                        <div class="collapse-body">
+                            <div class="flow-card-row">
+                                <span class="label">订单实付金额</span>
+                                <span class="value">&#165;500.00</span>
+                            </div>
+                            <div class="flow-card-row">
+                                <span class="label">优惠金额</span>
+                                <span class="value">&#165;0.00</span>
+                            </div>
+                            <div class="flow-card-row">
+                                <span class="label">咨询总数</span>
+                                <span class="value">120</span>
+                            </div>
+                            <div class="flow-card-row highlight">
+                                <span class="label">实际计酬收入<i class="help-icon" onclick="showModal('income-rule')" title="了解计酬规则">?</i></span>
+                                <span class="value">&#165;500.00</span>
+                            </div>
+                            <div class="flow-card-row">
+                                <span class="label">交易费</span>
+                                <span class="value">0.6%（&#165;3.00）</span>
+                            </div>
+                            <div class="flow-card-row">
+                                <span class="label">分成比例<i class="help-icon" onclick="showModal('share-rule')" title="了解分成比例规则">?</i></span>
+                                <span class="value">60%</span>
+                            </div>
+                            <div class="flow-card-row highlight">
+                                <span class="label">应结算金额<i class="help-icon" onclick="showModal('share-amount')" title="查看应结算金额计算公式">?</i></span>
+                                <span class="value primary">&#165;300.00</span>
+                            </div>
+                        </div>
+                        <div class="flow-card-footer">
+                            <span class="flow-card-tax">劳务税费，对公税差于提现时统一核算，不单独核算</span>
+                            <button class="btn-detail" onclick="showToast('订单详情')">订单详情</button>
+                        </div>
+                    </div>
+                    <div class="flow-card">
+                        <div class="flow-card-header">
+                            <span class="flow-card-title">咨询服务费</span>
+                            <span class="flow-card-amount">&#165; 560.00</span>
+                        </div>
+                        <div class="flow-card-row">
+                            <span class="label">业务类型</span>
+                            <span class="value">此刻咨询</span>
+                        </div>
+                        <div class="flow-card-row">
+                            <span class="label">订单编号</span>
+                            <span class="value" style="color:#6982fa;">202606140512100B33F2</span>
+                        </div>
+                        <div class="flow-card-row">
+                            <span class="label">咨询服务名称</span>
+                            <span class="value">单次 咨询服务</span>
+                        </div>
+                        <div class="flow-card-row">
+                            <span class="label">预约时间</span>
+                            <span class="value">2026-06-14 20:00-21:00</span>
+                        </div>
+                        <div class="flow-card-divider"></div>
+                        <div class="collapse-header" onclick="toggleCollapse(this)">
+                            <span class="collapse-title">收入明细</span>
+                            <span class="collapse-arrow">&#8964;</span>
+                        </div>
+                        <div class="collapse-body">
+                            <div class="flow-card-row">
+                                <span class="label">订单实付金额</span>
+                                <span class="value">&#165;800.00</span>
+                            </div>
+                            <div class="flow-card-row">
+                                <span class="label">优惠金额</span>
+                                <span class="value">&#165;0.00</span>
+                            </div>
+                            <div class="flow-card-row">
+                                <span class="label">咨询总数</span>
+                                <span class="value">210</span>
+                            </div>
+                            <div class="flow-card-row highlight">
+                                <span class="label">实际计酬收入<i class="help-icon" onclick="showModal('income-rule')" title="了解计酬规则">?</i></span>
+                                <span class="value">&#165;800.00</span>
+                            </div>
+                            <div class="flow-card-row">
+                                <span class="label">交易费</span>
+                                <span class="value">0.6%（&#165;4.80）</span>
+                            </div>
+                            <div class="flow-card-row">
+                                <span class="label">分成比例<i class="help-icon" onclick="showModal('share-rule')" title="了解分成比例规则">?</i></span>
+                                <span class="value">70%</span>
+                            </div>
+                            <div class="flow-card-row highlight">
+                                <span class="label">应结算金额<i class="help-icon" onclick="showModal('share-amount')" title="查看应结算金额计算公式">?</i></span>
+                                <span class="value primary">&#165;560.00</span>
+                            </div>
+                        </div>
+                        <div class="flow-card-footer">
+                            <span class="flow-card-tax">劳务税费，对公税差于提现时统一核算，不单独核算</span>
+                            <button class="btn-detail" onclick="showToast('订单详情')">订单详情</button>
+                        </div>
+                    </div>
+                    <div style="text-align:center;font-size:12px;color:#bbb;padding:14px 0 20px;">已全部展示</div>
+                </div>
+
+                <!-- 其它 -->
+                <div style="background:#fff;margin:0 0 2px;padding:0 16px;">
+                    <div style="display:flex;align-items:center;padding-top:14px;padding-bottom:10px;border-bottom:1px solid #f0f0f0;">
+                        <span style="font-size:14px;font-weight:600;color:#6982fa;">其它 <span style="font-size:12px;font-weight:400;">(2&#20010;)</span></span>
+                    </div>
+                </div>
+                <!-- 其它列表 -->
+                <div style="padding:0 16px 8px;">
+                    <!-- 返现类型 item -->
+                    <div class="flow-card">
+                        <div class="flow-card-header">
+                            <span class="flow-card-title">返现</span>
+                            <span class="flow-card-amount" style="color:#fa5151;">-&#165;7.5</span>
+                        </div>
+                        <div class="flow-card-row">
+                            <span class="label">业务类型</span>
+                            <span class="value">此刻咨询</span>
+                        </div>
+                        <div class="flow-card-row">
+                            <span class="label">订单编号</span>
+                            <span class="value" style="color:#6982fa;">202606120512100B33F4</span>
+                        </div>
+                        <div class="flow-card-row">
+                            <span class="label">咨询服务名称</span>
+                            <span class="value">5次咨询·成长套餐</span>
+                        </div>
+                        <div class="flow-card-row">
+                            <span class="label">预约时间</span>
+                            <span class="value">2026-06-12 10:00-11:00</span>
+                        </div>
+                        <div class="flow-card-row highlight">
+                            <span class="label">应结算金额（返现金额）</span>
+                            <span class="value" style="color:#fa5151;">-&#165;7.5</span>
+                        </div>
+                        <div class="flow-card-footer">
+                            <span class="flow-card-tax">劳务税费，对公税差于提现时统一核算，不单独核算</span>
+                            <button class="btn-detail" onclick="showToast('订单详情')">订单详情</button>
+                        </div>
+                    </div>
+                    <!-- 激励金类型 item -->
+                    <div class="flow-card">
+                        <div class="flow-card-header">
+                            <span class="flow-card-title">激励金</span>
+                            <span class="flow-card-amount">&#165;400.00</span>
+                        </div>
+                        <div class="flow-card-row">
+                            <span class="label">业务类型</span>
+                            <span class="value">此刻咨询</span>
+                        </div>
+                        <div class="flow-card-row">
+                            <span class="label">备注</span>
+                            <span class="value">202504月激励金</span>
+                        </div>
+                        <div class="flow-card-row highlight">
+                            <span class="label">应结算金额</span>
+                            <span class="value primary">&#165;400.00</span>
+                        </div>
+                    </div>
+                    <div style="text-align:center;font-size:12px;color:#bbb;padding:14px 0 20px;">已全部展示</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== 初心咨询提现中详情弹窗 ========== -->
+        <div class="modal-overlay" id="modal-withdrawing-detail-chuxin">
+            <div class="modal-content" style="max-height:90vh;overflow-y:auto;padding:0;background:#f5f6fa;">
+                <!-- 顶部蓝紫区域 -->
+                <div style="background:#6982fa;padding:20px 20px 52px;text-align:center;border-radius:16px 16px 0 0;">
+                    <p style="font-size:13px;color:rgba(255,255,255,0.85);margin:0 0 6px;">本次提现实收金额</p>
+                    <p style="font-size:36px;font-weight:700;color:#fff;margin:0 0 10px;line-height:1;">
+                        <span style="font-size:20px;vertical-align:middle;margin-right:2px;">&#165;</span>43.20
+                    </p>
+                    <p style="font-size:13px;color:#ffa202;margin:0;cursor:pointer;" onclick="showModal('real-amount')">实收金额说明 &gt;</p>
+                </div>
+                <!-- 进度卡片 -->
+                <div style="background:#fff;margin:-24px 16px 0;border-radius:12px;padding:20px 16px;box-shadow:0 2px 12px rgba(0,0,0,0.08);margin-bottom:12px;">
+                    <div style="display:flex;align-items:flex-start;">
+                        <div style="display:flex;flex-direction:column;align-items:center;margin-right:14px;">
+                            <span style="width:22px;height:22px;border-radius:50%;background:#6982fa;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                <span style="color:#fff;font-size:13px;">&#10003;</span>
+                            </span>
+                            <span style="width:0;border-left:2px dashed #c8d0fa;flex:1;min-height:28px;margin-top:3px;"></span>
+                        </div>
+                        <div style="flex:1;padding-top:2px;">
+                            <div style="display:flex;justify-content:space-between;align-items:center;">
+                                <span style="font-size:15px;color:#21252d;font-weight:500;">申请提现</span>
+                                <span style="font-size:12px;color:#bcc2cf;">2026-06-10 09:22:05</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="display:flex;align-items:flex-start;margin-top:12px;">
+                        <div style="display:flex;flex-direction:column;align-items:center;margin-right:14px;">
+                            <span style="width:22px;height:22px;border-radius:50%;background:#fff;border:2px solid #dde0e8;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                <span style="width:8px;height:8px;border-radius:50%;background:#c8cad0;"></span>
+                            </span>
+                        </div>
+                        <div style="flex:1;padding-top:2px;">
+                            <span style="font-size:15px;color:#21252d;font-weight:500;">处理中</span>
+                            <p style="font-size:13px;color:#7c8790;margin:4px 0 0;">资金预计于次月15号左右到账</p>
+                        </div>
+                    </div>
+                </div>
+                <!-- 关联订单 -->
+                <div style="background:#fff;margin:0 0 2px;padding:0 16px;">
+                    <div style="display:flex;align-items:center;padding-top:14px;padding-bottom:10px;border-bottom:1px solid #f0f0f0;">
+                        <span style="font-size:14px;font-weight:600;color:#6982fa;">关联订单 <span style="font-size:12px;font-weight:400;">(1&#20010;)</span></span>
+                    </div>
+                </div>
+                <!-- 关联订单列表 -->
+                <div style="padding:0 16px 8px;">
+                    <div class="flow-card">
+                        <div class="flow-card-header">
+                            <span class="flow-card-title">咨询服务费</span>
+                            <span class="flow-card-amount">&#165; 72.00</span>
+                        </div>
+                        <div class="flow-card-row">
+                            <span class="label">业务类型</span>
+                            <span class="value">初心咨询</span>
+                        </div>
+                        <div class="flow-card-row">
+                            <span class="label">订单编号</span>
+                            <span class="value" style="color:#6982fa;">CX2026050100098765</span>
+                        </div>
+                        <div class="flow-card-row">
+                            <span class="label">预约时间</span>
+                            <span class="value">2026-05-01 10:00-11:00</span>
+                        </div>
+                        <div class="flow-card-divider"></div>
+                        <div class="collapse-header" onclick="toggleCollapse(this)">
+                            <span class="collapse-title">收入明细</span>
+                            <span class="collapse-arrow">&#8964;</span>
+                        </div>
+                        <div class="collapse-body">
+                            <div class="flow-card-row">
+                                <span class="label">订单实付金额</span>
+                                <span class="value">&#165;120.00</span>
+                            </div>
+                            <div class="flow-card-row">
+                                <span class="label">优惠金额</span>
+                                <span class="value">&#165;0.00</span>
+                            </div>
+                            <div class="flow-card-row">
+                                <span class="label">咨询总数</span>
+                                <span class="value">30</span>
+                            </div>
+                            <div class="flow-card-row highlight">
+                                <span class="label">应结算金额<i class="help-icon" onclick="showModal('share-amount-chuxin')" title="查看应结算金额计算公式">?</i></span>
+                                <span class="value primary">&#165;72.00</span>
+                            </div>
+                        </div>
+                        <div class="flow-card-footer">
+                            <span class="flow-card-tax">劳务税费，对公税差于提现时统一核算，不单独核算</span>
+                            <button class="btn-detail" onclick="showToast('订单详情')">订单详情</button>
+                        </div>
+                    </div>
+                    <div style="text-align:center;font-size:12px;color:#bbb;padding:14px 0 20px;">已全部展示</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== 初心咨询已提现详情弹窗 ========== -->
+        <div class="modal-overlay" id="modal-withdrawn-detail-chuxin">
+            <div class="modal-content" style="max-height:90vh;overflow-y:auto;padding:0;background:#f5f6fa;">
+                <!-- 顶部蓝紫区域 -->
+                <div style="background:#6982fa;padding:20px 20px 52px;text-align:center;border-radius:16px 16px 0 0;">
+                    <p style="font-size:13px;color:rgba(255,255,255,0.85);margin:0 0 6px;">本次提现实收金额</p>
+                    <p style="font-size:36px;font-weight:700;color:#fff;margin:0 0 10px;line-height:1;">
+                        <span style="font-size:20px;vertical-align:middle;margin-right:2px;">&#165;</span>72.00
+                    </p>
+                    <p style="font-size:13px;color:#ffa202;margin:0;cursor:pointer;" onclick="showModal('real-amount')">实收金额说明 &gt;</p>
+                </div>
+                <!-- 进度卡片 -->
+                <div style="background:#fff;margin:-24px 16px 0;border-radius:12px;padding:20px 16px;box-shadow:0 2px 12px rgba(0,0,0,0.08);margin-bottom:12px;">
+                    <div style="display:flex;align-items:flex-start;">
+                        <div style="display:flex;flex-direction:column;align-items:center;margin-right:14px;">
+                            <span style="width:22px;height:22px;border-radius:50%;background:#6982fa;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                <span style="color:#fff;font-size:13px;">&#10003;</span>
+                            </span>
+                            <span style="width:0;border-left:2px solid #c8d0fa;flex:1;min-height:28px;margin-top:3px;"></span>
+                        </div>
+                        <div style="flex:1;padding-top:2px;">
+                            <div style="display:flex;justify-content:space-between;align-items:center;">
+                                <span style="font-size:15px;color:#21252d;font-weight:500;">申请提现</span>
+                                <span style="font-size:12px;color:#bcc2cf;">2026-04-05 11:00:00</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="display:flex;align-items:flex-start;margin-top:12px;">
+                        <div style="display:flex;flex-direction:column;align-items:center;margin-right:14px;">
+                            <span style="width:22px;height:22px;border-radius:50%;background:#6982fa;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                <span style="color:#fff;font-size:13px;">&#10003;</span>
+                            </span>
+                        </div>
+                        <div style="flex:1;padding-top:2px;">
+                            <div style="display:flex;justify-content:space-between;align-items:center;">
+                                <span style="font-size:15px;color:#21252d;font-weight:500;">已提现</span>
+                                <span style="font-size:12px;color:#bcc2cf;">2026-04-07 09:15:33</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- 关联订单 -->
+                <div style="background:#fff;margin:0 0 2px;padding:0 16px;">
+                    <div style="display:flex;align-items:center;padding-top:14px;padding-bottom:10px;border-bottom:1px solid #f0f0f0;">
+                        <span style="font-size:14px;font-weight:600;color:#6982fa;">关联订单 <span style="font-size:12px;font-weight:400;">(1&#20010;)</span></span>
+                    </div>
+                </div>
+                <!-- 关联订单列表 -->
+                <div style="padding:0 16px 8px;">
+                    <div class="flow-card">
+                        <div class="flow-card-header">
+                            <span class="flow-card-title">咨询服务费</span>
+                            <span class="flow-card-amount">&#165; 72.00</span>
+                        </div>
+                        <div class="flow-card-row">
+                            <span class="label">业务类型</span>
+                            <span class="value">初心咨询</span>
+                        </div>
+                        <div class="flow-card-row">
+                            <span class="label">订单编号</span>
+                            <span class="value" style="color:#6982fa;">CX2026050100098765</span>
+                        </div>
+                        <div class="flow-card-row">
+                            <span class="label">预约时间</span>
+                            <span class="value">2026-05-01 10:00-11:00</span>
+                        </div>
+                        <div class="flow-card-divider"></div>
+                        <div class="collapse-header" onclick="toggleCollapse(this)">
+                            <span class="collapse-title">收入明细</span>
+                            <span class="collapse-arrow">&#8964;</span>
+                        </div>
+                        <div class="collapse-body">
+                            <div class="flow-card-row">
+                                <span class="label">订单实付金额</span>
+                                <span class="value">&#165;120.00</span>
+                            </div>
+                            <div class="flow-card-row">
+                                <span class="label">优惠金额</span>
+                                <span class="value">&#165;0.00</span>
+                            </div>
+                            <div class="flow-card-row">
+                                <span class="label">咨询总数</span>
+                                <span class="value">30</span>
+                            </div>
+                            <div class="flow-card-row highlight">
+                                <span class="label">应结算金额<i class="help-icon" onclick="showModal('share-amount-chuxin')" title="查看应结算金额计算公式">?</i></span>
+                                <span class="value primary">&#165;72.00</span>
+                            </div>
+                        </div>
+                        <div class="flow-card-footer">
+                            <span class="flow-card-tax">劳务税费，对公税差于提现时统一核算，不单独核算</span>
+                            <button class="btn-detail" onclick="showToast('订单详情')">订单详情</button>
+                        </div>
+                    </div>
+                    <div style="text-align:center;font-size:12px;color:#bbb;padding:14px 0 20px;">已全部展示</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== 扣税方式说明弹窗 ========== -->
+        <div class="modal-overlay" id="modal-tax-type">
+            <div class="modal-content">
+                <div class="modal-header">
+                    &#25187;&#31246;&#26041;&#24335;&#35828;&#26126;
+                    <span class="modal-close" onclick="hideModal('tax-type')">&#10005;</span>
+                </div>
+                <div class="modal-body" style="padding:8px 16px 12px;">
+                    <div style="margin-bottom:16px;">
+                        <div style="font-size:14px;font-weight:500;color:#333;margin-bottom:6px;">&#21171;&#21153;&#25253;&#37228;&#20010;&#31246;</div>
+                        <div style="font-size:13px;color:#666;line-height:1.7;">&#25105;&#21496;&#24179;&#21488;&#25353;&#24403;&#26399;&#32467;&#31639;&#21171;&#21153;&#25910;&#20837;&#39069;&#39044;&#25187;&#32564;&#22686;&#20540;&#31246;&#12289;&#38468;&#21152;&#31246;&#12289;&#20010;&#20154;&#25152;&#24471;&#31246;&#21518;&#23558;&#27454;&#39033;&#25903;&#20184;&#32473;&#32769;&#24072;&#65292;&#24182;&#22312;&#27425;&#26376;&#23436;&#25104;&#30003;&#25253;&#20195;&#25187;&#20195;&#32564;&#21518;&#23558;&#39044;&#25187;&#31246;&#39069;&#19982;&#23454;&#32564;&#31246;&#39069;&#36319;&#32769;&#24072;&#36827;&#34892;&#22810;&#36864;&#23569;&#34917;&#32467;&#31639;&#65292;&#24050;&#30003;&#25253;&#25910;&#20837;&#25968;&#25454;&#21487;&#22312;&#20010;&#31246;app&#26597;&#35810;&#12290;</div>
+                    </div>
+                    <div>
+                        <div style="font-size:14px;font-weight:500;color:#333;margin-bottom:6px;">&#20844;&#23545;&#20844;&#22686;&#20540;&#31246;</div>
+                        <div style="font-size:13px;color:#666;line-height:1.7;">&#20844;&#21496;&#24179;&#21488;&#20316;&#20026;&#36866;&#29992; 6% &#31246;&#29575;&#30340;&#19968;&#33324;&#32435;&#31246;&#20154;&#65292;&#20026;&#30830;&#20445;&#31246;&#21153;&#21512;&#35268;&#24182;&#20844;&#24179;&#26680;&#31639;&#21452;&#26041;&#25104;&#26412;&#65292;&#24179;&#21488;&#23558;&#25353;&#21512;&#20316;&#26041;&#25552;&#20379;&#30340;&#23454;&#38469;&#21487;&#25187;&#25187;&#31246;&#39069;&#19982;&#26412;&#20844;&#21496;&#32422;&#23450;&#31246;&#29575;&#30340;&#24046;&#39069;&#35843;&#25972;&#32467;&#31639;&#37329;&#39069;&#12290;</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-primary" onclick="hideModal('tax-type')">&#25105;&#30693;&#36947;&#20102;</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== 说明弹窗 ========== -->
+        <div class="modal-overlay" id="modal-explain">
+            <div class="modal-content">
+                <div class="modal-header">
+                    结算/提现说明
+                    <span class="modal-close" onclick="hideModal('explain')">&#10005;</span>
+                </div>
+                <div class="modal-body">
+                    <h4>一、结算说明</h4>
+                    <p>&#23436;&#25104;&#26381;&#21153;&#21518;&#65292;&#21487;&#22312;&#36164;&#37329;&#31649;&#29702;&#39029;&#12300;&#24453;&#32467;&#31639;&#12301;&#21015;&#34920;&#26597;&#30475;&#32467;&#31639;&#26126;&#32454;&#65307;&#24403;&#26376;&#23436;&#25104;&#30340;&#39044;&#32422;&#21333;&#65292;&#27425;&#26376; 1 &#26085;&#20940;&#26216; 2 &#28857;&#36215;&#25903;&#25345;&#25552;&#29616;</p>
+
+                    <h4>二、提现说明</h4>
+                    <p>· 申请提现时，系统将根据余额对应业务的收入金额，在扣除各个业务的交易费和税费后，计算实际到账金额。</p>
+                    <p>· 申请提现后，资金预计在本月或次月的15号（当月5号23:59:59前提现为本月15号左右到账；6号00:00:00后提现则为次月15号左右到账），转账至您的支付账号或银行账户。提现成功后，请及时登录收款支付宝账号或银行账户查看。</p>
+                    <p>· 若提现失败，资金将退回可提现余额。请在「提现设置」修改提现信息后，再次申请提现。</p>
+                    <p>· 壹心理100%保证平台账号的信息安全和资金安全。</p>
+
+                    <h4>三、特别提醒</h4>
+                    <p>· 请正确设置您的收款账号，包括：银行卡号、支付宝账号、证件类型、证件号码、收款人姓名等。</p>
+                    <p>· 若提现信息设置有误，导致转账失败，或者转入错误账户，将由咨询师/倾听师承担全部责任。</p>
+                    <p>· 请妥善保管您的提现密码。</p>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-primary" onclick="hideModal('explain')">我知道了</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== 实际计酬收入说明弹窗 ========== -->
+        <div class="modal-overlay" id="modal-income-rule">
+            <div class="modal-content">
+                <div class="modal-header">
+                    实际计酬收入说明
+                    <span class="modal-close" onclick="hideModal('income-rule')">&#10005;</span>
+                </div>
+                <div class="modal-body">
+                    <div class="rule-intro">
+                        每一笔预约单的“实际计酬收入”会根据所属服务、是否使用了优惠券或兑换码自动计算。规则按下述优先级<strong>逐条判断，命中即生效</strong>，不再向下匹配。
+                    </div>
+                    <ul class="rule-list">
+                        <li class="rule-item">
+                            <div class="rule-item-title"><span class="rule-item-tag">1</span>使用“转 199 元”系列优惠券</div>
+                            <div class="rule-item-formula">实际计酬收入 = &#165;66.33 （即 199 ÷ 3）</div>
+                            <div class="rule-item-tip">营销活动专用券，金额固定。</div>
+                        </li>
+                        <li class="rule-item">
+                            <div class="rule-item-title"><span class="rule-item-tag">2</span>使用“转 99 元”系列优惠券</div>
+                            <div class="rule-item-formula">实际计酬收入 = &#165;33</div>
+                            <div class="rule-item-tip">营销活动专用券，金额固定。</div>
+                        </li>
+                        <li class="rule-item">
+                            <div class="rule-item-title"><span class="rule-item-tag">3</span>使用“壹心理员工体验”兑换码</div>
+                            <div class="rule-item-formula">实际计酬收入 = &#165;33</div>
+                            <div class="rule-item-tip">内部体验码专用计酬。</div>
+                        </li>
+                        <li class="rule-item">
+                            <div class="rule-item-title"><span class="rule-item-tag">4</span>单次咨询服务（平均单价不足 &#165;100）</div>
+                            <div class="rule-item-formula">实际计酬收入 = (订单支付金额 + 咨询总数 × &#165;1 + 优惠金额 × 平台共担比例) ÷ 咨询总数</div>
+                            <div class="rule-item-tip">仅适用于该服务下低单价场次，平台额外补贴 &#165;1/次。</div>
+                        </li>
+                        <li class="rule-item">
+                            <div class="rule-item-title"><span class="rule-item-tag">5</span>新人专属单次咨询服务</div>
+                            <div class="rule-item-formula">实际计酬收入 = (订单支付金额 &#8722; &#165;10 + 优惠金额 × 平台共担比例) ÷ 咨询总数</div>
+                            <div class="rule-item-tip">该服务为新人引流产品，每单扣 &#165;10 推广成本。</div>
+                        </li>
+                        <li class="rule-item">
+                            <div class="rule-item-title"><span class="rule-item-tag">6</span>公益项目 — 小红书公益咨询</div>
+                            <div class="rule-item-formula">实际计酬收入 = &#165;0</div>
+                            <div class="rule-item-tip">公益项目不计酬。</div>
+                        </li>
+                        <li class="rule-item">
+                            <div class="rule-item-title"><span class="rule-item-tag">7</span>企业 EAP / 统一付费类服务</div>
+                            <div class="rule-item-formula">实际计酬收入 = 预约单应结算金额</div>
+                            <div class="rule-item-tip">依企业合同约定金额计酬。适用服务包括：</div>
+                            <div class="rule-srv-list">
+                                · 心理咨询服务（B2）<br>
+                                · 员工内部咨询<br>
+                                · 单次咨询（企业统一付费）<br>
+                                · 企业B端服务（农）<br>
+                                · GAP员工EAP咨询服务<br>
+                                · 顺德农商EAP咨询服务<br>
+                                · 健康崖州EAP咨询服务<br>
+                                · 农业银行（北京总行）EAP咨询服务<br>
+                                · 家长法学院<br>
+                                · 浙江国泰证券EAP<br>
+                                · 杭州橄榄树<br>
+                                · 中国教育工会北京市顺义区委员
+                            </div>
+                        </li>
+                        <li class="rule-item" style="border-color:#cfdbff; background:#f5f9ff;">
+                            <div class="rule-item-title"><span class="rule-item-tag" style="background:#666;">默认</span>其他常规服务</div>
+                            <div class="rule-item-formula">实际计酬收入 = (订单支付金额 + 优惠金额 × 平台共担比例) ÷ 咨询总数</div>
+                        </li>
+                    </ul>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-primary" onclick="hideModal('income-rule')">我知道了</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== 分成比例说明弹窗 ========== -->
+        <div class="modal-overlay" id="modal-share-rule">
+            <div class="modal-content">
+                <div class="modal-header">
+                    分成比例说明
+                    <span class="modal-close" onclick="hideModal('share-rule')">&#10005;</span>
+                </div>
+                <div class="modal-body">
+                    <ul class="rule-list">
+                        <li class="rule-item">
+                            <div class="rule-item-title"><span class="rule-item-tag">1</span>自带来访</div>
+                            <div class="rule-item-formula">分成比例 = 90%</div>
+                        </li>
+                        <li class="rule-item">
+                            <div class="rule-item-title"><span class="rule-item-tag">2</span>新人套餐</div>
+                            <div class="rule-item-formula">分成比例 = 60%</div>
+                        </li>
+                        <li class="rule-item">
+                            <div class="rule-item-title"><span class="rule-item-tag">3</span>合作渠道</div>
+                            <div class="rule-item-formula">分成比例 = 50%</div>
+                        </li>
+                        <li class="rule-item">
+                            <div class="rule-item-title"><span class="rule-item-tag">4</span>常规服务（按资费 + 季度审核双维度判定）</div>
+                            <div class="rule-table">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>咨询师资费</th>
+                                            <th>季审通过</th>
+                                            <th>季审不通过</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>≤ &#165;200</td>
+                                            <td><strong>80%</strong></td>
+                                            <td>75%</td>
+                                        </tr>
+                                        <tr>
+                                            <td>&gt; &#165;200</td>
+                                            <td><strong>70%</strong></td>
+                                            <td>65%</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-primary" onclick="hideModal('share-rule')">我知道了</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast 提示 -->
+    <div id="toast" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:rgba(0,0,0,0.7); color:#fff; padding:12px 24px; border-radius:6px; font-size:14px; z-index:300;"></div>
+
+    <script>
+        // 页面切换
+        function showPage(pageId) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById('page-' + pageId).classList.add('active');
+            window.scrollTo(0, 0);
+        }
+        function goHome() { showPage('home'); }
+        function goToSettings() { showPage('settings'); }
+
+        // 业务线切换
+        function switchBiz(el) {
+            document.querySelectorAll('.biz-tab').forEach(t => t.classList.remove('active'));
+            el.classList.add('active');
+            const biz = el.dataset.biz;
+            document.querySelectorAll('.biz-content').forEach(c => c.style.display = 'none');
+            document.getElementById('biz-' + biz).style.display = 'block';
+        }
+
+        // 状态切换
+        const TIPS_PENDING = '完成服务后，可在资金管理页「待结算」列表查看结算明细；当月完成的预约单，次月 1 日凌晨 2 点起支持提现';
+        const TIPS_OTHER  = '完成服务后，可在资金管理页「待结算」列表查看结算明细；当月完成的预约单，次月 1 日凌晨 2 点起支持提现';
+        function switchStatus(el, status) {
+            const parent = el.closest('.biz-content');
+            parent.querySelectorAll('.status-tab').forEach(t => t.classList.remove('active'));
+            el.classList.add('active');
+            parent.querySelectorAll('.flow-list').forEach(l => l.style.display = 'none');
+            const target = parent.querySelector('#flow-' + status);
+            if (target) target.style.display = 'block';
+            // 动态更新提示文案
+            const isPending = status === 'pending' || status === 'live-pending';
+            const tipsId = status.startsWith('live') ? 'tips-live' : 'tips-consult';
+            const tipsEl = document.getElementById(tipsId);
+            if (tipsEl) tipsEl.textContent = isPending ? TIPS_PENDING : TIPS_OTHER;
+        }
+
+        // 提现详情弹窗Tab切换（关联订单/其它）
+        function switchDetailTab(el, tab) {
+            var tabOrders = document.getElementById('dtab-orders');
+            var tabOthers = document.getElementById('dtab-others');
+            var listOrders = document.getElementById('dlist-orders');
+            var listOthers = document.getElementById('dlist-others');
+            if (tab === 'orders') {
+                tabOrders.style.borderBottom = '2px solid #6982fa';
+                tabOrders.querySelector('span').style.color = '#6982fa';
+                tabOthers.style.borderBottom = '2px solid transparent';
+                tabOthers.querySelector('span').style.color = '#9aa3b2';
+                listOrders.style.display = '';
+                listOthers.style.display = 'none';
+            } else {
+                tabOthers.style.borderBottom = '2px solid #6982fa';
+                tabOthers.querySelector('span').style.color = '#6982fa';
+                tabOrders.style.borderBottom = '2px solid transparent';
+                tabOrders.querySelector('span').style.color = '#9aa3b2';
+                listOrders.style.display = 'none';
+                listOthers.style.display = '';
+            }
+        }
+
+        // 弹窗
+        function showModal(id) {
+            document.getElementById('modal-' + id).classList.add('active');
+        }
+        function hideModal(id) {
+            document.getElementById('modal-' + id).classList.remove('active');
+        }
+
+        // 折叠/展开订单收入明细
+        function toggleCollapse(header) {
+            const body = header.nextElementSibling;
+            const isOpen = header.classList.contains('open');
+            if (isOpen) {
+                header.classList.remove('open');
+                body.classList.remove('open');
+            } else {
+                header.classList.add('open');
+                body.classList.add('open');
+            }
+        }
+
+        // Toast
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.style.display = 'block';
+            setTimeout(() => { toast.style.display = 'none'; }, 2000);
+        }
+
+        // 点击遮罩关闭弹窗
+        document.getElementById('modal-explain').addEventListener('click', function(e) {
+            if (e.target === this) hideModal('explain');
+        });
+        document.getElementById('modal-income-rule').addEventListener('click', function(e) {
+            if (e.target === this) hideModal('income-rule');
+        });
+        document.getElementById('modal-share-rule').addEventListener('click', function(e) {
+            if (e.target === this) hideModal('share-rule');
+        });
+        document.getElementById('modal-share-amount').addEventListener('click', function(e) {
+            if (e.target === this) hideModal('share-amount');
+        });
+        document.getElementById('modal-share-amount-chuxin').addEventListener('click', function(e) {
+            if (e.target === this) hideModal('share-amount-chuxin');
+        });
+        document.getElementById('modal-real-amount').addEventListener('click', function(e) {
+            if (e.target === this) hideModal('real-amount');
+        });
+        document.getElementById('modal-tax-type').addEventListener('click', function(e) {
+            if (e.target === this) hideModal('tax-type');
+        });
+        document.getElementById('modal-withdraw-confirm').addEventListener('click', function(e) {
+            if (e.target === this) hideModal('withdraw-confirm');
+        });
+        function confirmWithdraw() {
+            hideModal('withdraw-confirm');
+            showToast('提现申请已提交');
+        }
+        document.getElementById('modal-withdrawing-detail').addEventListener('click', function(e) {
+            if (e.target === this) hideModal('withdrawing-detail');
+        });
+        document.getElementById('modal-withdrawn-detail').addEventListener('click', function(e) {
+            if (e.target === this) hideModal('withdrawn-detail');
+        });
+        document.getElementById('modal-withdrawing-detail-chuxin').addEventListener('click', function(e) {
+            if (e.target === this) hideModal('withdrawing-detail-chuxin');
+        });
+        document.getElementById('modal-withdrawn-detail-chuxin').addEventListener('click', function(e) {
+            if (e.target === this) hideModal('withdrawn-detail-chuxin');
+        });
+    </script>
+</body>
+</html>

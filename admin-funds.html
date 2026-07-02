@@ -1,0 +1,1171 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>资金管理后台 - 结算系统</title>
+    <!-- Element UI CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/element-ui@2.15.14/lib/theme-chalk/index.css">
+    <style>
+        body { margin: 0; font-family: 'PingFang SC','Microsoft YaHei',sans-serif; }
+        .el-container { height: 100vh; }
+        .el-aside { background: #001529; }
+        .el-menu { border-right: none; }
+        .sidebar-title { color: #fff; text-align: center; padding: 20px 0; font-size: 16px; font-weight: 600; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .el-main { background: #f0f2f5; padding: 16px; }
+        .page-header { margin-bottom: 16px; }
+        .stat-row { margin-bottom: 16px; }
+        .stat-card .value { font-size: 28px; font-weight: 700; color: #1890ff; }
+        .stat-card .label { font-size: 13px; color: #999; }
+        .filter-bar { margin-bottom: 16px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+        .el-table th { background: #fafafa !important; }
+        .tab-header { margin-bottom: 12px; }
+        /* 提现付款单详情 */
+        .withdraw-detail-dialog .el-dialog { border-radius: 8px; overflow: hidden; }
+        .withdraw-detail-dialog .el-dialog__header { background: linear-gradient(90deg,#1890ff,#36a3f7); padding: 14px 20px; }
+        .withdraw-detail-dialog .el-dialog__title { color: #fff; font-weight: 600; font-size: 15px; letter-spacing: 1px; }
+        .withdraw-detail-dialog .el-dialog__headerbtn { top: 18px; }
+        .withdraw-detail-dialog .el-dialog__headerbtn .el-dialog__close { color: #fff; font-size: 18px; }
+        .withdraw-detail-dialog .el-dialog__body { padding: 20px 24px; background: #f7f9fc; }
+        .withdraw-detail-dialog .el-dialog__footer { background: #fff; border-top: 1px solid #ebeef5; padding: 12px 20px; }
+        .wd-detail { font-size: 13px; color: #303133; }
+        /* 头部卡片 */
+        .wd-header { background: #fff; border-radius: 6px; padding: 16px 20px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); border: 1px solid #ebeef5; position: relative; }
+        .wd-header::before { content: ''; position: absolute; left: 0; top: 12px; bottom: 12px; width: 3px; background: #1890ff; border-radius: 0 2px 2px 0; }
+        .wd-header-title { font-size: 15px; font-weight: 600; margin-bottom: 14px; color: #1f2d3d; padding-left: 8px; display:flex; justify-content:space-between; align-items:center; border-bottom: 1px dashed #ebeef5; padding-bottom: 10px; }
+        .wd-header-tag { color: #1890ff; font-weight: 500; font-size: 12px; background: #e6f1fb; padding: 2px 10px; border-radius: 10px; }
+        .wd-header-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px 32px; padding-left: 8px; }
+        .wd-cell { display: flex; align-items: center; min-height: 28px; font-size: 13px; }
+        .wd-cell label { width: 100px; color: #909399; flex-shrink: 0; }
+        .wd-cell label::after { content: '：'; }
+        .wd-cell span { color: #303133; flex: 1; }
+        /* 区块卡片 */
+        .wd-section { background: #fff; border-radius: 6px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); border: 1px solid #ebeef5; overflow: hidden; }
+        .wd-section-title { background: #fff; color: #1890ff; padding: 12px 18px; font-weight: 600; font-size: 14px; border-bottom: 1px solid #ebeef5; position: relative; padding-left: 28px; }
+        .wd-section-title::before { content: ''; position: absolute; left: 18px; top: 50%; transform: translateY(-50%); width: 3px; height: 14px; background: #1890ff; border-radius: 2px; }
+        /* 表格 */
+        .wd-table { width: 100%; border-collapse: collapse; }
+        .wd-table th { background: #f7f9fc; color: #606266; font-weight: 500; padding: 10px 8px; border-bottom: 1px solid #ebeef5; border-right: 1px solid #ebeef5; text-align: center; font-size: 12px; line-height: 1.5; }
+        .wd-table th:last-child, .wd-table td:last-child { border-right: none; }
+        .wd-table td { padding: 10px 8px; border-bottom: 1px solid #ebeef5; border-right: 1px solid #ebeef5; text-align: center; font-size: 12px; vertical-align: middle; color: #303133; }
+        .wd-table tbody tr:last-child td { border-bottom: none; }
+        .wd-table tbody tr:hover td { background: #f7f9fc; }
+        .wd-table-narrow th, .wd-table-narrow td { padding: 8px 4px; font-size: 11px; }
+        .wd-table-sum td { background: #fafbfd !important; font-weight: 600; color: #1890ff; }
+        .wl-filter-form .el-form-item { margin-bottom: 8px; margin-right: 12px; }
+        /* 提现列表合计行 */
+        .wl-table .el-table__footer-wrapper td { background: #fff7e6 !important; color: #fa8c16; font-weight: 600; }
+        .wl-table .el-table__footer-wrapper td .cell { font-weight: 600; }
+    </style>
+</head>
+<body>
+<div id="app">
+    <el-container>
+        <!-- 侧边栏 -->
+        <el-aside width="220px">
+            <div class="sidebar-title">&#128176; 资金管理后台</div>
+            <el-menu :default-active="activePage" background-color="#001529" text-color="rgba(255,255,255,0.65)" active-text-color="#fff" @select="handleMenuSelect">
+                <el-menu-item index="withdraw-list">
+                    <i class="el-icon-tickets"></i>
+                    <span>提现列表</span>
+                </el-menu-item>
+                <el-menu-item index="pay-list">
+                    <i class="el-icon-bank-card"></i>
+                    <span>打款列表</span>
+                </el-menu-item>
+                <el-menu-item index="settle-config">
+                    <i class="el-icon-setting"></i>
+                    <span>结算特殊设置</span>
+                </el-menu-item>
+            </el-menu>
+        </el-aside>
+
+        <el-container>
+            <!-- 顶部 -->
+            <el-header style="background:#fff;display:flex;align-items:center;justify-content:space-between;box-shadow:0 1px 4px rgba(0,0,0,0.08);">
+                <el-breadcrumb separator="/">
+                    <el-breadcrumb-item>首页</el-breadcrumb-item>
+                    <el-breadcrumb-item>资金管理</el-breadcrumb-item>
+                    <el-breadcrumb-item>{{ pageTitle }}</el-breadcrumb-item>
+                </el-breadcrumb>
+                <div>
+                    <el-avatar size="small" style="background:#1890ff;">财</el-avatar>
+                    <span style="margin-left:8px;font-size:14px;">财务专员</span>
+                </div>
+            </el-header>
+
+            <!-- 主内容 -->
+            <el-main>
+                <!-- ========== 提现审核 ========== -->
+                <div v-show="activePage==='audit'">
+                    <el-row :gutter="16" class="stat-row">
+                        <el-col :span="6"><el-card class="stat-card" shadow="hover"><div class="label">今日待审核</div><div class="value">12</div></el-card></el-col>
+                        <el-col :span="6"><el-card class="stat-card" shadow="hover"><div class="label">本月已审核</div><div class="value">156</div></el-card></el-col>
+                        <el-col :span="6"><el-card class="stat-card" shadow="hover"><div class="label">审核通过率</div><div class="value">98.7%</div></el-card></el-col>
+                        <el-col :span="6"><el-card class="stat-card" shadow="hover"><div class="label">本月提现总额</div><div class="value">¥128.5万</div></el-card></el-col>
+                    </el-row>
+                    <el-card>
+                        <div slot="header" style="display:flex;justify-content:space-between;align-items:center;">
+                            <span style="font-weight:600;">提现审核列表</span>
+                            <div>
+                                <el-input size="small" placeholder="搜索申请人" prefix-icon="el-icon-search" style="width:200px;margin-right:8px;" v-model="auditSearch"></el-input>
+                                <el-button size="small" type="primary">搜索</el-button>
+                            </div>
+                        </div>
+                        <el-table :data="auditTableData" border stripe style="width:100%;">
+                            <el-table-column prop="id" label="申请编号" width="150"></el-table-column>
+                            <el-table-column prop="name" label="申请人" width="100"></el-table-column>
+                            <el-table-column prop="biz" label="业务线" width="100"></el-table-column>
+                            <el-table-column prop="amount" label="提现金额" width="120"></el-table-column>
+                            <el-table-column prop="realAmount" label="实收金额" width="120"></el-table-column>
+                            <el-table-column prop="time" label="申请时间" width="170"></el-table-column>
+                            <el-table-column prop="status" label="状态" width="100">
+                                <template slot-scope="scope">
+                                    <el-tag :type="scope.row.status==='待审核'?'warning':scope.row.status==='已通过'?'success':'danger'" size="small">{{ scope.row.status }}</el-tag>
+                                </template>
+                            </el-table-column>
+                            <el-table-column label="操作" width="180">
+                                <template slot-scope="scope">
+                                    <el-button size="mini" @click="showAuditDetail(scope.row)">详情</el-button>
+                                    <el-button size="mini" type="success" v-if="scope.row.status==='待审核'" @click="auditPass(scope.row)">通过</el-button>
+                                    <el-button size="mini" type="danger" v-if="scope.row.status==='待审核'" @click="auditReject(scope.row)">拒绝</el-button>
+                                </template>
+                            </el-table-column>
+                        </el-table>
+                    </el-card>
+                </div>
+
+                <!-- ========== 打款管理 ========== -->
+                <div v-show="activePage==='payment'">
+                    <el-card>
+                        <div slot="header"><span style="font-weight:600;">打款处理列表</span></div>
+                        <el-table :data="paymentTableData" border stripe>
+                            <el-table-column prop="id" label="打款编号" width="150"></el-table-column>
+                            <el-table-column prop="name" label="收款人" width="100"></el-table-column>
+                            <el-table-column prop="account" label="收款账号" width="180"></el-table-column>
+                            <el-table-column prop="amount" label="打款金额" width="120"></el-table-column>
+                            <el-table-column prop="status" label="状态" width="100">
+                                <template slot-scope="scope">
+                                    <el-tag :type="scope.row.status==='待打款'?'warning':'success'" size="small">{{ scope.row.status }}</el-tag>
+                                </template>
+                            </el-table-column>
+                            <el-table-column prop="time" label="审核通过时间" width="170"></el-table-column>
+                            <el-table-column label="操作" width="120">
+                                <template slot-scope="scope">
+                                    <el-button size="mini" type="primary" v-if="scope.row.status==='待打款'" @click="confirmPayment(scope.row)">确认打款</el-button>
+                                </template>
+                            </el-table-column>
+                        </el-table>
+                    </el-card>
+                </div>
+
+                <!-- ========== 资金流水 ========== -->
+                <div v-show="activePage==='flow'">
+                    <el-card>
+                        <div slot="header" style="display:flex;justify-content:space-between;align-items:center;">
+                            <span style="font-weight:600;">资金流水记录</span>
+                            <el-date-picker v-model="flowDateRange" type="daterange" range-separator="至" start-placeholder="开始日期" end-placeholder="结束日期" size="small"></el-date-picker>
+                        </div>
+                        <el-table :data="flowTableData" border stripe>
+                            <el-table-column prop="time" label="时间" width="170"></el-table-column>
+                            <el-table-column prop="type" label="类型" width="100"></el-table-column>
+                            <el-table-column prop="desc" label="说明" min-width="200"></el-table-column>
+                            <el-table-column prop="amount" label="金额" width="120"></el-table-column>
+                            <el-table-column prop="balance" label="余额" width="120"></el-table-column>
+                        </el-table>
+                    </el-card>
+                </div>
+
+                <!-- ========== 财务报表 ========== -->
+                <div v-show="activePage==='report'">
+                    <el-card>
+                        <div slot="header"><span style="font-weight:600;">月度财务报表</span></div>
+                        <el-table :data="reportTableData" border stripe>
+                            <el-table-column prop="month" label="月份" width="100"></el-table-column>
+                            <el-table-column prop="totalIncome" label="总收入" width="140"></el-table-column>
+                            <el-table-column prop="totalWithdraw" label="总提现" width="140"></el-table-column>
+                            <el-table-column prop="totalTax" label="扣税总额" width="140"></el-table-column>
+                            <el-table-column prop="actualPay" label="实际支出" width="140"></el-table-column>
+                            <el-table-column prop="profit" label="平台收入" width="140"></el-table-column>
+                        </el-table>
+                    </el-card>
+                </div>
+
+                <!-- ========== 结算配置 ========== -->
+                <div v-show="activePage==='config'">
+                    <el-card>
+                        <div slot="header" style="display:flex;justify-content:space-between;align-items:center;">
+                            <span style="font-weight:600;">结算规则配置</span>
+                            <el-button size="small" type="primary" @click="$message.success('保存配置')">保存配置</el-button>
+                        </div>
+                        <el-table :data="configTableData" border stripe>
+                            <el-table-column prop="name" label="配置项" width="140"></el-table-column>
+                            <el-table-column prop="biz" label="业务线" width="120"></el-table-column>
+                            <el-table-column prop="value" label="当前值" width="140"></el-table-column>
+                            <el-table-column prop="desc" label="说明" min-width="250"></el-table-column>
+                            <el-table-column label="操作" width="80">
+                                <template><el-button size="mini" @click="$message.info('编辑配置')">编辑</el-button></template>
+                            </el-table-column>
+                        </el-table>
+                    </el-card>
+                </div>
+
+                <!-- ========== 提现列表 ========== -->
+                <div v-show="activePage==='withdraw-list'">
+                    <el-card>
+                        <div slot="header" style="display:flex;justify-content:space-between;align-items:center;">
+                            <span style="font-weight:600;">提现列表</span>
+                        </div>
+                        <!-- 筛选条件 -->
+                        <el-form :inline="true" size="small" label-width="75px" class="wl-filter-form" style="margin-bottom:8px;">
+                            <el-form-item label="提现时间">
+                                <el-date-picker v-model="wlFilterDateRange" type="datetimerange" range-separator="至" start-placeholder="开始时间" end-placeholder="结束时间" style="width:360px;" value-format="yyyy-MM-dd HH:mm:ss"></el-date-picker>
+                            </el-form-item>
+                            <el-form-item label="结算周期">
+                                <el-date-picker v-model="wlFilterPeriodRange" type="daterange" range-separator="至" start-placeholder="开始日期" end-placeholder="结束日期" style="width:240px;" value-format="yyyyMMdd"></el-date-picker>
+                            </el-form-item>
+                            <el-form-item label="劳务/对公">
+                                <el-select v-model="wlFilterTax" placeholder="全部" clearable style="width:140px;">
+                                    <el-option label="劳务报酬个税" value="劳务报酬个税"></el-option>
+                                    <el-option label="公对公增值税" value="公对公增值税"></el-option>
+                                </el-select>
+                            </el-form-item>
+                            <el-form-item label="境内/境外">
+                                <el-select v-model="wlFilterRegion" placeholder="全部" clearable style="width:100px;">
+                                    <el-option label="境内" value="境内"></el-option>
+                                    <el-option label="境外" value="境外"></el-option>
+                                </el-select>
+                            </el-form-item>
+                            <el-form-item label="证件类型">
+                                <el-select v-model="wlFilterCertType" placeholder="全部" clearable style="width:170px;">
+                                    <el-option label="中国大陆居民身份证" value="中国大陆居民身份证"></el-option>
+                                    <el-option label="港澳居民居住证" value="港澳居民居住证"></el-option>
+                                    <el-option label="台湾居民居住证" value="台湾居民居住证"></el-option>
+                                    <el-option label="护照" value="护照"></el-option>
+                                    <el-option label="港澳通行证" value="港澳通行证"></el-option>
+                                    <el-option label="台湾通行证" value="台湾通行证"></el-option>
+                                    <el-option label="外国人永久居留身份证" value="外国人永久居留身份证"></el-option>
+                                </el-select>
+                            </el-form-item>
+                            <el-form-item label="业务线">
+                                <el-select v-model="wlFilterBizLine" placeholder="全部" clearable style="width:130px;">
+                                    <el-option label="此刻咨询" value="此刻咨询"></el-option>
+                                    <el-option label="初心咨询" value="初心咨询"></el-option>
+                                </el-select>
+                            </el-form-item>
+                            <el-form-item label="付款状态">
+                                <el-select v-model="wlFilterPayStatus" placeholder="全部" clearable style="width:110px;">
+                                    <el-option label="待付款" value="待付款"></el-option>
+                                    <el-option label="已付款" value="已付款"></el-option>
+                                </el-select>
+                            </el-form-item>
+                            <el-form-item label="付款编号">
+                                <el-input v-model="wlFilterPayNo" placeholder="付款编号" clearable style="width:180px;"></el-input>
+                            </el-form-item>
+                            <el-form-item label="合作方">
+                                <el-input v-model="wlFilterPartner" placeholder="姓名 / 公司名" clearable style="width:180px;"></el-input>
+                            </el-form-item>
+                            <el-form-item label="关键字">
+                                <el-input v-model="wlFilterKeyword" placeholder="咨询师ID / 证件姓名 / 提现号" prefix-icon="el-icon-search" style="width:240px;" clearable></el-input>
+                            </el-form-item>
+                            <el-form-item label-width="0">
+                                <el-button type="primary" icon="el-icon-search" @click="$message.info('查询')">查询</el-button>
+                                <el-button icon="el-icon-refresh-left" @click="wlResetFilter">重置</el-button>
+                                <el-button icon="el-icon-download" @click="$message.success('导出Excel')">导出</el-button>
+                            </el-form-item>
+                        </el-form>
+                        <el-table :data="wlFilteredData" border stripe size="small" style="width:100%;" class="wl-table" :header-cell-style="{background:'#fafafa'}" show-summary :summary-method="getWlSummaries" @selection-change="wlSelectionChange">
+                            <el-table-column type="selection" width="42" fixed="left"></el-table-column>
+                            <!-- 公共字段 -->
+                            <el-table-column prop="index" label="序号" width="55" fixed="left">
+                                <template slot="header"><span>序号</span><el-tooltip content="自动生成的行序号" placement="top"><i class="el-icon-info" style="margin-left:4px;color:#999;"></i></el-tooltip></template>
+                            </el-table-column>
+                            <el-table-column prop="time" label="提现时间" width="155">
+                                <template slot="header"><span>提现时间</span><el-tooltip placement="top"><div slot="content" style="line-height:1.8;">咨询师发起提现申请的时间<br/>· 格式：yyyy-MM-dd HH:mm<br/>· 用于追溯提现单创建时点</div><i class="el-icon-info" style="margin-left:4px;color:#999;"></i></el-tooltip></template>
+                            </el-table-column>
+                            <el-table-column prop="withdrawNo" label="提现号" width="180">
+                                <template slot="header"><span>提现号</span><el-tooltip placement="top"><div slot="content" style="line-height:1.8;">提现单唯一编号，生成规则：<br/>· TX + yyyyMMdd + 6位随机数<br/>示例：TX20260615482103</div><i class="el-icon-info" style="margin-left:4px;color:#999;"></i></el-tooltip></template>
+                            </el-table-column>
+                            <el-table-column prop="payNo" label="付款编号" width="175">
+                                <template slot="header"><span>付款编号</span><el-tooltip placement="top"><div slot="content" style="line-height:1.8;">对应财务打款列表中的付款编号<br/>· 待付款记录暂无付款编号</div><i class="el-icon-info" style="margin-left:4px;color:#999;"></i></el-tooltip></template>
+                            </el-table-column>
+                            <el-table-column prop="period" label="结算周期" width="170">
+                                <template slot="header"><span>结算周期</span><el-tooltip placement="top"><div slot="content" style="line-height:1.8;">本次提现对应的结算周期：<br/>· 取账单最小时间 — 最大时间<br/>· 格式：yyyyMMdd-yyyyMMdd<br/>· 示例：20260110-20261225</div><i class="el-icon-info" style="margin-left:4px;color:#999;"></i></el-tooltip></template>
+                            </el-table-column>
+                            <el-table-column prop="teacherId" label="咨询师ID" width="90">
+                                <template slot="header"><span>咨询师ID</span><el-tooltip placement="top"><div slot="content" style="line-height:1.8;">咨询师在业务系统中的唯一标识<br/>· 来源：各业务系统注册ID<br/>· 示例：11539</div><i class="el-icon-info" style="margin-left:4px;color:#999;"></i></el-tooltip></template>
+                            </el-table-column>
+                            <el-table-column prop="certName" label="证件姓名" width="110">
+                                <template slot="header"><span>证件姓名</span><el-tooltip placement="top"><div slot="content" style="line-height:1.8;">老师的法定姓名（真实姓名）<br/>· 中籍：身份证/居住证上的姓名<br/>· 外籍：护照上的拼音姓名</div><i class="el-icon-info" style="margin-left:4px;color:#999;"></i></el-tooltip></template>
+                            </el-table-column>
+                            <el-table-column prop="certNo" label="证件号" width="130">
+                                <template slot="header"><span>证件号</span><el-tooltip placement="top"><div slot="content" style="line-height:1.8;">老师的有效证件号码：<br/>· 中籍：身份证号码<br/>· 港澳台居民：居住证号码<br/>· 外籍：护照号码</div><i class="el-icon-info" style="margin-left:4px;color:#999;"></i></el-tooltip></template>
+                            </el-table-column>
+                            <el-table-column prop="certType" label="证件类型" width="180">
+                                <template slot="header"><span>证件类型</span><el-tooltip placement="top"><div slot="content" style="line-height:1.8;">支持以下证件类型：<br/>· 中国大陆居民身份证<br/>· 港澳居民居住证<br/>· 台湾居民居住证<br/>· 护照<br/>· 港澳通行证<br/>· 台湾通行证<br/>· 外国人永久居留身份证</div><i class="el-icon-info" style="margin-left:4px;color:#999;"></i></el-tooltip></template>
+                            </el-table-column>
+                            <el-table-column prop="taxType" label="劳务/对公" width="120">
+                                <template slot="header"><span>劳务/对公</span><el-tooltip placement="top"><div slot="content" style="line-height:1.8;">合作与扣税方式：<br/>· 劳务报酬个税：个人合作<br/>　　代扣个税 + 个人增值税<br/>· 公对公增值税：机构合作<br/>　　公司开票 + 扣除税点</div><i class="el-icon-info" style="margin-left:4px;color:#999;"></i></el-tooltip></template>
+                                <template slot-scope="scope">
+                                    <el-tag size="mini" :type="scope.row.taxType==='劳务报酬个税'?'primary':'warning'">{{ scope.row.taxType }}</el-tag>
+                                </template>
+                            </el-table-column>
+                            <el-table-column prop="region" label="境内/境外" width="95">
+                                <template slot="header"><span>境内/境外</span><el-tooltip placement="top"><div slot="content" style="line-height:1.8;">劳务：按老师国籍判定<br/>　　· 中国籍 → 境内<br/>　　· 外籍 → 境外<br/>对公：按所属公司属地判定<br/>　　· 国内公司 → 境内<br/>　　· 国外公司 → 境外</div><i class="el-icon-info" style="margin-left:4px;color:#999;"></i></el-tooltip></template>
+                            </el-table-column>
+                            <el-table-column prop="partner" label="合作方" width="220">
+                                <template slot="header"><span>合作方</span><el-tooltip placement="top"><div slot="content" style="line-height:1.8;">合作方主体：<br/>· 劳务：显示证件姓名<br/>　　（个人老师主体）<br/>· 对公：显示公司名称<br/>　　（机构老师主体）</div><i class="el-icon-info" style="margin-left:4px;color:#999;"></i></el-tooltip></template>
+                            </el-table-column>
+                            <el-table-column prop="bizLine" label="业务线" width="110">
+                                <template slot="header"><span>业务线</span><el-tooltip placement="top"><div slot="content" style="line-height:1.8;">老师提现所属业务线：<br/>· 此刻咨询<br/>· 初心咨询</div><i class="el-icon-info" style="margin-left:4px;color:#999;"></i></el-tooltip></template>
+                            </el-table-column>
+                            <el-table-column prop="orderActualAmount" label="订单实收" width="100">
+                                <template slot="header"><span>订单实收</span><el-tooltip placement="top"><div slot="content" style="line-height:1.8;">当前提现单关联的所有已完成订单的实际支付金额总和</div><i class="el-icon-info" style="margin-left:4px;color:#999;"></i></el-tooltip></template>
+                                <template slot-scope="scope">
+                                    <span style="color:#1890ff;font-weight:600;">{{ scope.row.orderActualAmount }}</span>
+                                </template>
+                            </el-table-column>
+                            <el-table-column prop="billNum" label="账单数量" width="90">
+                                <template slot="header"><span>账单数量</span><el-tooltip placement="top"><div slot="content" style="line-height:1.8;">当前提现单包含的已完成预约单或其他类型账单总数</div><i class="el-icon-info" style="margin-left:4px;color:#999;"></i></el-tooltip></template>
+                                <template slot-scope="scope">
+                                    <span style="font-weight:600;color:#1890ff;">{{ scope.row.billNum }}</span>
+                                </template>
+                            </el-table-column>
+                            <el-table-column prop="receivable" label="应结算金额" width="100">
+                                <template slot="header"><span>应结算金额</span><el-tooltip placement="top"><div slot="content" style="line-height:1.8;">应结算金额：<br/>· 扣个税 / 发票税差金额 前的金额<br/>· 单位：元</div><i class="el-icon-info" style="margin-left:4px;color:#999;"></i></el-tooltip></template>
+                                <template slot-scope="scope">
+                                    <span style="color:#fa8c16;font-weight:600;">{{ scope.row.receivable }}</span>
+                                </template>
+                            </el-table-column>
+                            <!-- 劳务特有字段 -->
+                            <el-table-column prop="vatTax" label="代扣个人增值税" width="125">
+                                <template slot="header"><span>代扣个人增值税</span><el-tooltip placement="top"><div slot="content" style="line-height:1.8;">代扣个人增值税：<br/>· 适用：劳务报酬个税 + 境外老师<br/>· 计算公式：<br/>　　结算金额合计 ÷ 1.06 × 0.06<br/>· 公对公场景不适用</div><i class="el-icon-info" style="margin-left:4px;color:#999;"></i></el-tooltip></template>
+                            </el-table-column>
+                            <el-table-column prop="domesticTax" label="代扣境内劳务个税" width="135">
+                                <template slot="header"><span>代扣境内劳务个税</span><el-tooltip placement="top"><div slot="content" style="line-height:1.8;">代扣境内劳务个税：<br/>· 适用：劳务报酬个税 + 境内老师<br/>· 一、应纳税所得额计算规则：<br/>　　结算金额 ≤ 800：应纳税所得额 = 0<br/>　　800 &lt; 结算金额 ≤ 4,000：<br/>　　　　应纳税所得额 = 结算金额 − 800<br/>　　结算金额 &gt; 4,000：<br/>　　　　应纳税所得额 = 结算金额 × (1 − 20%)<br/>· 二、应纳税额通用公式：<br/>　　应纳税额 = 应纳税所得额 × 适用税率 − 速算扣除数<br/>· 三、劳务报酬所得税率表：<br/>　　级数1：当月应纳税所得额 ≤ 20,000<br/>　　　　税率 20% / 速算扣除数 0<br/>　　级数2：20,000 &lt; 当月应纳税所得额 ≤ 50,000<br/>　　　　税率 30% / 速算扣除数 2,000<br/>　　级数3：当月应纳税所得额 &gt; 50,000<br/>　　　　税率 40% / 速算扣除数 7,000</div><i class="el-icon-info" style="margin-left:4px;color:#999;"></i></el-tooltip></template>
+                            </el-table-column>
+                            <el-table-column prop="overseasTax" label="代扣境外劳务个税" width="135">
+                                <template slot="header"><span>代扣境外劳务个税</span><el-tooltip placement="top"><div slot="content" style="line-height:1.8;">代扣境外劳务个税：<br/>· 场景判定：<br/>　　履约地境外：仅扣 6% 增值税，无个税<br/>　　履约地境内 或 年度境内居住≥183天：<br/>　　　　先扣 6% 增值税，再单独代扣个税<br/>· 个人增值税：<br/>　　结算金额合计 ÷ 1.06 × 0.06<br/>· 个人所得税计算步骤：<br/>　　① A = 结算金额合计 − 个人增值税<br/>　　② 应纳税所得额 = A × (1 − 20%)<br/>　　③ 个税 = 应纳税所得额 × 税率 − 速算扣除数<br/>· 分级税率表（应纳税所得额 / 税率 / 速算扣除数）：<br/>　　≤ 3,000：3% / 0<br/>　　(3,000, 12,000]：10% / 210<br/>　　(12,000, 25,000]：20% / 1,410<br/>　　(25,000, 35,000]：25% / 2,660<br/>　　(35,000, 55,000]：30% / 4,410<br/>　　(55,000, 80,000]：35% / 7,160<br/>　　&gt; 80,000：45% / 15,160</div><i class="el-icon-info" style="margin-left:4px;color:#999;"></i></el-tooltip></template>
+                            </el-table-column>
+                            <!-- 对公特有字段 -->
+                            <el-table-column prop="invoiceType" label="发票类型" width="130">
+                                <template slot="header"><span>发票类型</span><el-tooltip placement="top"><div slot="content" style="line-height:1.8;">对公结算发票类型：<br/>· 增值税专用发票<br/>· 增值税普通发票<br/>· 境外收费凭证</div><i class="el-icon-info" style="margin-left:4px;color:#999;"></i></el-tooltip></template>
+                            </el-table-column>
+                            <el-table-column prop="invoiceDiff" label="发票税差金额" width="115">
+                                <template slot="header"><span>发票税差金额</span><el-tooltip placement="top"><div slot="content" style="line-height:1.8;">发票税差金额：<br/>· 仅对公场景适用<br/>· 计算公式：<br/>　　应结算金额 ÷ 1.06 × 扣除税点</div><i class="el-icon-info" style="margin-left:4px;color:#999;"></i></el-tooltip></template>
+                            </el-table-column>
+                            <el-table-column prop="invoiceRate" label="专票税率" width="85">
+                                <template slot="header"><span>专票税率</span><el-tooltip placement="top"><div slot="content" style="line-height:1.8;">专票税率取值规则：<br/>· 乙方为普票：专票税率 = 0<br/>· 乙方为专票：<br/>　　读取发票税率字段（6%/3%/1%）</div><i class="el-icon-info" style="margin-left:4px;color:#999;"></i></el-tooltip></template>
+                            </el-table-column>
+                            <el-table-column prop="deductPoint" label="扣除税点" width="90">
+                                <template slot="header"><span>扣除税点</span><el-tooltip placement="top"><div slot="content" style="line-height:1.8;">扣除税点取值规则：<br/>· 乙方为普票：扣除税点 = 6%<br/>· 乙方为专票：<br/>　　扣除税点 = 6% − 专票税率<br/>　　（个别老师会单独约定扣除税点）<br/>· 仅对公场景适用</div><i class="el-icon-info" style="margin-left:4px;color:#999;"></i></el-tooltip></template>
+                            </el-table-column>
+                            <el-table-column prop="deductTotal" label="扣除项合计金额" width="125">
+                                <template slot="header"><span>扣除项合计金额</span><el-tooltip placement="top"><div slot="content" style="line-height:1.8;">扣除项合计金额计算规则：<br/>· 劳务：<br/>　代扣个人增值税<br/>　+ 代扣境内劳务个税<br/>　+ 代扣境外劳务个税<br/>· 对公：<br/>　发票税差金额</div><i class="el-icon-info" style="margin-left:4px;color:#999;"></i></el-tooltip></template>
+                            </el-table-column>
+                            <!-- 公共尾部 -->
+                            <el-table-column prop="actualAmount" label="实付金额" width="110">
+                                <template slot="header"><span>实付金额</span><el-tooltip placement="top"><div slot="content" style="line-height:1.8;">实付金额 = 应结算金额 − 扣除项合计金额</div><i class="el-icon-info" style="margin-left:4px;color:#999;"></i></el-tooltip></template>
+                                <template slot-scope="scope">
+                                    <span style="color:#fa8c16;font-weight:600;">{{ scope.row.actualAmount }}</span>
+                                </template>
+                            </el-table-column>
+                            <el-table-column prop="payStatus" label="付款状态" width="100">
+                                <template slot="header"><span>付款状态</span><el-tooltip placement="top"><div slot="content" style="line-height:1.8;">提现单付款状态：<br/>· 待付款：尚未完成付款<br/>· 已付款：银行返回记账成功</div><i class="el-icon-info" style="margin-left:4px;color:#999;"></i></el-tooltip></template>
+                                <template slot-scope="scope">
+                                    <el-tag size="mini" :type="scope.row.payStatus==='已付款' ? 'success' : 'info'">{{ scope.row.payStatus }}</el-tag>
+                                </template>
+                            </el-table-column>
+                            <el-table-column prop="payTime" label="付款时间" width="155">
+                                <template slot="header"><span>付款时间</span><el-tooltip placement="top"><div slot="content" style="line-height:1.8;">银行返回实际记账时间：<br/>· 仅打款成功后填充<br/>· 未打款与处理中订单为 -<br/>· 格式：yyyy-MM-dd HH:mm</div><i class="el-icon-info" style="margin-left:4px;color:#999;"></i></el-tooltip></template>
+                            </el-table-column>
+                            <el-table-column label="操作" width="70" fixed="right">
+                                <template slot-scope="scope"><el-button size="mini" type="text" @click="showWithdrawDetail(scope.row)">详情</el-button></template>
+                            </el-table-column>
+                        </el-table>
+                    </el-card>
+                </div>
+
+                <!-- ========== 打款列表 ========== -->
+                <div v-show="activePage==='pay-list'">
+                    <el-card>
+                        <div slot="header" style="display:flex;justify-content:space-between;align-items:center;">
+                            <span style="font-weight:600;">打款列表</span>
+                            <el-button size="small" icon="el-icon-download" @click="$message.success('导出Excel')">导出</el-button>
+                        </div>
+                        <!-- 筛选条件 -->
+                        <el-form :inline="true" size="small" label-width="75px" class="wl-filter-form" style="margin-bottom:8px;">
+                            <el-form-item label="付款编号">
+                                <el-input v-model="plFilterNo" placeholder="付款编号" clearable style="width:180px;"></el-input>
+                            </el-form-item>
+                            <el-form-item label="生成时间">
+                                <el-date-picker v-model="plFilterDateRange" type="datetimerange" range-separator="至" start-placeholder="开始时间" end-placeholder="结束时间" style="width:360px;" value-format="yyyy-MM-dd HH:mm:ss"></el-date-picker>
+                            </el-form-item>
+                            <el-form-item label="劳务/对公">
+                                <el-select v-model="plFilterTaxType" placeholder="劳务/对公" clearable style="width:130px;">
+                                    <el-option label="劳务" value="劳务"></el-option>
+                                    <el-option label="对公" value="对公"></el-option>
+                                </el-select>
+                            </el-form-item>
+                            <el-form-item label="业务线">
+                                <el-select v-model="plFilterBizLine" placeholder="业务线" clearable style="width:130px;">
+                                    <el-option label="此刻咨询" value="此刻咨询"></el-option>
+                                    <el-option label="初心咨询" value="初心咨询"></el-option>
+                                </el-select>
+                            </el-form-item>
+                            <el-form-item label-width="0">
+                                <el-button type="primary" icon="el-icon-search" @click="$message.info('搜索')"><span>搜索</span></el-button>
+                                <el-button icon="el-icon-refresh-left" @click="plResetFilter"><span>重置</span></el-button>
+                            </el-form-item>
+                        </el-form>
+                        <el-table :data="plFilteredData" border stripe size="small" style="width:100%;" class="wl-table" :header-cell-style="{background:'#fafafa'}" show-summary :summary-method="getPlSummaries">
+                            <el-table-column label="操作" width="160" fixed="left">
+                                <template slot-scope="scope">
+                                    <el-button size="mini" type="text" @click="openDownloadDialog(scope.row)">下载打款单</el-button>
+                                    <el-button size="mini" type="text" @click="viewWithdrawList(scope.row)">查看提现单</el-button>
+                                    <div v-if="scope.row.payStatus==='待打款'" style="margin-top:4px;">
+                                        <el-button size="mini" type="warning" plain icon="el-icon-check" @click="openPlPayConfirm(scope.row)">修改为已打款</el-button>
+                                    </div>
+                                </template>
+                            </el-table-column>
+                            <el-table-column prop="index" label="序号" width="55" fixed="left"></el-table-column>
+                            <el-table-column prop="payNo" label="付款编号" width="175"></el-table-column>
+                            <el-table-column prop="payStatus" label="打款状态" width="90">
+                                <template slot-scope="scope">
+                                    <el-tag size="mini" :type="scope.row.payStatus==='已打款'?'success':'warning'">{{ scope.row.payStatus }}</el-tag>
+                                </template>
+                            </el-table-column>
+                            <el-table-column prop="createTime" label="生成时间" width="155"></el-table-column>
+                            <el-table-column prop="taxType" label="劳务/对公" width="90">
+                                <template slot-scope="scope">
+                                    <el-tag size="mini" :type="scope.row.taxType==='劳务'?'success':'primary'">{{ scope.row.taxType }}</el-tag>
+                                </template>
+                            </el-table-column>
+                            <el-table-column prop="bizLine" label="业务线" width="100"></el-table-column>
+                            <el-table-column prop="totalAmount" label="应结算金额" width="100">
+                                <template slot-scope="scope"><span style="color:#fa8c16;font-weight:600;">{{ scope.row.totalAmount }}</span></template>
+                            </el-table-column>
+                            <el-table-column prop="laborVat" label="代扣个人增值税" width="125"></el-table-column>
+                            <el-table-column prop="personalTax" label="代扣境内劳务个税" width="130"></el-table-column>
+                            <el-table-column prop="overseasTax" label="代扣境外劳务个税" width="130"></el-table-column>
+                            <el-table-column prop="pubTaxDiff" label="发票税差金额" width="115"></el-table-column>
+                            <el-table-column prop="deductTotal" label="扣除项合计金额" width="125">
+                                <template slot="header"><span>扣除项合计金额</span><el-tooltip placement="top"><div slot="content" style="line-height:1.8;">扣除项合计金额计算规则：<br/>· 劳务：<br/>　代扣个人增值税<br/>　+ 代扣境内劳务个税<br/>　+ 代扣境外劳务个税<br/>· 对公：<br/>　发票税差金额</div><i class="el-icon-info" style="margin-left:4px;color:#999;"></i></el-tooltip></template>
+                            </el-table-column>
+                            <el-table-column prop="payAmount" label="付款金额" width="100">
+                                <template slot-scope="scope"><span style="color:#fa8c16;font-weight:600;">{{ scope.row.payAmount }}</span></template>
+                            </el-table-column>
+                            <el-table-column prop="invoiceExclTax" label="发票不含税金额" width="125"></el-table-column>
+                            <el-table-column prop="invoiceVat" label="专票增值税" width="110"></el-table-column>
+                            <el-table-column prop="operator" label="操作人" width="160"></el-table-column>
+                        </el-table>
+                    </el-card>
+                </div>
+
+                <!-- ========== 结算特殊设置 ========== -->
+                <div v-show="activePage==='settle-config'">
+                    <el-card>
+                        <div slot="header" style="display:flex;justify-content:space-between;align-items:center;">
+                            <span style="font-weight:600;">结算特殊设置</span>
+                            <el-button size="small" type="primary" icon="el-icon-plus" @click="settleAddVisible = true">新增</el-button>
+                        </div>
+                        <el-table :data="settleConfigData" border stripe size="small" style="width:100%;" :header-cell-style="{background:'#fafafa'}">
+                            <el-table-column type="index" label="序号" width="60" align="center"></el-table-column>
+                            <el-table-column prop="type" label="类型" width="140">
+                                <template slot="header"><span>类型</span><el-tooltip content="结算特殊设置的类型：优惠劵、兑换码、咨询服务" placement="top"><i class="el-icon-info" style="margin-left:4px;color:#999;"></i></el-tooltip></template>
+                            </el-table-column>
+                            <el-table-column prop="name" label="名称" min-width="220"></el-table-column>
+                            <el-table-column prop="realIncome" label="实际计酬收入" width="150">
+                                <template slot="header"><span>实际计酬收入</span><el-tooltip content="该字段对应的特殊计酬收入金额" placement="top"><i class="el-icon-info" style="margin-left:4px;color:#999;"></i></el-tooltip></template>
+                                <template slot-scope="scope">
+                                    <span style="color:#fa8c16;font-weight:600;">{{ scope.row.realIncome }}</span>
+                                </template>
+                            </el-table-column>
+                        </el-table>
+                    </el-card>
+                </div>
+
+            </el-main>
+        </el-container>
+    </el-container>
+
+    <!-- 结算特殊设置-新增弹窗 -->
+    <el-dialog title="新增结算特殊设置" :visible.sync="settleAddVisible" width="520px">
+        <el-form :model="settleAddForm" label-width="120px" size="small">
+            <el-form-item label="类型">
+                <el-select v-model="settleAddForm.type" placeholder="请选择类型" style="width:100%;">
+                    <el-option label="优惠劵" value="优惠劵"></el-option>
+                    <el-option label="兑换码" value="兑换码"></el-option>
+                    <el-option label="咨询服务" value="咨询服务"></el-option>
+                </el-select>
+            </el-form-item>
+            <el-form-item label="名称">
+                <el-select v-model="settleAddForm.name" placeholder="请选择名称" filterable style="width:100%;">
+                    <el-option label="4次深度咨询×名师带练「情绪日记」" value="4次深度咨询×名师带练「情绪日记」"></el-option>
+                    <el-option label="单次咨询服务" value="单次咨询服务"></el-option>
+                    <el-option label="5次咨询·成长套餐" value="5次咨询·成长套餐"></el-option>
+                    <el-option label="新人优惠券" value="新人优惠券"></el-option>
+                    <el-option label="满减优惠券" value="满减优惠券"></el-option>
+                    <el-option label="课程兑换码" value="课程兑换码"></el-option>
+                    <el-option label="会员兑换码" value="会员兑换码"></el-option>
+                </el-select>
+            </el-form-item>
+            <el-form-item label="实际计酬收入">
+                <el-input v-model="settleAddForm.realIncome" placeholder="请输入金额">
+                    <template slot="prepend">&#165;</template>
+                </el-input>
+                <div style="color:#f56c6c;font-size:12px;line-height:1.6;margin-top:6px;">
+                    <i class="el-icon-warning" style="margin-right:4px;"></i>实际计酬收入为 0 的，按常规逻辑计算；不为 0 的，以预设配置值为准，请谨慎配置
+                </div>
+            </el-form-item>
+        </el-form>
+        <span slot="footer">
+            <el-button @click="settleAddVisible = false">取消</el-button>
+            <el-button type="primary" @click="confirmSettleAdd">确认新增</el-button>
+        </span>
+    </el-dialog>
+
+    <!-- 下载打款单弹窗 -->
+    <el-dialog title="下载打款单" :visible.sync="downloadDialogVisible" width="580px">
+        <div v-if="downloadDialogRow">
+            <div style="margin-bottom:14px;display:flex;align-items:center;gap:12px;">
+                <span style="font-size:13px;color:#606266;">付款编号：<strong>{{ downloadDialogRow.payNo }}</strong></span>
+                <el-tag size="small" :type="downloadDialogRow.taxType==='劳务'?'success':'primary'">{{ downloadDialogRow.taxType }}</el-tag>
+            </div>
+            <!-- 劳务场景 -->
+            <template v-if="downloadDialogRow.taxType==='劳务'">
+                <div style="margin-bottom:10px;">
+                    <div style="font-size:13px;font-weight:600;color:#303133;margin-bottom:8px;"><i class="el-icon-printer" style="margin-right:5px;color:#1890ff;"></i>结算专员需上传合思以及需要打印的文件</div>
+                    <div style="padding:0 14px;background:#f5f7fa;border-radius:4px;">
+                        <div v-for="(f,i) in dlLaborPrint" :key="'lp'+i" style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #ebeef5;">
+                            <span style="font-size:13px;"><i :class="f.icon" style="margin-right:6px;color:#909399;"></i>{{ f.name }}</span>
+                            <el-button size="mini" type="primary" plain @click="$message.success('开始下载：'+f.name)">下载</el-button>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <div style="font-size:13px;font-weight:600;color:#303133;margin-bottom:8px;"><i class="el-icon-download" style="margin-right:5px;color:#52c41a;"></i>财务人员自行下载</div>
+                    <div style="padding:0 14px;background:#f5f7fa;border-radius:4px;">
+                        <div v-for="(f,i) in dlLaborDownload" :key="'ld'+i" style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #ebeef5;">
+                            <span style="font-size:13px;"><i :class="f.icon" style="margin-right:6px;color:#909399;"></i>{{ f.name }}</span>
+                            <el-button size="mini" type="success" plain @click="$message.success('开始下载：'+f.name)">下载</el-button>
+                        </div>
+                    </div>
+                </div>
+            </template>
+            <!-- 对公场景 -->
+            <template v-if="downloadDialogRow.taxType==='对公'">
+                <div style="margin-bottom:10px;">
+                    <div style="font-size:13px;font-weight:600;color:#303133;margin-bottom:8px;"><i class="el-icon-printer" style="margin-right:5px;color:#1890ff;"></i>结算专员需上传合思以及需要打印的文件</div>
+                    <div style="padding:0 14px;background:#f5f7fa;border-radius:4px;">
+                        <div v-for="(f,i) in dlPubPrint" :key="'pp'+i" style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #ebeef5;">
+                            <span style="font-size:13px;"><i :class="f.icon" style="margin-right:6px;color:#909399;"></i>{{ f.name }}</span>
+                            <el-button size="mini" type="primary" plain @click="$message.success('开始下载：'+f.name)">下载</el-button>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <div style="font-size:13px;font-weight:600;color:#303133;margin-bottom:8px;"><i class="el-icon-download" style="margin-right:5px;color:#52c41a;"></i>财务人员自行下载</div>
+                    <div style="padding:0 14px;background:#f5f7fa;border-radius:4px;">
+                        <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;">
+                            <span style="font-size:13px;"><i class="el-icon-document" style="margin-right:6px;color:#909399;"></i>对公批量付款单</span>
+                            <el-button size="mini" type="success" plain @click="$message.success('开始下载：对公批量付款单')">下载</el-button>
+                        </div>
+                    </div>
+                </div>
+            </template>
+            <!-- 核对提示 -->
+            <div style="margin-top:14px;padding:10px 14px;background:#fffbe6;border:1px solid #ffe58f;border-radius:4px;font-size:13px;font-weight:600;color:#d48806;text-align:center;">
+                <i class="el-icon-warning" style="margin-right:6px;font-size:15px;"></i>请务必认真核对金额，再打印文件交给财务
+            </div>
+            <!-- 合规要求 -->
+            <div style="margin-top:14px;padding:10px 12px;background:#fffbe6;border:1px solid #ffe58f;border-radius:4px;font-size:12px;line-height:1.8;">
+                <div style="font-weight:600;color:#d48806;margin-bottom:4px;"><i class="el-icon-warning" style="margin-right:4px;"></i>重要合规要求</div>
+                <div style="color:#614700;">根据相关法律及财务合规要求，账户名称规则如下：</div>
+                <div style="color:#614700;padding-left:8px;">
+                    · 劳务个人：收款账户名称须与<strong>证件姓名</strong>一致<br/>
+                    · 个体工商户：收款账户名称仅限经营者（法人）姓名或乙方主体名称<br/>
+                    · 企业类公司：收款账户名称必须为<strong>乙方企业全称</strong>
+                </div>
+            </div>
+            <!-- 注意事项 -->
+            <div style="margin-top:10px;padding:10px 12px;background:#fff2f0;border:1px solid #ffccc7;border-radius:4px;font-size:12px;line-height:1.8;color:#cf1322;">
+                <i class="el-icon-warning-outline" style="margin-right:4px;"></i><strong>注意事项：</strong>打款单生成后，严禁擅自修改任何信息。例如将"林肖"改为其亲属"晓明"等代收款行为，均不符合规定，坚决不允许。
+            </div>
+        </div>
+        <span slot="footer">
+            <el-button @click="downloadDialogVisible = false">关闭</el-button>
+            <el-button type="success" icon="el-icon-download" @click="$message.success('开始打包下载全部文件：' + (downloadDialogRow ? downloadDialogRow.payNo : ''))">下载全部</el-button>
+        </span>
+    </el-dialog>
+
+    <!-- 打款列表确认打款弹窗 -->
+    <el-dialog title="确认修改打款状态" :visible.sync="plPayConfirmVisible" width="400px">
+        <div v-if="plPayConfirmRow" style="line-height:1.8;color:#606266;">
+            <div style="margin-bottom:10px;">将付款编号 <strong style="color:#409eff;">{{ plPayConfirmRow.payNo }}</strong> 的状态修改为 <strong style="color:#52c41a;">已打款</strong>。</div>
+            <div style="font-size:12px;color:#909399;">
+                · 业务线：{{ plPayConfirmRow.bizLine }}　劳务/对公：{{ plPayConfirmRow.taxType }}<br/>
+                · 付款金额：{{ plPayConfirmRow.payAmount }}
+            </div>
+            <div style="margin-top:10px;padding:8px 10px;background:#e6f7ff;border:1px solid #91d5ff;border-radius:4px;font-size:12px;color:#096dd9;line-height:1.7;">
+                <i class="el-icon-info" style="margin-right:4px;"></i>操作成功后，老师可看到自己的结算单状态从「提现中」变为「已提现」
+            </div>
+        </div>
+        <span slot="footer">
+            <el-button @click="plPayConfirmVisible = false">取消</el-button>
+            <el-button type="primary" @click="confirmPlPay">确认已打款</el-button>
+        </span>
+    </el-dialog>
+
+    <!-- 审核详情弹窗 -->
+    <el-dialog title="提现审核详情" :visible.sync="auditDetailVisible" width="500px">
+        <el-descriptions :column="1" border v-if="currentAuditRow">
+            <el-descriptions-item label="申请编号">{{ currentAuditRow.id }}</el-descriptions-item>
+            <el-descriptions-item label="申请人">{{ currentAuditRow.name }}</el-descriptions-item>
+            <el-descriptions-item label="业务线">{{ currentAuditRow.biz }}</el-descriptions-item>
+            <el-descriptions-item label="提现金额">{{ currentAuditRow.amount }}</el-descriptions-item>
+            <el-descriptions-item label="实收金额">{{ currentAuditRow.realAmount }}</el-descriptions-item>
+            <el-descriptions-item label="申请时间">{{ currentAuditRow.time }}</el-descriptions-item>
+            <el-descriptions-item label="状态">{{ currentAuditRow.status }}</el-descriptions-item>
+        </el-descriptions>
+        <span slot="footer">
+            <el-button @click="auditDetailVisible=false">关闭</el-button>
+            <el-button type="danger" v-if="currentAuditRow&&currentAuditRow.status==='待审核'" @click="auditReject(currentAuditRow);auditDetailVisible=false">拒绝</el-button>
+            <el-button type="success" v-if="currentAuditRow&&currentAuditRow.status==='待审核'" @click="auditPass(currentAuditRow);auditDetailVisible=false">通过</el-button>
+        </span>
+    </el-dialog>
+
+    <!-- 提现付款单详情弹窗 -->
+    <el-dialog title="提现付款单" :visible.sync="withdrawDetailVisible" width="1200px" top="5vh" custom-class="withdraw-detail-dialog">
+        <div v-if="currentWithdrawRow" class="wd-detail">
+            <!-- 头部基本信息 -->
+            <div class="wd-header">
+                <div class="wd-header-title">{{ currentWithdrawRow._companyName }}<span class="wd-header-tag">提现付款单</span></div>
+                <div class="wd-header-grid">
+                    <div class="wd-cell"><label>付款单类型</label><span>提现付款单</span></div>
+                    <div class="wd-cell"><label>单据编号</label><span>{{ currentWithdrawRow.withdrawNo }}</span></div>
+                    <div class="wd-cell"><label>单据生成日期</label><span>{{ currentWithdrawRow.time }}</span></div>
+                    <div class="wd-cell"><label>实付金额</label><span style="color:#fa8c16;font-weight:600;">{{ currentWithdrawRow.actualAmount }}</span></div>
+                    <div class="wd-cell"><label>金额大写</label><span>{{ currentWithdrawRow._amountCN }}</span></div>
+                    <div class="wd-cell"><label>付款时间</label><span>{{ currentWithdrawRow._payTime }}</span></div>
+                </div>
+            </div>
+
+            <!-- 收款方信息 -->
+            <div class="wd-section">
+                <div class="wd-section-title" style="display:flex;align-items:center;justify-content:space-between;padding-right:14px;">
+                    <span>收款方信息</span>
+                    <el-button type="primary" size="mini" plain icon="el-icon-refresh" @click="syncPayeeInfo" style="font-weight:normal;">同步最新收款信息</el-button>
+                </div>
+                <div style="padding:10px 18px;background:#fafbfc;border-bottom:1px solid #ebeef5;color:#606266;font-size:12px;">
+                    <i class="el-icon-user" style="margin-right:6px;color:#1890ff;"></i>
+                    <span style="margin-right:24px;">证件姓名：<strong style="color:#303133;">{{ currentWithdrawRow.certName }}</strong></span>
+                    <span>证件号：<strong style="color:#303133;">{{ currentWithdrawRow.certNo }}</strong></span>
+                </div>
+                <table class="wd-table">
+                    <thead><tr><th>账户类型</th><th>收款账户名称</th><th>账号</th><th>联行号</th><th>开户支行</th><th>开户行</th><th>开户地</th></tr></thead>
+                    <tbody><tr>
+                        <td>银行卡</td>
+                        <td>{{ currentWithdrawRow.partner }}</td>
+                        <td>{{ currentWithdrawRow._payeeAccount }}</td>
+                        <td>{{ currentWithdrawRow._payeeBankCode }}</td>
+                        <td>{{ currentWithdrawRow._payeeBankBranch }}</td>
+                        <td>{{ currentWithdrawRow._payeeBank }}</td>
+                        <td>{{ currentWithdrawRow._payeeArea }}</td>
+                    </tr></tbody>
+                </table>
+            </div>
+
+            <!-- 劳务税费计算 -->
+            <div class="wd-section" v-if="currentWithdrawRow.taxType==='劳务报酬个税'">
+                <div class="wd-section-title">劳务税费计算</div>
+                <table class="wd-table">
+                    <thead><tr>
+                        <th>账单数量</th>
+                        <th>应结算金额</th>
+                        <th>代扣个人增值税</th>
+                        <th>代扣境内劳务个税</th>
+                        <th>代扣境外劳务个税</th>
+                        <th>扣除项合计金额</th>
+                        <th>实付金额</th>
+                    </tr></thead>
+                    <tbody><tr>
+                        <td><span style="color:#1890ff;font-weight:600;">{{ currentWithdrawRow.billNum }} 笔</span></td>
+                        <td><span style="color:#fa8c16;font-weight:600;">{{ currentWithdrawRow.receivable }}</span></td>
+                        <td>{{ currentWithdrawRow.vatTax }}</td>
+                        <td>{{ currentWithdrawRow.domesticTax }}</td>
+                        <td>{{ currentWithdrawRow.overseasTax }}</td>
+                        <td>{{ currentWithdrawRow.deductTotal }}</td>
+                        <td><span style="color:#fa8c16;font-weight:600;">{{ currentWithdrawRow.actualAmount }}</span></td>
+                    </tr></tbody>
+                </table>
+            </div>
+
+            <!-- 对公发票税差计算 -->
+            <div class="wd-section" v-if="currentWithdrawRow.taxType==='公对公增值税'">
+                <div class="wd-section-title">对公发票税差计算</div>
+                <table class="wd-table">
+                    <thead><tr><th>账单数量</th><th>结算金额（元）</th><th>专票税率</th><th>扣除税点</th><th>发票税差金额</th><th>扣除项合计金额</th><th>实付金额</th></tr></thead>
+                    <tbody><tr>
+                        <td><span style="color:#1890ff;font-weight:600;">{{ currentWithdrawRow.billNum }} 笔</span></td>
+                        <td>{{ currentWithdrawRow.receivable }}</td>
+                        <td>{{ currentWithdrawRow.invoiceRate }}</td>
+                        <td>{{ currentWithdrawRow.deductPoint }}</td>
+                        <td>{{ currentWithdrawRow.invoiceDiff }}</td>
+                        <td>{{ currentWithdrawRow.deductTotal }}</td>
+                        <td><span style="color:#fa8c16;font-weight:600;">{{ currentWithdrawRow.actualAmount }}</span></td>
+                    </tr></tbody>
+                </table>
+            </div>
+
+            <!-- 对公发票信息 -->
+            <div class="wd-section" v-if="currentWithdrawRow.taxType==='公对公增值税' && currentWithdrawRow._invoices && currentWithdrawRow._invoices.length">
+                <div class="wd-section-title">对公发票信息<el-tooltip placement="right"><div slot="content" style="line-height:1.9;max-width:360px;">字段取值均来自发票识别<br/>· <strong>普票</strong>：专票增值税 = 0；发票不含税金额 = 发票含税金额，对应发票「价税合计」字段<br/>· <strong>专票</strong>：专票增值税对应发票「税额」；发票不含税金额对应「金额」；发票含税金额对应「价税合计」</div><i class="el-icon-info" style="margin-left:6px;color:#999;font-size:13px;vertical-align:middle;"></i></el-tooltip></div>
+                <div style="overflow-x:auto;">
+                <table class="wd-table" style="min-width:1050px;">
+                    <thead><tr>
+                        <th style="width:70px;">发票原件</th>
+                        <th style="width:200px;">销售方名称</th>
+                        <th style="width:170px;">销售方纳税人识别号</th>
+                        <th style="width:180px;">发票类型</th>
+                        <th style="width:130px;">发票不含税金额（元）</th>
+                        <th style="width:120px;">专票增值税（元）</th>
+                        <th style="width:130px;">发票含税金额（元）</th>
+                        <th style="width:170px;">发票号码</th>
+                    </tr></thead>
+                    <tbody>
+                        <tr v-for="(inv, idx) in currentWithdrawRow._invoices" :key="idx">
+                            <td><i class="el-icon-document" style="font-size:22px;color:#1890ff;cursor:pointer;" @click="$message.success('预览发票原件')"></i></td>
+                            <td style="text-align:left;">{{ inv.seller }}</td>
+                            <td>{{ inv.sellerTaxNo }}</td>
+                            <td style="text-align:left;">{{ inv.kind }}</td>
+                            <td>{{ inv.amountExclTax }}</td>
+                            <td>{{ inv.deductibleVat }}</td>
+                            <td>{{ inv.amountInclTax }}</td>
+                            <td>{{ inv.no }}</td>
+                        </tr>
+                        <tr class="wd-table-sum">
+                            <td colspan="4">合计</td>
+                            <td>{{ currentWithdrawRow._invoiceSumExcl }}</td>
+                            <td>{{ currentWithdrawRow._invoiceSumVat }}</td>
+                            <td><strong style="color:#fa8c16;">{{ currentWithdrawRow._invoiceTotal }}</strong></td>
+                            <td></td>
+                        </tr>
+                    </tbody>
+                </table>
+                </div>
+            </div>
+        </div>
+        <span slot="footer">
+            <el-button @click="withdrawDetailVisible=false">关闭</el-button>
+            <el-button type="primary" @click="$message.success('导出PDF')">导出PDF</el-button>
+        </span>
+    </el-dialog>
+</div>
+
+<!-- Vue2 + Element UI JS -->
+<script src="https://unpkg.com/vue@2.7.16/dist/vue.min.js"></script>
+<script src="https://unpkg.com/element-ui@2.15.14/lib/index.js"></script>
+<script>
+new Vue({
+    el: '#app',
+    data() {
+        return {
+            activePage: 'withdraw-list',
+            auditSearch: '',
+            flowDateRange: [],
+            wlFilterTax: '',
+            wlFilterRegion: '',
+            wlFilterCertType: '',
+            wlFilterBizLine: '',
+            wlFilterPayNo: '',
+            wlFilterPayStatus: '',
+            wlFilterPartner: '',
+            wlFilterKeyword: '',
+            wlFilterDateRange: [],
+            wlFilterPeriodRange: [],
+            wlSelected: [],
+            plPayConfirmVisible: false,
+            plPayConfirmRow: null,
+            downloadDialogVisible: false,
+            downloadDialogRow: null,
+            dlLaborPrint: [
+                { name: '成本表', icon: 'el-icon-s-order' },
+                { name: '劳务结算明细', icon: 'el-icon-tickets' },
+            ],
+            dlLaborDownload: [
+                { name: '劳务代发付款单', icon: 'el-icon-document' },
+                { name: '支付宝批量付款单', icon: 'el-icon-wallet' },
+                { name: '提现单列表', icon: 'el-icon-s-grid' },
+            ],
+            dlPubPrint: [
+                { name: '成本表', icon: 'el-icon-s-order' },
+                { name: '对公结算明细', icon: 'el-icon-tickets' },
+                { name: '全部发票', icon: 'el-icon-s-ticket' },
+                { name: '专用发票', icon: 'el-icon-s-ticket' },
+            ],
+            plFilterNo: '',
+            plFilterDateRange: [],
+            plFilterTaxType: '',
+            plFilterBizLine: '',
+            plAllData: [
+                { index: 1,  payNo: 'LW20260623115019', createTime: '2026-06-23 11:50:19', taxType: '劳务',  payStatus: '已打款',  bizLine: '此刻咨询', totalAmount: 2370,     laborVat: 0, personalTax: 224,     overseasTax: 0,       pubTaxDiff: 0,       deductTotal: 224,     payAmount: 2146,     invoiceExclTax: 0,        invoiceVat: 0,     operator: '张晓霞' },
+                { index: 2,  payNo: 'DG20260623112323', createTime: '2026-06-23 11:23:24', taxType: '对公',  payStatus: '已打款',  bizLine: '初心咨询', totalAmount: 3958.11,  laborVat: 0, personalTax: 0,       overseasTax: 0,       pubTaxDiff: 186.7,   deductTotal: 186.7,   payAmount: 3771.41,  invoiceExclTax: 3734.07,  invoiceVat: 37.34, operator: '吴和欣' },
+                { index: 3,  payNo: 'LW20260623110721', createTime: '2026-06-23 11:07:22', taxType: '劳务',  payStatus: '已打款',  bizLine: '此刻咨询', totalAmount: 8737.68,  laborVat: 0, personalTax: 1055.04, overseasTax: 0,       pubTaxDiff: 0,       deductTotal: 1055.04, payAmount: 7682.64,  invoiceExclTax: 0,        invoiceVat: 0,     operator: '张晓霞' },
+                { index: 4,  payNo: 'LW20260623110316', createTime: '2026-06-23 11:03:17', taxType: '劳务',  payStatus: '已打款',  bizLine: '初心咨询', totalAmount: 9800,     laborVat: 0, personalTax: 1160,    overseasTax: 0,       pubTaxDiff: 0,       deductTotal: 1160,    payAmount: 8640,     invoiceExclTax: 0,        invoiceVat: 0,     operator: '吴和欣' },
+                { index: 5,  payNo: 'DG20260623104221', createTime: '2026-06-23 10:42:22', taxType: '对公',  payStatus: '已打款',  bizLine: '此刻咨询', totalAmount: 62585.17, laborVat: 0, personalTax: 0,       overseasTax: 0,       pubTaxDiff: 1291.88, deductTotal: 1291.88, payAmount: 61293.29, invoiceExclTax: 60884.72, invoiceVat: 408.57, operator: '张晓霞' },
+                { index: 6,  payNo: 'LW20260623103831', createTime: '2026-06-23 10:38:33', taxType: '劳务',  payStatus: '待打款',  bizLine: '初心咨询', totalAmount: 13050,    laborVat: 0, personalTax: 1970,    overseasTax: 0,       pubTaxDiff: 0,       deductTotal: 1970,    payAmount: 11080,    invoiceExclTax: 0,        invoiceVat: 0,     operator: '吴和欣' },
+                { index: 7,  payNo: 'LW20260623093948', createTime: '2026-06-23 09:39:50', taxType: '劳务',  payStatus: '待打款',  bizLine: '此刻咨询', totalAmount: 16650,    laborVat: 0, personalTax: 2450,    overseasTax: 0,       pubTaxDiff: 0,       deductTotal: 2450,    payAmount: 14200,    invoiceExclTax: 0,        invoiceVat: 0,     operator: '张晓霞' },
+                { index: 8,  payNo: 'LW20260616111044', createTime: '2026-06-16 11:10:45', taxType: '劳务',  payStatus: '待打款',  bizLine: '初心咨询', totalAmount: 15600,    laborVat: 0, personalTax: 2280,    overseasTax: 0,       pubTaxDiff: 0,       deductTotal: 2280,    payAmount: 13320,    invoiceExclTax: 0,        invoiceVat: 0,     operator: '吴和欣' },
+                { index: 9,  payNo: 'LW20260616110156', createTime: '2026-06-16 11:01:57', taxType: '劳务',  payStatus: '待打款',  bizLine: '此刻咨询', totalAmount: 20200,    laborVat: 0, personalTax: 2960,    overseasTax: 0,       pubTaxDiff: 0,       deductTotal: 2960,    payAmount: 17240,    invoiceExclTax: 0,        invoiceVat: 0,     operator: '张晓霞' },
+                { index: 10, payNo: 'LW20260616102216', createTime: '2026-06-16 10:22:17', taxType: '劳务',  payStatus: '待打款',  bizLine: '初心咨询', totalAmount: 31259.36, laborVat: 0, personalTax: 4407.41, overseasTax: 0,       pubTaxDiff: 0,       deductTotal: 4407.41, payAmount: 26851.95, invoiceExclTax: 0,        invoiceVat: 0,     operator: '吴和欣' },
+            ],
+            auditDetailVisible: false,
+            currentAuditRow: null,
+            withdrawDetailVisible: false,
+            currentWithdrawRow: null,
+
+            // 提现审核数据
+            auditTableData: [
+                { id: 'WD20260610001', name: '张老师', biz: '咨询业务', amount: '¥1,520.54', realAmount: '¥1,448.49', time: '2026-06-10 09:23:15', status: '待审核' },
+                { id: 'WD20260610002', name: '李老师', biz: '咨询业务', amount: '¥860.00', realAmount: '¥829.90', time: '2026-06-10 08:15:22', status: '待审核' },
+                { id: 'WD20260609003', name: '王老师', biz: '直播业务', amount: '¥2,100.00', realAmount: '¥1,680.00', time: '2026-06-09 16:40:33', status: '已通过' },
+                { id: 'WD20260609004', name: '赵老师', biz: '咨询业务', amount: '¥450.00', realAmount: '¥432.50', time: '2026-06-09 14:10:08', status: '已通过' },
+                { id: 'WD20260608005', name: '刘老师', biz: '咨询业务', amount: '¥3,200.00', realAmount: '¥2,890.00', time: '2026-06-08 10:05:44', status: '已拒绝' },
+            ],
+            // 打款管理数据
+            paymentTableData: [
+                { id: 'PY20260610001', name: '王老师', account: '支付宝 138****5678', amount: '¥1,680.00', status: '待打款', time: '2026-06-09 17:00:00' },
+                { id: 'PY20260610002', name: '赵老师', account: '银行卡 6222****9012', amount: '¥432.50', status: '待打款', time: '2026-06-09 15:30:00' },
+                { id: 'PY20260608003', name: '陈老师', account: '支付宝 139****3456', amount: '¥1,200.00', status: '已打款', time: '2026-06-08 11:00:00' },
+            ],
+            // 资金流水数据
+            flowTableData: [
+                { time: '2026-06-10 09:23:15', type: '提现申请', desc: '张老师提现 ¥1,520.54', amount: '-¥1,520.54', balance: '¥52,340.00' },
+                { time: '2026-06-09 17:00:00', type: '打款', desc: '王老师打款 ¥1,680.00', amount: '-¥1,680.00', balance: '¥53,860.54' },
+                { time: '2026-06-09 02:00:00', type: '结算入账', desc: '6月结算批次入账', amount: '+¥12,500.00', balance: '¥55,540.54' },
+            ],
+            // 财务报表数据
+            reportTableData: [
+                { month: '2026-06', totalIncome: '¥128,500', totalWithdraw: '¥95,200', totalTax: '¥8,540', actualPay: '¥86,660', profit: '¥41,840' },
+                { month: '2026-05', totalIncome: '¥115,800', totalWithdraw: '¥88,600', totalTax: '¥7,890', actualPay: '¥80,710', profit: '¥35,090' },
+                { month: '2026-04', totalIncome: '¥105,200', totalWithdraw: '¥82,100', totalTax: '¥7,120', actualPay: '¥74,980', profit: '¥30,220' },
+            ],
+            // 结算配置数据
+            configTableData: [
+                { name: '结算周期', biz: '全部', value: '每月1号', desc: '每月1号凌晨2点自动更新收入金额' },
+                { name: '交易费率', biz: '咨询业务', value: '0%', desc: '当前咨询业务免收交易费' },
+                { name: '交易费率', biz: '直播业务', value: '5%', desc: '直播业务平台分成比例' },
+                { name: '到账时间', biz: '全部', value: '当月/次月15号', desc: '5号前提现本月15号到账，之后次月15号到账' },
+                { name: '最低提现金额', biz: '全部', value: '¥0.01', desc: '单次提现最低金额限制' },
+            ],
+            // 提现列表数据（劳务+对公合并）
+            // 提现号规则：TX开头，拼yyyyMMdd+6位随机数
+            // 证件类型枚举：中国大陆居民身份证/港澳居民居住证/台湾居民居住证/护照/港澳通行证/台湾通行证/外国人永久居留身份证
+            // 合作方规则：劳务显示证件姓名，对公显示公司名称
+            wlAllData: [
+                { index: 1, time: '2026-06-15 10:22:00', withdrawNo: 'TX20260615482103', period: '20260501-20260531', teacherId: '11539', certName: '张三', certNo: '440106198806221234', certType: '中国大陆居民身份证', taxType: '劳务报酬个税', region: '境内', partner: '张三', bizLine: '此刻咨询', orderActualAmount: '¥2,500.00', billNum: 12, receivable: '¥1,520.54', vatTax: '¥0.00', domesticTax: '¥72.05', overseasTax: '¥0.00', invoiceType: '-', invoiceDiff: '-', invoiceRate: '-', deductPoint: '-', deductTotal: '¥72.05', actualAmount: '¥1,448.49', payNo: 'LW20260615482103', payStatus: '已付款', payTime: '2026-06-15 11:30:00' },
+                { index: 2, time: '2026-06-14 14:05:30', withdrawNo: 'TX20260614915077', period: '20260501-20260531', teacherId: '12087', certName: '李四', certNo: '310115199204215678', certType: '中国大陆居民身份证', taxType: '劳务报酬个税', region: '境内', partner: '李四', bizLine: '初心咨询', orderActualAmount: '¥1,400.00', billNum: 8, receivable: '¥860.00', vatTax: '¥0.00', domesticTax: '¥30.10', overseasTax: '¥0.00', invoiceType: '-', invoiceDiff: '-', invoiceRate: '-', deductPoint: '-', deductTotal: '¥30.10', actualAmount: '¥829.90', payNo: 'LW20260614915077', payStatus: '已付款', payTime: '2026-06-14 15:20:00' },
+                { index: 3, time: '2026-06-13 09:18:44', withdrawNo: 'TX20260613360421', period: '20260501-20260531', teacherId: '13256', certName: 'WANG MING', certNo: 'P987659012', certType: '护照', taxType: '劳务报酬个税', region: '境外', partner: 'WANG MING', bizLine: '此刻咨询', orderActualAmount: '¥3,500.00', billNum: 15, receivable: '¥2,100.00', vatTax: '¥0.00', domesticTax: '¥0.00', overseasTax: '¥420.00', invoiceType: '-', invoiceDiff: '-', invoiceRate: '-', deductPoint: '-', deductTotal: '¥420.00', actualAmount: '¥1,680.00', payNo: '', payStatus: '待付款', payTime: '-' },
+                { index: 4, time: '2026-06-13 11:30:12', withdrawNo: 'TX20260613784529', period: '20260501-20260531', teacherId: '13892', certName: '陈佳琪', certNo: 'H05236783', certType: '港澳居民居住证', taxType: '劳务报酬个税', region: '境内', partner: '陈佳琪', bizLine: '初心咨询', orderActualAmount: '¥2,000.00', billNum: 10, receivable: '¥1,200.00', vatTax: '¥0.00', domesticTax: '¥42.00', overseasTax: '¥0.00', invoiceType: '-', invoiceDiff: '-', invoiceRate: '-', deductPoint: '-', deductTotal: '¥42.00', actualAmount: '¥1,158.00', payNo: '', payStatus: '待付款', payTime: '-' },
+                { index: 5, time: '2026-06-12 16:40:00', withdrawNo: 'TX20260612605812', period: '20260501-20260531', teacherId: '20005', certName: '陈志明', certNo: '91310115MA1K3XY2XZ', certType: '中国大陆居民身份证', taxType: '公对公增值税', region: '境内', partner: '上海心语心理咨询有限公司', bizLine: '此刻咨询', orderActualAmount: '¥8,500.00', billNum: 25, receivable: '¥5,000.00', vatTax: '-', domesticTax: '-', overseasTax: '-', invoiceType: '增值税专用发票', invoiceDiff: '¥283.02', invoiceRate: '6%', deductPoint: '0%', deductTotal: '¥283.02', actualAmount: '¥4,716.98', payNo: 'DG20260612605812', payStatus: '已付款', payTime: '2026-06-12 17:30:00' },
+                { index: 6, time: '2026-06-11 11:20:00', withdrawNo: 'TX20260611128345', period: '20260501-20260531', teacherId: '20012', certName: '赵丽', certNo: '91440101MA9UABC8XK', certType: '中国大陆居民身份证', taxType: '公对公增值税', region: '境内', partner: '广州初心心理咨询有限公司', bizLine: '此刻咨询', orderActualAmount: '¥5,200.00', billNum: 18, receivable: '¥3,200.00', vatTax: '-', domesticTax: '-', overseasTax: '-', invoiceType: '增值税普通发票', invoiceDiff: '¥31.68', invoiceRate: '1%', deductPoint: '6%', deductTotal: '¥31.68', actualAmount: '¥3,168.32', payNo: '', payStatus: '待付款', payTime: '-' },
+                { index: 7, time: '2026-06-10 09:55:30', withdrawNo: 'TX20260610973204', period: '20260501-20260531', teacherId: '20098', certName: '黄宇航', certNo: '91110105MA01QWE3X8', certType: '中国大陆居民身份证', taxType: '公对公增值税', region: '境内', partner: '北京同行心理咨询有限公司', bizLine: '初心咨询', orderActualAmount: '¥7,200.00', billNum: 20, receivable: '¥4,500.00', vatTax: '-', domesticTax: '-', overseasTax: '-', invoiceType: '增值税专用发票', invoiceDiff: '¥135.00', invoiceRate: '3%', deductPoint: '3%', deductTotal: '¥135.00', actualAmount: '¥4,365.00', payNo: 'DG20260610973204', payStatus: '已付款', payTime: '2026-06-10 11:00:00' },
+                { index: 8, time: '2026-06-09 14:10:25', withdrawNo: 'TX20260609546821', period: '20260501-20260531', teacherId: '20156', certName: 'David Chen', certNo: 'HK52340987', certType: '护照', taxType: '公对公增值税', region: '境外', partner: 'Mind Care Counseling Pte. Ltd.（新加坡）', bizLine: '初心咨询', orderActualAmount: '¥11,000.00', billNum: 30, receivable: '¥6,800.00', vatTax: '-', domesticTax: '-', overseasTax: '-', invoiceType: '境外收费凭证', invoiceDiff: '¥680.00', invoiceRate: '-', deductPoint: '10%', deductTotal: '¥680.00', actualAmount: '¥6,120.00', payNo: '', payStatus: '待付款', payTime: '-' },
+            ],
+            // 结算特殊设置
+            settleAddVisible: false,
+            settleAddForm: { type: '', name: '', realIncome: '' },
+            settleConfigData: [
+                { type: '咨询服务', name: '4次深度咨询×名师带练「情绪日记」', realIncome: '¥300.00' },
+                { type: '咨询服务', name: '单次咨询服务', realIncome: '¥560.00' },
+                { type: '优惠劵', name: '新人优惠券', realIncome: '-¥7.50' },
+            ],
+        };
+    },
+    computed: {
+        pageTitle() {
+            const map = { 'audit': '提现审核', 'payment': '打款管理', 'flow': '资金流水', 'report': '财务报表', 'config': '结算配置', 'withdraw-list': '提现列表', 'pay-list': '打款列表', 'settle-config': '结算特殊设置' };
+            return map[this.activePage] || '';
+        },
+        plFilteredData() {
+            let data = this.plAllData;
+            if (this.plFilterNo) data = data.filter(r => r.payNo.includes(this.plFilterNo));
+            if (this.plFilterDateRange && this.plFilterDateRange.length === 2) {
+                const [s, e] = this.plFilterDateRange;
+                data = data.filter(r => r.createTime >= s && r.createTime <= e);
+            }
+            if (this.plFilterTaxType) data = data.filter(r => r.taxType === this.plFilterTaxType);
+            if (this.plFilterBizLine) data = data.filter(r => r.bizLine === this.plFilterBizLine);
+            return data;
+        },
+        wlFilteredData() {
+            let data = this.wlAllData;
+            if (this.wlFilterDateRange && this.wlFilterDateRange.length === 2) {
+                const [s, e] = this.wlFilterDateRange;
+                data = data.filter(r => {
+                    const d = (r.time || '').slice(0, 19);
+                    return d >= s && d <= e;
+                });
+            }
+            if (this.wlFilterPeriodRange && this.wlFilterPeriodRange.length === 2) {
+                const [s, e] = this.wlFilterPeriodRange;
+                data = data.filter(r => {
+                    const p = (r.period || '').split('-');
+                    if (p.length !== 2) return false;
+                    return !(p[1] < s || p[0] > e); // 区间重叠
+                });
+            }
+            if (this.wlFilterTax) data = data.filter(r => r.taxType === this.wlFilterTax);
+            if (this.wlFilterRegion) data = data.filter(r => r.region === this.wlFilterRegion);
+            if (this.wlFilterCertType) data = data.filter(r => r.certType === this.wlFilterCertType);
+            if (this.wlFilterBizLine) data = data.filter(r => r.bizLine === this.wlFilterBizLine);
+            if (this.wlFilterPayStatus) data = data.filter(r => r.payStatus === this.wlFilterPayStatus);
+            if (this.wlFilterPayNo) data = data.filter(r => (r.payNo || '').includes(this.wlFilterPayNo));
+            if (this.wlFilterPartner) data = data.filter(r => r.partner.includes(this.wlFilterPartner));
+            if (this.wlFilterKeyword) {
+                const kw = this.wlFilterKeyword.toLowerCase();
+                data = data.filter(r => r.teacherId.toLowerCase().includes(kw) || r.certName.toLowerCase().includes(kw) || r.withdrawNo.toLowerCase().includes(kw));
+            }
+            return data;
+        }
+    },
+    methods: {
+        handleMenuSelect(index) {
+            this.activePage = index;
+        },
+        showAuditDetail(row) {
+            this.currentAuditRow = row;
+            this.auditDetailVisible = true;
+        },
+        auditPass(row) {
+            row.status = '已通过';
+            this.$message.success('审核通过');
+        },
+        auditReject(row) {
+            row.status = '已拒绝';
+            this.$message.error('已拒绝');
+        },
+        confirmPayment(row) {
+            row.status = '已打款';
+            this.$message.success('打款成功');
+        },
+        wlResetFilter() {
+            this.wlFilterTax = '';
+            this.wlFilterRegion = '';
+            this.wlFilterCertType = '';
+            this.wlFilterBizLine = '';
+            this.wlFilterPayStatus = '';
+            this.wlFilterPayNo = '';
+            this.wlFilterPartner = '';
+            this.wlFilterKeyword = '';
+            this.wlFilterDateRange = [];
+            this.wlFilterPeriodRange = [];
+        },
+        openDownloadDialog(row) {
+            this.downloadDialogRow = row;
+            this.downloadDialogVisible = true;
+        },
+        viewWithdrawList(row) {
+            this.wlFilterPayNo = row.payNo || '';
+            this.activePage = 'withdraw-list';
+        },
+        openPlPayConfirm(row) {
+            this.plPayConfirmRow = row;
+            this.plPayConfirmVisible = true;
+        },
+        confirmPlPay() {
+            if (!this.plPayConfirmRow) return;
+            this.$set(this.plPayConfirmRow, 'payStatus', '已打款');
+            this.plPayConfirmVisible = false;
+            this.$message.success('已将【' + this.plPayConfirmRow.payNo + '】修改为已打款');
+            this.plPayConfirmRow = null;
+        },
+        plResetFilter() {
+            this.plFilterNo = '';
+            this.plFilterDateRange = [];
+            this.plFilterTaxType = '';
+            this.plFilterBizLine = '';
+        },
+        getPlSummaries({ columns, data }) {
+            const sumProps = ['totalAmount', 'laborVat', 'personalTax', 'overseasTax', 'pubTaxDiff', 'deductTotal', 'payAmount', 'invoiceExclTax', 'invoiceVat'];
+            return columns.map((col, idx) => {
+                if (idx === 0) return '合计';
+                if (idx === 1) return (data && data.length ? data.length + ' 条' : '');
+                if (!sumProps.includes(col.property)) return '';
+                const sum = (data || []).reduce((acc, r) => acc + (parseFloat(r[col.property]) || 0), 0);
+                return sum ? sum.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',') : '0';
+            });
+        },
+        getWlSummaries({ columns, data }) {
+            const sumProps = ['orderActualAmount', 'receivable', 'vatTax', 'domesticTax', 'overseasTax', 'invoiceDiff', 'deductTotal', 'actualAmount'];
+            return columns.map((col, idx) => {
+                if (idx === 0) return '合计';
+                if (idx === 1) return (data && data.length ? data.length + ' 条' : '');
+                if (col.property === 'billNum') {
+                    let cnt = 0;
+                    (data || []).forEach(r => { if (r.billNum) cnt += r.billNum; });
+                    return cnt || '-';
+                }
+                if (!sumProps.includes(col.property)) return '';
+                let sum = 0, hasNum = false;
+                (data || []).forEach(r => {
+                    const v = parseFloat(String(r[col.property] || '').replace(/[¥,\s]/g, ''));
+                    if (!isNaN(v)) { sum += v; hasNum = true; }
+                });
+                if (!hasNum) return '-';
+                return '¥' + sum.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+            });
+        },
+        wlSelectionChange(rows) {
+            this.wlSelected = rows || [];
+        },
+        showWithdrawDetail(row) {
+            // 补充详情所需的附加字段（如该行已推送过详情数据则不重复生成）
+            if (!row._companyName) {
+                this.$set(row, '_companyName', '广州人心网络科技有限公司');
+                this.$set(row, '_amountCN', this.toChineseAmount(row.actualAmount));
+                this.$set(row, '_payTime', row.payTime && row.payTime !== '-' ? row.payTime : '-');
+                // 付款方（公司主体）
+                this.$set(row, '_payerAccount', '6228480123456789012');
+                this.$set(row, '_payerBankCode', '308584000013');
+                this.$set(row, '_payerBankBranch', '中国农业银行广州珠江新城支行');
+                this.$set(row, '_payerBank', '中国农业银行');
+                this.$set(row, '_payerArea', '广州市');
+                // 收款方
+                const isPub = row.taxType === '公对公增值税';
+                this.$set(row, '_payeeAccount', isPub ? '98080078801300002052' : '6222020200008888' + row.teacherId.slice(-3));
+                this.$set(row, '_payeeBankCode', isPub ? '103290076356' : '102100099996');
+                this.$set(row, '_payeeBankBranch', isPub ? '中国农业银行上海分行' : '中国工商银行北京朝阳支行');
+                this.$set(row, '_payeeBank', isPub ? '中国农业银行' : '中国工商银行');
+                this.$set(row, '_payeeArea', isPub ? '上海市' : '北京市');
+                this.$set(row, '_payeePhone', '152****8202');
+                // 劳务税费计算（假样本）
+                if (!isPub) {
+                    this.$set(row, '_lwPretax', '5,000');
+                    this.$set(row, '_lwPrevIncome', '30,000');
+                    this.$set(row, '_lwTotalIncome', '35,000');
+                    this.$set(row, '_lwTotalIncome80', '35000×80%=28000');
+                    this.$set(row, '_lwDeduct', '15,000');
+                    this.$set(row, '_lwTaxable', '28000-15000=13000');
+                    this.$set(row, '_lwLevel', '3');
+                    this.$set(row, '_lwRate', '20');
+                    this.$set(row, '_lwQuickDeduct', '1,410');
+                    this.$set(row, '_lwAccTaxAll', '13000×20%-1410=1190');
+                    this.$set(row, '_lwAccTaxPrev', '700+90=790');
+                    this.$set(row, '_lwTaxThis', '1190-790=400');
+                }
+                // 对公发票信息
+                if (isPub) {
+                    const recv = parseFloat(String(row.receivable).replace(/[¥,\s]/g, '')) || 0;
+                    const fmtM = n => '¥' + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+                    const ord = Math.min(1500, recv * 0.3);            // 普票金额
+                    const pro = +(recv - ord).toFixed(2);                // 专票含税金额
+                    const proExcl = +(pro / 1.06).toFixed(2);            // 专票不含税
+                    const proVat = +(pro - proExcl).toFixed(2);          // 专票可抵扣/税差
+                    this.$set(row, '_invoices', [
+                        {
+                            kind: '增值税普通发票',
+                            code: '',
+                            no: '25134000000004068792',
+                            seller: '三河市开凌技术信息咨询工作室',
+                            sellerTaxNo: '92130481WE74123040',
+                            taxDiff: '¥0.00',
+                            settle: fmtM(ord),
+                            rate: '—',
+                            deductPoint: '—',
+                            amountExclTax: fmtM(ord),
+                            deductibleVat: '¥0.00',
+                            amountInclTax: fmtM(ord)
+                        },
+                        {
+                            kind: '增值税专用发票',
+                            code: '',
+                            no: '25412000000227654015',
+                            seller: '郑州明一心理咨询有限公司',
+                            sellerTaxNo: '91410100WE17412304',
+                            taxDiff: fmtM(proVat),
+                            settle: fmtM(pro),
+                            rate: '6%',
+                            deductPoint: '6%',
+                            amountExclTax: fmtM(proExcl),
+                            deductibleVat: fmtM(proVat),
+                            amountInclTax: fmtM(pro)
+                        }
+                    ]);
+                    this.$set(row, '_invoiceTotal', fmtM(recv));
+                    this.$set(row, '_invoiceSumTaxDiff', fmtM(proVat));
+                    this.$set(row, '_invoiceSumExcl', fmtM(+(ord + proExcl).toFixed(2)));
+                    this.$set(row, '_invoiceSumVat', fmtM(proVat));
+                }
+            }
+            this.currentWithdrawRow = row;
+            this.withdrawDetailVisible = true;
+        },
+        syncPayeeInfo() {
+            if (!this.currentWithdrawRow) return;
+            this.$confirm('将从老师/合作方资料中心拉取最新收款信息，会覆盖当前单据上的收款账户/开户行等字段，是否继续？', '同步最新收款信息', {
+                confirmButtonText: '确认同步',
+                cancelButtonText: '取消',
+                type: 'warning'
+            }).then(() => {
+                const row = this.currentWithdrawRow;
+                const isPub = row.taxType === '公对公增值税';
+                // 模拟从老师/合作方资料中心拉取最新收款信息
+                this.$set(row, '_payeeAccount', isPub ? '98080078801300002099' : '6222020200009999' + row.teacherId.slice(-3));
+                this.$set(row, '_payeeBankCode', isPub ? '103290076356' : '102100099996');
+                this.$set(row, '_payeeBankBranch', isPub ? '中国农业银行上海漕河泾支行' : '中国工商银行北京朝阳支行');
+                this.$set(row, '_payeeBank', isPub ? '中国农业银行' : '中国工商银行');
+                this.$set(row, '_payeeArea', isPub ? '上海市' : '北京市');
+                this.$message.success('已同步最新收款信息');
+            }).catch(() => {});
+        },
+        toChineseAmount(amountStr) {
+            const num = parseFloat(String(amountStr).replace(/[¥,\s]/g, ''));
+            if (isNaN(num)) return '';
+            const cn = ['零','壹','贰','叁','肆','伍','陆','柒','捌','玖'];
+            const u = ['','拾','佰','仟','万','拾','佰','仟','亿','拾','佰','仟'];
+            const [ip, dp] = num.toFixed(2).split('.');
+            let res = '';
+            const len = ip.length;
+            let zeroFlag = false;
+            for (let i = 0; i < len; i++) {
+                const d = +ip[i];
+                const pos = len - 1 - i;
+                if (d === 0) {
+                    zeroFlag = true;
+                    if (pos === 4) res += '万';
+                } else {
+                    if (zeroFlag) { res += '零'; zeroFlag = false; }
+                    res += cn[d] + u[pos];
+                }
+            }
+            res += '元';
+            const a = +dp[0], b = +dp[1];
+            if (a === 0 && b === 0) res += '整';
+            else {
+                if (a > 0) res += cn[a] + '角';
+                else if (b > 0) res += '零';
+                if (b > 0) res += cn[b] + '分';
+            }
+            return res;
+        },
+        confirmSettleAdd() {
+            if (!this.settleAddForm.type || !this.settleAddForm.name) {
+                this.$message.warning('请选择类型和名称');
+                return;
+            }
+            this.settleConfigData.push({
+                type: this.settleAddForm.type,
+                name: this.settleAddForm.name,
+                realIncome: this.settleAddForm.realIncome ? '¥' + this.settleAddForm.realIncome : ''
+            });
+            this.settleAddForm = { type: '', name: '', realIncome: '' };
+            this.settleAddVisible = false;
+            this.$message.success('新增成功');
+        }
+    }
+});
+</script>
+</body>
+</html>
