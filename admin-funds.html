@@ -440,6 +440,12 @@
                                 </template>
                             </el-table-column>
                             <el-table-column prop="createTime" label="生成时间" width="155"></el-table-column>
+                            <el-table-column prop="payTime" label="付款时间" width="170">
+                                <template slot-scope="scope">
+                                    <span v-if="scope.row.payTime && scope.row.payTime !== '-'">{{ scope.row.payTime }}</span>
+                                    <span v-else style="color:#ccc;">-</span>
+                                </template>
+                            </el-table-column>
                             <el-table-column prop="taxType" label="劳务/对公" width="90">
                                 <template slot-scope="scope">
                                     <el-tag size="mini" :type="scope.row.taxType==='劳务'?'success':'primary'">{{ scope.row.taxType }}</el-tag>
@@ -1028,15 +1034,15 @@ new Vue({
             plFilterTaxType: '',
             plFilterBizLine: '',
             plAllData: [
-                { index: 1,  payNo: 'LW20260623115019', createTime: '2026-06-23 11:50:19', taxType: '劳务',  payStatus: '已付款',  bizLine: '此刻咨询', totalAmount: 2370,     laborVat: 0, personalTax: 224,     overseasTax: 0,       pubTaxDiff: 0,       deductTotal: 224,     payAmount: 2146,     invoiceExclTax: 0,        invoiceVat: 0,     operator: '张晓霞' },
-                { index: 2,  payNo: 'DG20260623112323', createTime: '2026-06-23 11:23:24', taxType: '对公',  payStatus: '已付款',  bizLine: '初心咨询', totalAmount: 3958.11,  laborVat: 0, personalTax: 0,       overseasTax: 0,       pubTaxDiff: 186.7,   deductTotal: 186.7,   payAmount: 3771.41,  invoiceExclTax: 3734.07,  invoiceVat: 37.34, operator: '吴和欣' },
-                { index: 3,  payNo: 'LW20260623110721', createTime: '2026-06-23 11:07:22', taxType: '劳务',  payStatus: '已付款',  bizLine: '此刻咨询', totalAmount: 8737.68,  laborVat: 0, personalTax: 1055.04, overseasTax: 0,       pubTaxDiff: 0,       deductTotal: 1055.04, payAmount: 7682.64,  invoiceExclTax: 0,        invoiceVat: 0,     operator: '张晓霞' },
-                { index: 4,  payNo: 'LW20260623110316', createTime: '2026-06-23 11:03:17', taxType: '劳务',  payStatus: '已付款',  bizLine: '初心咨询', totalAmount: 9800,     laborVat: 0, personalTax: 1160,    overseasTax: 0,       pubTaxDiff: 0,       deductTotal: 1160,    payAmount: 8640,     invoiceExclTax: 0,        invoiceVat: 0,     operator: '吴和欣' },
-                { index: 5,  payNo: 'DG20260623104221', createTime: '2026-06-23 10:42:22', taxType: '对公',  payStatus: '已付款',  bizLine: '此刻咨询', totalAmount: 62585.17, laborVat: 0, personalTax: 0,       overseasTax: 0,       pubTaxDiff: 1291.88, deductTotal: 1291.88, payAmount: 61293.29, invoiceExclTax: 60884.72, invoiceVat: 408.57, operator: '张晓霞' },
-                { index: 6,  payNo: 'LW20260623103831', createTime: '2026-06-23 10:38:33', taxType: '劳务',  payStatus: '待付款',  bizLine: '初心咨询', totalAmount: 13050,    laborVat: 0, personalTax: 1970,    overseasTax: 0,       pubTaxDiff: 0,       deductTotal: 1970,    payAmount: 11080,    invoiceExclTax: 0,        invoiceVat: 0,     operator: '吴和欣' },
-                { index: 7,  payNo: 'LW20260623093948', createTime: '2026-06-23 09:39:50', taxType: '劳务',  payStatus: '待付款',  bizLine: '此刻咨询', totalAmount: 16650,    laborVat: 0, personalTax: 2450,    overseasTax: 0,       pubTaxDiff: 0,       deductTotal: 2450,    payAmount: 14200,    invoiceExclTax: 0,        invoiceVat: 0,     operator: '张晓霞' },
-                { index: 8,  payNo: 'LW20260616111044', createTime: '2026-06-16 11:10:45', taxType: '劳务',  payStatus: '待付款',  bizLine: '初心咨询', totalAmount: 15600,    laborVat: 0, personalTax: 2280,    overseasTax: 0,       pubTaxDiff: 0,       deductTotal: 2280,    payAmount: 13320,    invoiceExclTax: 0,        invoiceVat: 0,     operator: '吴和欣' },
-                { index: 9,  payNo: 'LW20260616110156', createTime: '2026-06-16 11:01:57', taxType: '劳务',  payStatus: '待付款',  bizLine: '此刻咨询', totalAmount: 20200,    laborVat: 0, personalTax: 2960,    overseasTax: 0,       pubTaxDiff: 0,       deductTotal: 2960,    payAmount: 17240,    invoiceExclTax: 0,        invoiceVat: 0,     operator: '张晓霞' },
+                { index: 1,  payNo: 'LW20260623115019', createTime: '2026-06-23 11:50:19', taxType: '劳务',  payStatus: '已付款',  payTime: '2026-06-23 14:30:00', bizLine: '此刻咨询', totalAmount: 2370,     laborVat: 0, personalTax: 224,     overseasTax: 0,       pubTaxDiff: 0,       deductTotal: 224,     payAmount: 2146,     invoiceExclTax: 0,        invoiceVat: 0,     operator: '张晓霞' },
+                { index: 2,  payNo: 'DG20260623112323', createTime: '2026-06-23 11:23:24', taxType: '对公',  payStatus: '已付款',  payTime: '2026-06-23 14:15:00', bizLine: '初心咨询', totalAmount: 3958.11,  laborVat: 0, personalTax: 0,       overseasTax: 0,       pubTaxDiff: 186.7,   deductTotal: 186.7,   payAmount: 3771.41,  invoiceExclTax: 3734.07,  invoiceVat: 37.34, operator: '吴和欣' },
+                { index: 3,  payNo: 'LW20260623110721', createTime: '2026-06-23 11:07:22', taxType: '劳务',  payStatus: '已付款',  payTime: '2026-06-23 13:50:00', bizLine: '此刻咨询', totalAmount: 8737.68,  laborVat: 0, personalTax: 1055.04, overseasTax: 0,       pubTaxDiff: 0,       deductTotal: 1055.04, payAmount: 7682.64,  invoiceExclTax: 0,        invoiceVat: 0,     operator: '张晓霞' },
+                { index: 4,  payNo: 'LW20260623110316', createTime: '2026-06-23 11:03:17', taxType: '劳务',  payStatus: '已付款',  payTime: '2026-06-23 13:20:00', bizLine: '初心咨询', totalAmount: 9800,     laborVat: 0, personalTax: 1160,    overseasTax: 0,       pubTaxDiff: 0,       deductTotal: 1160,    payAmount: 8640,     invoiceExclTax: 0,        invoiceVat: 0,     operator: '吴和欣' },
+                { index: 5,  payNo: 'DG20260623104221', createTime: '2026-06-23 10:42:22', taxType: '对公',  payStatus: '已付款',  payTime: '2026-06-23 12:40:00', bizLine: '此刻咨询', totalAmount: 62585.17, laborVat: 0, personalTax: 0,       overseasTax: 0,       pubTaxDiff: 1291.88, deductTotal: 1291.88, payAmount: 61293.29, invoiceExclTax: 60884.72, invoiceVat: 408.57, operator: '张晓霞' },
+                { index: 6,  payNo: 'LW20260623103831', createTime: '2026-06-23 10:38:33', taxType: '劳务',  payStatus: '待付款',  payTime: '-', bizLine: '初心咨询', totalAmount: 13050,    laborVat: 0, personalTax: 1970,    overseasTax: 0,       pubTaxDiff: 0,       deductTotal: 1970,    payAmount: 11080,    invoiceExclTax: 0,        invoiceVat: 0,     operator: '吴和欣' },
+                { index: 7,  payNo: 'LW20260623093948', createTime: '2026-06-23 09:39:50', taxType: '劳务',  payStatus: '待付款',  payTime: '-', bizLine: '此刻咨询', totalAmount: 16650,    laborVat: 0, personalTax: 2450,    overseasTax: 0,       pubTaxDiff: 0,       deductTotal: 2450,    payAmount: 14200,    invoiceExclTax: 0,        invoiceVat: 0,     operator: '张晓霞' },
+                { index: 8,  payNo: 'LW20260616111044', createTime: '2026-06-16 11:10:45', taxType: '劳务',  payStatus: '待付款',  payTime: '-', bizLine: '初心咨询', totalAmount: 15600,    laborVat: 0, personalTax: 2280,    overseasTax: 0,       pubTaxDiff: 0,       deductTotal: 2280,    payAmount: 13320,    invoiceExclTax: 0,        invoiceVat: 0,     operator: '吴和欣' },
+                { index: 9,  payNo: 'LW20260616110156', createTime: '2026-06-16 11:01:57', taxType: '劳务',  payStatus: '待付款',  payTime: '-', bizLine: '此刻咨询', totalAmount: 20200,    laborVat: 0, personalTax: 2960,    overseasTax: 0,       pubTaxDiff: 0,       deductTotal: 2960,    payAmount: 17240,    invoiceExclTax: 0,        invoiceVat: 0,     operator: '张晓霞' },
                 { index: 10, payNo: 'LW20260616102216', createTime: '2026-06-16 10:22:17', taxType: '劳务',  payStatus: '待付款',  bizLine: '初心咨询', totalAmount: 31259.36, laborVat: 0, personalTax: 4407.41, overseasTax: 0,       pubTaxDiff: 0,       deductTotal: 4407.41, payAmount: 26851.95, invoiceExclTax: 0,        invoiceVat: 0,     operator: '吴和欣' },
             ],
             auditDetailVisible: false,
@@ -1496,7 +1502,8 @@ new Vue({
                     settleAmount: amt,
                     status: '可提现',
                     settleNo: '',
-                    payNo: ''
+                    payNo: '',
+                    payTime: ''
                 });
             });
             this.$message.success('成功导入 ' + validData.length + ' 条调整项数据');

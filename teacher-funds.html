@@ -136,12 +136,17 @@
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
         .data-card-real {
-            font-size: 12px;
-            opacity: 0.85;
-            margin-bottom: 16px;
+            font-size: 14px;
+            opacity: 0.95;
+            margin-bottom: 12px;
             display: flex;
             align-items: center;
             gap: 4px;
+        }
+        .data-card-real .real-amount {
+            font-size: 16px;
+            font-weight: 600;
+            margin-left: 2px;
         }
         .data-card-stats {
             display: flex;
@@ -660,19 +665,20 @@
             <div class="biz-content" id="biz-consult">
                 <div class="data-card">
                     <div class="data-card-header">
-                        <span class="data-card-label">可提现余额(元)</span>
+                        <span class="data-card-label">实收金额(元)</span>
                         <span class="data-card-help" onclick="showModal('explain')">
                             结算/提现说明
                             <span class="icon-help">?</span>
                         </span>
                     </div>
-                    <div class="data-card-amount">1,520.54</div>
+                    <div class="data-card-amount">&#165;1,448.49
+                        <span class="icon-help" onclick="showModal('real-amount')" style="cursor:pointer;width:18px;height:18px;border:1px solid rgba(255,255,255,0.6);border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11px;margin-left:6px;vertical-align:middle;">?</span>
+                    </div>
                     <div class="data-card-withdraw">
                         <button class="btn-withdraw" onclick="showModal('withdraw-confirm')">提现</button>
                     </div>
                     <div class="data-card-real">
-                        &#23454;&#25910;&#37329;&#39069;&#65306;&#165;1448.49
-                        <span class="icon-help" onclick="showModal('real-amount')" style="cursor:pointer;">?</span>
+                        可提现余额：<span class="real-amount">&#165;1,520.54</span>
                     </div>
                     <div class="data-card-stats">
                         <div class="stat-item">
@@ -995,19 +1001,20 @@
             <div class="biz-content" id="biz-live" style="display:none;">
                 <div class="data-card">
                     <div class="data-card-header">
-                        <span class="data-card-label">可提现余额(元）</span>
+                        <span class="data-card-label">实收金额(元)</span>
                         <span class="data-card-help" onclick="showModal('explain')">
                             结算/提现说明
                             <span class="icon-help">?</span>
                         </span>
                     </div>
-                    <div class="data-card-amount">860.00</div>
+                    <div class="data-card-amount">&#165;817.00
+                        <span class="icon-help" onclick="showModal('real-amount')" style="cursor:pointer;width:18px;height:18px;border:1px solid rgba(255,255,255,0.6);border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11px;margin-left:6px;vertical-align:middle;">?</span>
+                    </div>
                     <div class="data-card-withdraw">
                         <button class="btn-withdraw" onclick="showModal('withdraw-confirm')">提现</button>
                     </div>
                     <div class="data-card-real">
-                        &#23454;&#25910;&#37329;&#39069;&#65306;&#165;817.00
-                        <span class="icon-help" onclick="showModal('real-amount')" style="cursor:pointer;">?</span>
+                        可提现余额：<span class="real-amount">&#165;860.00</span>
                     </div>
                     <div class="data-card-stats">
                         <div class="stat-item">
@@ -1207,9 +1214,9 @@
             </div>
 
             <div class="setting-list">
-                <div class="setting-item" onclick="window.open('https://static.xinli001.com/msite/index.html#/settlement/contract/teacher-info','_blank')">
+                <div class="setting-item">
                     <span class="setting-label">收款账号</span>
-                    <span class="setting-value">未设置 <span class="arrow"></span></span>
+                    <span class="setting-value" style="color:#fa5151;">未设置 <span class="arrow"></span></span>
                 </div>
             </div>
         </div>
@@ -1585,14 +1592,17 @@
                         </div>
                     </div>
                 </div>
-                <!-- 关联订单 -->
-                <div style="background:#fff;margin:0 0 2px;padding:0 16px;">
-                    <div style="display:flex;align-items:center;padding-top:14px;padding-bottom:10px;border-bottom:1px solid #f0f0f0;">
+                <!-- 关联订单 + 其它 并列Tab -->
+                <div style="background:#fff;margin:0 0 2px;display:flex;border-bottom:1px solid #f0f0f0;">
+                    <div style="flex:1;text-align:center;padding:14px 0;cursor:pointer;border-bottom:2px solid #6982fa;" id="wdtab-orders" onclick="switchWdTab(this,'orders')">
                         <span style="font-size:14px;font-weight:600;color:#6982fa;">关联订单 <span style="font-size:12px;font-weight:400;">(2&#20010;)</span></span>
+                    </div>
+                    <div style="flex:1;text-align:center;padding:14px 0;cursor:pointer;border-bottom:2px solid transparent;" id="wdtab-others" onclick="switchWdTab(this,'others')">
+                        <span style="font-size:14px;font-weight:600;color:#9aa3b2;">其它 <span style="font-size:12px;font-weight:400;">(2&#20010;)</span></span>
                     </div>
                 </div>
                 <!-- 关联订单列表 -->
-                <div style="padding:0 16px 8px;">
+                <div id="wdlist-orders" style="padding:0 16px 8px;">
                     <div class="flow-card">
                         <div class="flow-card-header">
                             <span class="flow-card-title">咨询服务费</span>
@@ -1718,14 +1728,8 @@
                     <div style="text-align:center;font-size:12px;color:#bbb;padding:14px 0 20px;">已全部展示</div>
                 </div>
 
-                <!-- 其它 -->
-                <div style="background:#fff;margin:0 0 2px;padding:0 16px;">
-                    <div style="display:flex;align-items:center;padding-top:14px;padding-bottom:10px;border-bottom:1px solid #f0f0f0;">
-                        <span style="font-size:14px;font-weight:600;color:#6982fa;">其它 <span style="font-size:12px;font-weight:400;">(2&#20010;)</span></span>
-                    </div>
-                </div>
                 <!-- 其它列表 -->
-                <div style="padding:0 16px 8px;">
+                <div id="wdlist-others" style="padding:0 16px 8px;display:none;">
                     <!-- 调整项类型 item -->
                     <div class="flow-card">
                         <div class="flow-card-header">
@@ -2185,6 +2189,28 @@
         }
 
         // 提现详情弹窗Tab切换（关联订单/其它）
+        function switchWdTab(el, tab) {
+            var tabOrders = document.getElementById('wdtab-orders');
+            var tabOthers = document.getElementById('wdtab-others');
+            var listOrders = document.getElementById('wdlist-orders');
+            var listOthers = document.getElementById('wdlist-others');
+            if (tab === 'orders') {
+                tabOrders.style.borderBottom = '2px solid #6982fa';
+                tabOrders.querySelector('span').style.color = '#6982fa';
+                tabOthers.style.borderBottom = '2px solid transparent';
+                tabOthers.querySelector('span').style.color = '#9aa3b2';
+                listOrders.style.display = '';
+                listOthers.style.display = 'none';
+            } else {
+                tabOthers.style.borderBottom = '2px solid #6982fa';
+                tabOthers.querySelector('span').style.color = '#6982fa';
+                tabOrders.style.borderBottom = '2px solid transparent';
+                tabOrders.querySelector('span').style.color = '#9aa3b2';
+                listOrders.style.display = 'none';
+                listOthers.style.display = '';
+            }
+        }
+
         function switchDetailTab(el, tab) {
             var tabOrders = document.getElementById('dtab-orders');
             var tabOthers = document.getElementById('dtab-others');
