@@ -73,6 +73,10 @@
                     <i class="el-icon-bank-card"></i>
                     <span>打款列表</span>
                 </el-menu-item>
+                <el-menu-item index="bill-list">
+                    <i class="el-icon-document-copy"></i>
+                    <span>账单列表</span>
+                </el-menu-item>
                 <el-menu-item index="settle-config">
                     <i class="el-icon-setting"></i>
                     <span>结算特殊设置</span>
@@ -462,6 +466,171 @@
                     </el-card>
                 </div>
 
+                <!-- ========== 账单列表 ========== -->
+                <div v-show="activePage==='bill-list'">
+                    <el-card>
+                        <div slot="header" style="display:flex;justify-content:space-between;align-items:center;">
+                            <span style="font-weight:600;">此刻咨询</span>
+                            <div>
+                                <el-button size="small" icon="el-icon-download" @click="$message.success('导出Excel')">导出</el-button>
+                                <el-button size="small" type="warning" icon="el-icon-upload2" @click="importDialogVisible = true">导入调整项</el-button>
+                            </div>
+                        </div>
+                        <!-- 筛选条件 -->
+                        <el-form :inline="true" size="small" label-width="75px" class="wl-filter-form" style="margin-bottom:8px;">
+                            <el-form-item label="账单状态">
+                                <el-select v-model="blFilterStatus" placeholder="全部" clearable style="width:120px;">
+                                    <el-option label="待结算" value="待结算"></el-option>
+                                    <el-option label="可提现" value="可提现"></el-option>
+                                    <el-option label="提现中" value="提现中"></el-option>
+                                    <el-option label="已付款" value="已付款"></el-option>
+                                </el-select>
+                            </el-form-item>
+                            <el-form-item label="账单类型">
+                                <el-select v-model="blFilterBillType" placeholder="全部" clearable style="width:120px;">
+                                    <el-option label="订单" value="订单"></el-option>
+                                    <el-option label="调整项" value="调整项"></el-option>
+                                </el-select>
+                            </el-form-item>
+                            <el-form-item label="调整项类型">
+                                <el-select v-model="blFilterAdjustType" placeholder="全部" clearable style="width:140px;">
+                                    <el-option label="返现金" value="返现金"></el-option>
+                                    <el-option label="月度激励金" value="月度激励金"></el-option>
+                                    <el-option label="订单退款补扣款" value="订单退款补扣款"></el-option>
+                                    <el-option label="订单延时补差价" value="订单延时补差价"></el-option>
+                                    <el-option label="特殊套餐补差价" value="特殊套餐补差价"></el-option>
+                                </el-select>
+                            </el-form-item>
+                            <el-form-item label="业务线">
+                                <el-select v-model="blFilterBizLine" placeholder="全部" clearable style="width:130px;">
+                                    <el-option label="此刻咨询" value="此刻咨询"></el-option>
+                                    <el-option label="初心咨询" value="初心咨询"></el-option>
+                                </el-select>
+                            </el-form-item>
+                            <el-form-item label="预约时间">
+                                <el-date-picker v-model="blFilterDateRange" type="daterange" range-separator="至" start-placeholder="开始日期" end-placeholder="结束日期" style="width:240px;" value-format="yyyy-MM-dd"></el-date-picker>
+                            </el-form-item>
+                            <el-form-item label="扣税方式">
+                                <el-select v-model="blFilterTaxType" placeholder="全部" clearable style="width:130px;">
+                                    <el-option label="劳务报酬个税" value="劳务报酬个税"></el-option>
+                                    <el-option label="公对公增值税" value="公对公增值税"></el-option>
+                                </el-select>
+                            </el-form-item>
+                            <el-form-item label="结算单号">
+                                <el-input v-model="blFilterSettleNo" placeholder="请输入结算单号" prefix-icon="el-icon-search" style="width:200px;" clearable></el-input>
+                            </el-form-item>
+                            <el-form-item label="付款单号">
+                                <el-input v-model="blFilterPayNo" placeholder="请输入付款单号" prefix-icon="el-icon-search" style="width:200px;" clearable></el-input>
+                            </el-form-item>
+                            <el-form-item label="关键字">
+                                <el-input v-model="blFilterKeyword" placeholder="老师ID / 姓名 / 订单号" prefix-icon="el-icon-search" style="width:240px;" clearable></el-input>
+                            </el-form-item>
+                            <el-form-item label-width="0">
+                                <el-button type="primary" icon="el-icon-search" @click="$message.info('查询')">查询</el-button>
+                                <el-button icon="el-icon-refresh-left" @click="blResetFilter">重置</el-button>
+                            </el-form-item>
+                        </el-form>
+                        <div class="bl-summary-bar" style="margin-bottom:12px;display:flex;flex-wrap:wrap;gap:8px;">
+                            <div v-for="item in blGroupSummary" :key="item.label" style="background:#f5f7fa;border:1px solid #e4e7ed;border-radius:4px;padding:6px 14px;display:flex;align-items:center;gap:8px;">
+                                <span style="font-size:12px;color:#909399;">{{ item.label }}</span>
+                                <span style="font-size:14px;font-weight:600;" :style="{ color: item.amount.startsWith('-') ? '#f56c6c' : '#e6a23c' }">{{ item.amount }}</span>
+                            </div>
+                        </div>
+                        <el-table :data="blFilteredData" border stripe size="small" style="width:100%;" class="wl-table" :header-cell-style="{background:'#fafafa'}" show-summary :summary-method="getBlSummaries">
+                            <el-table-column type="index" label="序号" width="55" fixed="left"></el-table-column>
+                            <el-table-column prop="billType" label="账单类型" width="100"></el-table-column>
+                            <el-table-column prop="adjustType" label="调整项类型" width="130">
+                                <template slot-scope="scope">
+                                    <span v-if="scope.row.adjustType">{{ scope.row.adjustType }}</span>
+                                    <span v-else style="color:#ccc;">-</span>
+                                </template>
+                            </el-table-column>
+                            <el-table-column prop="teacherId" label="老师ID" width="90"></el-table-column>
+                            <el-table-column prop="teacherName" label="老师姓名" width="110"></el-table-column>
+                            <el-table-column prop="orderNo" label="订单号" width="200"></el-table-column>
+                            <el-table-column prop="taxType" label="扣税方式" width="120">
+                                <template slot-scope="scope">
+                                    <el-tag size="mini" :type="scope.row.taxType==='劳务报酬个税'?'primary':'warning'">{{ scope.row.taxType }}</el-tag>
+                                </template>
+                            </el-table-column>
+                            <el-table-column prop="serviceName" label="咨询服务名称" min-width="200" show-overflow-tooltip></el-table-column>
+                            <el-table-column prop="appointTime" label="预约时间" width="170"></el-table-column>
+                            <el-table-column prop="createTime" label="创建时间" width="170"></el-table-column>
+                            <el-table-column prop="orderAmount" label="订单实付金额" width="110">
+                                <template slot-scope="scope">
+                                    <span style="color:#1890ff;font-weight:600;">{{ scope.row.orderAmount }}</span>
+                                </template>
+                            </el-table-column>
+                            <el-table-column prop="couponAmount" label="优惠金额" width="100"></el-table-column>
+                            <el-table-column prop="consultCount" label="咨询总数" width="90"></el-table-column>
+                            <el-table-column prop="actualIncome" label="实际计酬收入" width="110">
+                                <template slot="header"><span>实际计酬收入</span>
+                                    <el-tooltip placement="top">
+                                        <template slot="content">
+                                            <div style="max-width:380px;line-height:1.8;">
+                                                <div style="font-weight:bold;margin-bottom:4px;">每一笔预约单的"实际计酬收入"根据所属服务、是否使用优惠券或兑换码自动计算，按优先级逐条判断：</div>
+                                                <div>1. 转199元系列优惠券：¥66.33（199÷3）</div>
+                                                <div>2. 转99元系列优惠券：¥33</div>
+                                                <div>3. 壹心理员工体验兑换码：¥33</div>
+                                                <div>4. 单次咨询（均价＜¥100）：(订单支付金额 + 咨询总数×¥1 + 优惠金额×平台共担比例) ÷ 咨询总数</div>
+                                                <div>5. 新人专属单次咨询：(订单支付金额 − ¥10 + 优惠金额×平台共担比例) ÷ 咨询总数</div>
+                                                <div>6. 公益项目：¥0</div>
+                                                <div>7. 企业EAP/统一付费：预约单应结算金额</div>
+                                                <div style="margin-top:4px;border-top:1px solid #555;padding-top:4px;">默认：(订单支付金额 + 优惠金额×平台共担比例) ÷ 咨询总数</div>
+                                            </div>
+                                        </template>
+                                        <i class="el-icon-info" style="margin-left:4px;color:#999;"></i>
+                                    </el-tooltip>
+                                </template>
+                                <template slot-scope="scope">
+                                    <span style="color:#1890ff;">{{ scope.row.actualIncome }}</span>
+                                </template>
+                            </el-table-column>
+                            <el-table-column prop="tradeFee" label="交易费" width="90"></el-table-column>
+                            <el-table-column prop="shareRatio" label="分成比例" width="90">
+                                <template slot="header"><span>分成比例</span>
+                                    <el-tooltip placement="top">
+                                        <template slot="content">
+                                            <div style="max-width:300px;line-height:1.8;">
+                                                <div>1. 自带来访：90%</div>
+                                                <div>2. 新人套餐：60%</div>
+                                                <div>3. 合作渠道：50%</div>
+                                                <div>4. 常规服务（按资费+季度审核判定）：</div>
+                                                <div style="padding-left:12px;">资费≤¥200：季审通过80% / 不通过75%</div>
+                                                <div style="padding-left:12px;">资费＞¥200：季审通过70% / 不通过65%</div>
+                                            </div>
+                                        </template>
+                                        <i class="el-icon-info" style="margin-left:4px;color:#999;"></i>
+                                    </el-tooltip>
+                                </template>
+                            </el-table-column>
+                            <el-table-column prop="settleAmount" label="应结算金额" width="110">
+                                <template slot="header"><span>应结算金额</span>
+                                    <el-tooltip placement="top">
+                                        <template slot="content">
+                                            <div style="max-width:320px;line-height:1.8;">
+                                                <div style="font-weight:bold;color:#6982fa;">劳务结算</div>
+                                                <div>应结算金额 = （实际计酬收入 ÷ 1.06 − 交易费）× 分成比例</div>
+                                                <div style="font-weight:bold;color:#6982fa;margin-top:4px;">对公结算</div>
+                                                <div>应结算金额 = （实际计酬收入 − 交易费）× 分成比例</div>
+                                            </div>
+                                        </template>
+                                        <i class="el-icon-info" style="margin-left:4px;color:#999;"></i>
+                                    </el-tooltip>
+                                </template>
+                                <template slot-scope="scope">
+                                    <span style="color:#fa8c16;font-weight:600;">{{ scope.row.settleAmount }}</span>
+                                </template>
+                            </el-table-column>
+                            <el-table-column prop="status" label="账单状态" width="100" fixed="right">
+                                <template slot-scope="scope">
+                                    <el-tag size="mini" :type="billStatusTag(scope.row.status)">{{ scope.row.status }}</el-tag>
+                                </template>
+                            </el-table-column>
+                        </el-table>
+                    </el-card>
+                </div>
+
                 <!-- ========== 结算特殊设置 ========== -->
                 <div v-show="activePage==='settle-config'">
                     <el-card>
@@ -761,11 +930,61 @@
             <el-button type="primary" @click="$message.success('导出PDF')">导出PDF</el-button>
         </span>
     </el-dialog>
+
+       <!-- 导入调整项弹窗 -->
+    <el-dialog title="导入调整项" :visible.sync="importDialogVisible" width="700px" :close-on-click-modal="false">
+        <div style="margin-bottom:16px;">
+            <el-button size="small" type="text" icon="el-icon-download" @click="downloadImportTemplate">下载Excel模板</el-button>
+            <span style="margin-left:12px;color:#999;font-size:12px;">请按模板填写后上传</span>
+        </div>
+        <el-alert type="warning" :closable="false" style="margin-bottom:16px;">
+            <div style="line-height:1.8;">
+                <div>1. 调整项导入以后，状态变成可提现</div>
+                <div>2. 调整项类型做严格校验，不可随意导入</div>
+                <div style="color:#f56c6c;font-weight:600;">此导入影响老师的结算和公司财政支出，请谨慎操作</div>
+            </div>
+        </el-alert>
+        <el-upload
+            drag
+            action="#"
+            :auto-upload="false"
+            :on-change="handleImportFile"
+            :show-file-list="false"
+            accept=".xlsx,.xls">
+            <i class="el-icon-upload"></i>
+            <div class="el-upload__text">将 Excel 文件拖到此处，或<em>点击上传</em></div>
+            <div class="el-upload__tip" slot="tip">仅支持 .xlsx / .xls 格式文件</div>
+        </el-upload>
+        <div v-if="importPreviewData.length > 0" style="margin-top:16px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                <span style="font-weight:600;">数据预览（{{ importPreviewData.length }} 条）</span>
+                <span v-if="importErrors.length > 0" style="color:#f56c6c;font-size:12px;">{{ importErrors.length }} 条数据校验不通过</span>
+                <span v-else style="color:#67c23a;font-size:12px;">全部校验通过</span>
+            </div>
+            <el-table :data="importPreviewData" border stripe size="small" style="width:100%;" max-height="300">
+                <el-table-column type="index" label="行号" width="60"></el-table-column>
+                <el-table-column prop="teacherId" label="老师ID" width="100"></el-table-column>
+                <el-table-column prop="adjustType" label="调整项类型" width="150"></el-table-column>
+                <el-table-column prop="settleAmount" label="应结算金额（元）" width="130"></el-table-column>
+                <el-table-column label="校验" width="80">
+                    <template slot-scope="scope">
+                        <el-tag size="mini" :type="scope.row._valid ? 'success' : 'danger'">{{ scope.row._valid ? '通过' : '错误' }}</el-tag>
+                    </template>
+                </el-table-column>
+                <el-table-column prop="_error" label="错误信息" min-width="160" show-overflow-tooltip></el-table-column>
+            </el-table>
+        </div>
+        <span slot="footer">
+            <el-button @click="importDialogVisible = false">取消</el-button>
+            <el-button type="primary" :disabled="importPreviewData.length === 0 || importErrors.length > 0" @click="confirmImport">确认导入</el-button>
+        </span>
+    </el-dialog>
 </div>
 
 <!-- Vue2 + Element UI JS -->
 <script src="https://unpkg.com/vue@2.7.16/dist/vue.min.js"></script>
 <script src="https://unpkg.com/element-ui@2.15.14/lib/index.js"></script>
+<script src="https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
 new Vue({
     el: '#app',
@@ -873,6 +1092,30 @@ new Vue({
                 { index: 7, time: '2026-06-10 09:55:30', withdrawNo: 'TX20260610973204', period: '20260501-20260531', teacherId: '20098', certName: '黄宇航', certNo: '91110105MA01QWE3X8', certType: '中国大陆居民身份证', taxType: '公对公增值税', region: '境内', partner: '北京同行心理咨询有限公司', bizLine: '初心咨询', orderActualAmount: '¥7,200.00', billNum: 20, receivable: '¥4,500.00', vatTax: '-', domesticTax: '-', overseasTax: '-', invoiceType: '增值税专用发票', invoiceDiff: '¥135.00', invoiceRate: '3%', deductPoint: '3%', deductTotal: '¥135.00', actualAmount: '¥4,365.00', payNo: 'DG20260610973204', payStatus: '已付款', payTime: '2026-06-10 11:00:00' },
                 { index: 8, time: '2026-06-09 14:10:25', withdrawNo: 'TX20260609546821', period: '20260501-20260531', teacherId: '20156', certName: 'David Chen', certNo: 'HK52340987', certType: '护照', taxType: '公对公增值税', region: '境外', partner: 'Mind Care Counseling Pte. Ltd.（新加坡）', bizLine: '初心咨询', orderActualAmount: '¥11,000.00', billNum: 30, receivable: '¥6,800.00', vatTax: '-', domesticTax: '-', overseasTax: '-', invoiceType: '境外收费凭证', invoiceDiff: '¥680.00', invoiceRate: '-', deductPoint: '10%', deductTotal: '¥680.00', actualAmount: '¥6,120.00', payNo: '', payStatus: '待付款', payTime: '-' },
             ],
+            // 账单列表筛选
+            blFilterStatus: '',
+            blFilterBillType: '',
+            blFilterAdjustType: '',
+            blFilterBizLine: '',
+            blFilterTaxType: '',
+            blFilterKeyword: '',
+            blFilterDateRange: [],
+            blFilterSettleNo: '',
+            blFilterPayNo: '',
+            // 账单列表数据
+            blAllData: [
+                { billType: '订单', adjustType: '', teacherId: '11539', teacherName: '张三', orderNo: '20260601100001', bizLine: '此刻咨询', taxType: '劳务报酬个税', serviceName: '单次咨询服务', appointTime: '2026-06-01 10:00-11:00', createTime: '2026-06-01 11:05:23', orderAmount: '¥500.00', couponAmount: '¥0.00', consultCount: 120, actualIncome: '¥500.00', tradeFee: '0.6%', shareRatio: '60%', settleAmount: '¥300.00', status: '待结算', settleNo: '', payNo: '' },
+                { billType: '订单', adjustType: '', teacherId: '11539', teacherName: '张三', orderNo: '20260601098765', bizLine: '此刻咨询', taxType: '劳务报酬个税', serviceName: '4次深度咨询×名师带练「情绪日记」', appointTime: '2026-06-01 14:00-15:00', createTime: '2026-06-01 15:08:41', orderAmount: '¥500.00', couponAmount: '¥0.00', consultCount: 120, actualIncome: '¥500.00', tradeFee: '0.6%', shareRatio: '60%', settleAmount: '¥300.00', status: '待结算', settleNo: '', payNo: '' },
+                { billType: '订单', adjustType: '', teacherId: '12087', teacherName: '李四', orderNo: '20260528123456', bizLine: '初心咨询', taxType: '劳务报酬个税', serviceName: '单次咨询服务', appointTime: '2026-05-28 09:00-10:00', createTime: '2026-05-28 10:12:05', orderAmount: '¥200.00', couponAmount: '¥0.00', consultCount: 120, actualIncome: '¥200.00', tradeFee: '0.6%', shareRatio: '60%', settleAmount: '¥120.00', status: '可提现', settleNo: 'JS20260601001', payNo: '' },
+                { billType: '调整项', adjustType: '返现金', teacherId: '12087', teacherName: '李四', orderNo: '20260527876543', bizLine: '初心咨询', taxType: '劳务报酬个税', serviceName: '5次咨询·成长套餐', appointTime: '2026-05-27 15:00-16:00', createTime: '2026-05-27 16:15:33', orderAmount: '¥800.00', couponAmount: '¥100.00', consultCount: 120, actualIncome: '¥700.00', tradeFee: '0.6%', shareRatio: '60%', settleAmount: '¥420.00', status: '可提现', settleNo: 'JS20260601002', payNo: '' },
+                { billType: '订单', adjustType: '', teacherId: '13256', teacherName: 'WANG MING', orderNo: '20260520111223', bizLine: '此刻咨询', taxType: '劳务报酬个税', serviceName: '单次咨询服务', appointTime: '2026-05-20 10:00-11:00', createTime: '2026-05-20 11:03:18', orderAmount: '¥500.00', couponAmount: '¥0.00', consultCount: 120, actualIncome: '¥500.00', tradeFee: '0.6%', shareRatio: '60%', settleAmount: '¥300.00', status: '提现中', settleNo: 'JS20260601003', payNo: '' },
+                { billType: '调整项', adjustType: '月度激励金', teacherId: '13256', teacherName: 'WANG MING', orderNo: '20260518123456', bizLine: '此刻咨询', taxType: '劳务报酬个税', serviceName: '单次咨询服务', appointTime: '2026-05-18 14:00-15:00', createTime: '2026-05-18 15:06:47', orderAmount: '¥500.00', couponAmount: '¥0.00', consultCount: 120, actualIncome: '¥500.00', tradeFee: '0.6%', shareRatio: '60%', settleAmount: '¥300.00', status: '提现中', settleNo: 'JS20260601004', payNo: '' },
+                { billType: '订单', adjustType: '', teacherId: '20005', teacherName: '陈志明', orderNo: '20260515876543', bizLine: '此刻咨询', taxType: '公对公增值税', serviceName: '4次深度咨询×名师带练「情绪日记」', appointTime: '2026-05-15 10:00-11:00', createTime: '2026-05-15 11:02:29', orderAmount: '¥500.00', couponAmount: '¥0.00', consultCount: 120, actualIncome: '¥500.00', tradeFee: '-', shareRatio: '60%', settleAmount: '¥300.00', status: '提现中', settleNo: 'JS20260601005', payNo: '' },
+                { billType: '订单', adjustType: '', teacherId: '11539', teacherName: '张三', orderNo: '20260510111223', bizLine: '此刻咨询', taxType: '劳务报酬个税', serviceName: '单次咨询服务', appointTime: '2026-04-10 10:00-11:00', createTime: '2026-04-10 11:01:14', orderAmount: '¥500.00', couponAmount: '¥0.00', consultCount: 120, actualIncome: '¥500.00', tradeFee: '0.6%', shareRatio: '60%', settleAmount: '¥300.00', status: '已付款', settleNo: 'JS20260501001', payNo: 'FK20260520001' },
+                { billType: '调整项', adjustType: '订单延时补差价', teacherId: '12087', teacherName: '李四', orderNo: '20260428998877', bizLine: '初心咨询', taxType: '劳务报酬个税', serviceName: '5次咨询·成长套餐', appointTime: '2026-04-28 15:00-16:00', createTime: '2026-04-28 16:09:52', orderAmount: '¥800.00', couponAmount: '¥100.00', consultCount: 120, actualIncome: '¥700.00', tradeFee: '0.6%', shareRatio: '60%', settleAmount: '¥420.00', status: '已付款', settleNo: 'JS20260501002', payNo: 'FK20260520002' },
+                { billType: '调整项', adjustType: '订单退款补扣款', teacherId: '20012', teacherName: '赵丽', orderNo: '20260420123456', bizLine: '此刻咨询', taxType: '公对公增值税', serviceName: '4次深度咨询×名师带练「情绪日记」', appointTime: '2026-04-20 10:00-11:00', createTime: '2026-04-20 11:05:37', orderAmount: '¥500.00', couponAmount: '¥0.00', consultCount: 120, actualIncome: '¥500.00', tradeFee: '-', shareRatio: '60%', settleAmount: '-¥50.00', status: '已付款', settleNo: 'JS20260501003', payNo: 'FK20260520003' },
+                { billType: '调整项', adjustType: '特殊套餐补差价', teacherId: '11539', teacherName: '张三', orderNo: '', bizLine: '此刻咨询', taxType: '劳务报酬个税', serviceName: '', appointTime: '', createTime: '2026-06-05 09:30:12', orderAmount: '', couponAmount: '', consultCount: '', actualIncome: '', tradeFee: '', shareRatio: '', settleAmount: '¥150.00', status: '可提现', settleNo: 'JS20260602001', payNo: '' },
+            ],
             // 结算特殊设置
             settleAddVisible: false,
             settleAddForm: { type: '', name: '', realIncome: '' },
@@ -881,11 +1124,15 @@ new Vue({
                 { type: '咨询服务', name: '单次咨询服务', realIncome: '¥560.00' },
                 { type: '优惠劵', name: '新人优惠券', realIncome: '-¥7.50' },
             ],
+            // 导入调整项
+            importDialogVisible: false,
+            importPreviewData: [],
+            importErrors: [],
         };
     },
     computed: {
         pageTitle() {
-            const map = { 'audit': '提现审核', 'payment': '打款管理', 'flow': '资金流水', 'report': '财务报表', 'config': '结算配置', 'withdraw-list': '提现列表', 'pay-list': '打款列表', 'settle-config': '结算特殊设置' };
+            const map = { 'audit': '提现审核', 'payment': '打款管理', 'flow': '资金流水', 'report': '财务报表', 'config': '结算配置', 'withdraw-list': '提现列表', 'pay-list': '打款列表', 'bill-list': '此刻咨询', 'settle-config': '结算特殊设置' };
             return map[this.activePage] || '';
         },
         plFilteredData() {
@@ -898,6 +1145,50 @@ new Vue({
             if (this.plFilterTaxType) data = data.filter(r => r.taxType === this.plFilterTaxType);
             if (this.plFilterBizLine) data = data.filter(r => r.bizLine === this.plFilterBizLine);
             return data;
+        },
+        blFilteredData() {
+            let data = this.blAllData;
+            if (this.blFilterStatus) data = data.filter(r => r.status === this.blFilterStatus);
+            if (this.blFilterBillType) data = data.filter(r => r.billType === this.blFilterBillType);
+            if (this.blFilterAdjustType) data = data.filter(r => r.adjustType === this.blFilterAdjustType);
+            if (this.blFilterBizLine) data = data.filter(r => r.bizLine === this.blFilterBizLine);
+            if (this.blFilterTaxType) data = data.filter(r => r.taxType === this.blFilterTaxType);
+            if (this.blFilterDateRange && this.blFilterDateRange.length === 2) {
+                const [s, e] = this.blFilterDateRange;
+                data = data.filter(r => {
+                    const d = (r.appointTime || '').slice(0, 10);
+                    return d >= s && d <= e;
+                });
+            }
+            if (this.blFilterSettleNo) data = data.filter(r => (r.settleNo || '').includes(this.blFilterSettleNo));
+            if (this.blFilterPayNo) data = data.filter(r => (r.payNo || '').includes(this.blFilterPayNo));
+            if (this.blFilterKeyword) {
+                const kw = this.blFilterKeyword.toLowerCase();
+                data = data.filter(r => r.teacherId.toLowerCase().includes(kw) || r.teacherName.toLowerCase().includes(kw) || r.orderNo.toLowerCase().includes(kw));
+            }
+            return data;
+        },
+        blGroupSummary() {
+            const data = this.blFilteredData;
+            const groups = {};
+            data.forEach(r => {
+                let key, label;
+                if (r.billType === '订单') {
+                    key = '订单';
+                    label = '订单';
+                } else {
+                    key = '调整项-' + (r.adjustType || '未分类');
+                    label = '调整项·' + (r.adjustType || '未分类');
+                }
+                if (!groups[key]) groups[key] = { label, sum: 0 };
+                const v = parseFloat(String(r.settleAmount || '').replace(/[¥,\s]/g, ''));
+                if (!isNaN(v)) groups[key].sum += v;
+            });
+            const order = ['订单', '调整项-返现金', '调整项-月度激励金', '调整项-订单退款补扣款', '调整项-订单延时补差价', '调整项-特殊套餐补差价'];
+            const result = [];
+            order.forEach(k => { if (groups[k]) result.push({ label: groups[k].label, amount: '¥' + groups[k].sum.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',') }); });
+            Object.keys(groups).forEach(k => { if (!order.includes(k)) result.push({ label: groups[k].label, amount: '¥' + groups[k].sum.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',') }); });
+            return result;
         },
         wlFilteredData() {
             let data = this.wlAllData;
@@ -987,6 +1278,36 @@ new Vue({
             this.plFilterTaxType = '';
             this.plFilterBizLine = '';
         },
+        blResetFilter() {
+            this.blFilterStatus = '';
+            this.blFilterBillType = '';
+            this.blFilterAdjustType = '';
+            this.blFilterBizLine = '';
+            this.blFilterTaxType = '';
+            this.blFilterKeyword = '';
+            this.blFilterDateRange = [];
+            this.blFilterSettleNo = '';
+            this.blFilterPayNo = '';
+        },
+        billStatusTag(status) {
+            const map = { '待结算': 'info', '可提现': '', '提现中': 'warning', '已付款': 'success' };
+            return map[status] || 'info';
+        },
+        getBlSummaries({ columns, data }) {
+            const sumProps = ['settleAmount'];
+            return columns.map((col, idx) => {
+                if (idx === 0) return '合计';
+                if (!sumProps.includes(col.property)) return '';
+                let sum = 0, hasNum = false;
+                (data || []).forEach(r => {
+                    const v = parseFloat(String(r[col.property] || '').replace(/[¥,\s]/g, ''));
+                    if (!isNaN(v)) { sum += v; hasNum = true; }
+                });
+                if (!hasNum) return '-';
+                return '¥' + sum.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+            });
+        },
+
         getPlSummaries({ columns, data }) {
             const sumProps = ['totalAmount', 'laborVat', 'personalTax', 'overseasTax', 'pubTaxDiff', 'deductTotal', 'payAmount', 'invoiceExclTax', 'invoiceVat'];
             return columns.map((col, idx) => {
@@ -1149,6 +1470,112 @@ new Vue({
                 if (b > 0) res += cn[b] + '分';
             }
             return res;
+        },
+        confirmImport() {
+            const validData = this.importPreviewData.filter(r => r._valid);
+            const ts = Date.now();
+            validData.forEach((row, idx) => {
+                const seq = String(ts + idx).slice(-6);
+                const amt = row.settleAmount.startsWith('-') ? '-' + '¥' + Math.abs(parseFloat(row.settleAmount)).toFixed(2) : '¥' + parseFloat(row.settleAmount).toFixed(2);
+                this.blAllData.push({
+                    billType: '调整项',
+                    adjustType: row.adjustType,
+                    teacherId: row.teacherId,
+                    teacherName: row.teacherName || '',
+                    orderNo: '',
+                    bizLine: '',
+                    taxType: '',
+                    serviceName: '',
+                    appointTime: '',
+                    orderAmount: '',
+                    couponAmount: '',
+                    consultCount: '',
+                    actualIncome: '',
+                    tradeFee: '',
+                    shareRatio: '',
+                    settleAmount: amt,
+                    status: '可提现',
+                    settleNo: '',
+                    payNo: ''
+                });
+            });
+            this.$message.success('成功导入 ' + validData.length + ' 条调整项数据');
+            this.importDialogVisible = false;
+            this.importPreviewData = [];
+            this.importErrors = [];
+        },
+        downloadImportTemplate() {
+            const ws = XLSX.utils.aoa_to_sheet([
+                ['老师id', '调整项类型', '应结算金额（元）'],
+                ['11539', '订单退款补扣款', '-50.00'],
+                ['13256', '订单延时补差价', '100.00'],
+                ['20012', '特殊套餐补差价', '200.00']
+            ]);
+            ws['!cols'] = [{ wch: 15 }, { wch: 20 }, { wch: 18 }];
+            ws['!ref'] = 'A1:C4';
+            ws['!dataValidations'] = [{ sqref: 'B2:B1000', type: 'list', formula1: '"订单退款补扣款,订单延时补差价,特殊套餐补差价"' }];
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, '调整项模板');
+            XLSX.writeFile(wb, '调整项导入模板.xlsx');
+            this.$message.success('模板已下载');
+        },
+        handleImportFile(file) {
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const wb = XLSX.read(data, { type: 'array' });
+                    const ws = wb.Sheets[wb.SheetNames[0]];
+                    const rows = XLSX.utils.sheet_to_json(ws, { header: 1 });
+                    if (rows.length < 2) {
+                        this.$message.error('Excel文件无数据');
+                        return;
+                    }
+                    const header = rows[0].map(h => String(h).trim());
+                    const idxTid = header.findIndex(h => h.includes('老师id') || h.includes('老师ID'));
+                    const idxType = header.findIndex(h => h.includes('调整项类型'));
+                    const idxAmt = header.findIndex(h => h.includes('应结算金额'));
+                    if (idxTid === -1 || idxType === -1 || idxAmt === -1) {
+                        this.$message.error('Excel模板格式不正确，请下载标准模板');
+                        return;
+                    }
+                    const validTypes = ['订单退款补扣款', '订单延时补差价', '特殊套餐补差价'];
+                    const teacherMap = {};
+                    this.blAllData.forEach(r => {
+                        if (r.teacherId) teacherMap[r.teacherId] = r.teacherName;
+                    });
+                    const preview = [];
+                    const errors = [];
+                    for (let i = 1; i < rows.length; i++) {
+                        const row = rows[i];
+                        if (!row || row.length === 0) continue;
+                        const tid = String(row[idxTid] || '').trim();
+                        const atype = String(row[idxType] || '').trim();
+                        const amt = String(row[idxAmt] || '').trim();
+                        const item = { teacherId: tid, adjustType: atype, settleAmount: amt, _valid: true, _error: '' };
+                        if (!tid) { item._valid = false; item._error = '老师ID不能为空'; }
+                        else if (!atype) { item._valid = false; item._error = '调整项类型不能为空'; }
+                        else if (!validTypes.includes(atype)) { item._valid = false; item._error = '调整项类型必须是：' + validTypes.join('、'); }
+                        else if (!amt || isNaN(parseFloat(amt))) { item._valid = false; item._error = '应结算金额必须为数字'; }
+                        if (teacherMap[tid]) item.teacherName = teacherMap[tid];
+                        if (!item._valid) errors.push(item);
+                        preview.push(item);
+                    }
+                    this.importPreviewData = preview;
+                    this.importErrors = errors;
+                    if (preview.length === 0) {
+                        this.$message.warning('未解析到有效数据');
+                    } else if (errors.length === 0) {
+                        this.$message.success('解析成功，共 ' + preview.length + ' 条数据');
+                    } else {
+                        this.$message.warning('解析完成，' + errors.length + ' 条数据校验不通过');
+                    }
+                } catch (err) {
+                    this.$message.error('文件解析失败：' + err.message);
+                }
+            };
+            reader.readAsArrayBuffer(file.raw);
         },
         confirmSettleAdd() {
             if (!this.settleAddForm.type || !this.settleAddForm.name) {
