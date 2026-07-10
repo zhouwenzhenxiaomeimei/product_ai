@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>提价要求一览表</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+    background: #f5f7fa;
+    color: #333;
+    padding: 40px 20px;
+  }
+  .container {
+    max-width: 960px;
+    margin: 0 auto;
+  }
+  h1 {
+    font-size: 24px;
+    color: #1a1a2e;
+    margin-bottom: 8px;
+  }
+  .subtitle {
+    font-size: 14px;
+    color: #999;
+    margin-bottom: 32px;
+  }
+  .card-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 32px;
+  }
+  .price-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    border-left: 4px solid #1677ff;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .price-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+  }
+  .price-card .price-header {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .price-card .price-value {
+    font-size: 36px;
+    font-weight: 700;
+    color: #1677ff;
+  }
+  .price-card .price-unit {
+    font-size: 14px;
+    color: #999;
+  }
+  .price-card .price-label {
+    font-size: 13px;
+    color: #fff;
+    background: #1677ff;
+    padding: 2px 10px;
+    border-radius: 10px;
+    margin-left: auto;
+  }
+  .price-card .price-label.lv2 { background: #52c41a; }
+  .price-card .price-label.lv3 { background: #fa8c16; }
+  .price-card .price-label.lv4 { background: #cf1322; }
+  .price-card .info-section {
+    margin-bottom: 14px;
+  }
+  .price-card .info-label {
+    font-size: 13px;
+    color: #999;
+    margin-bottom: 4px;
+  }
+  .price-card .info-value {
+    font-size: 15px;
+    color: #333;
+    line-height: 1.6;
+  }
+  .price-card .info-value.highlight {
+    color: #cf1322;
+    font-weight: 500;
+  }
+  .price-card .divider {
+    height: 1px;
+    background: #f0f0f0;
+    margin: 12px 0;
+  }
+  .price-card .badge-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 4px;
+  }
+  .price-card .badge {
+    font-size: 12px;
+    padding: 3px 10px;
+    border-radius: 4px;
+    background: #f5f5f5;
+    color: #666;
+  }
+  .price-card .badge.warn {
+    background: #fff7e6;
+    color: #fa8c16;
+  }
+  .price-card .badge.danger {
+    background: #fff1f0;
+    color: #cf1322;
+  }
+  .price-card .badge.success {
+    background: #f6ffed;
+    color: #52c41a;
+  }
+  .full-table {
+    background: #fff;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    overflow-x: auto;
+  }
+  .full-table h2 {
+    font-size: 16px;
+    margin-bottom: 16px;
+    color: #1a1a2e;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  th {
+    background: #fafafa;
+    padding: 12px 14px;
+    text-align: left;
+    font-weight: 600;
+    color: #1a1a2e;
+    border-bottom: 2px solid #e8e8e8;
+    white-space: nowrap;
+  }
+  th.col-price, th.col-review {
+    background: #e6f7ff;
+    color: #1677ff;
+  }
+  td {
+    padding: 12px 14px;
+    border-bottom: 1px solid #f0f0f0;
+    color: #555;
+    line-height: 1.5;
+  }
+  td.col-price {
+    font-weight: 700;
+    font-size: 18px;
+    color: #1677ff;
+  }
+  td.col-review {
+    color: #cf1322;
+    font-weight: 500;
+  }
+  tr:last-child td {
+    border-bottom: none;
+  }
+  tr:hover td {
+    background: #fafafa;
+  }
+  .footnote {
+    margin-top: 12px;
+    font-size: 12px;
+    color: #999;
+    line-height: 1.8;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>提价要求一览表</h1>
+  <p class="subtitle">根据单次咨询定价、提价前评分、入驻时间、年审/季审要求整理</p>
+
+  <!-- 卡片式展示 -->
+  <div class="card-grid">
+    <!-- 99元 -->
+    <div class="price-card" style="border-left-color: #1677ff;">
+      <div class="price-header">
+        <span class="price-value">99</span>
+        <span class="price-unit">元/次</span>
+        <span class="price-label">入门档</span>
+      </div>
+      <div class="info-section">
+        <div class="info-label">入驻时间</div>
+        <div class="info-value">一年以内</div>
+      </div>
+      <div class="info-section">
+        <div class="info-label">提价前评分</div>
+        <div class="info-value">不要求</div>
+      </div>
+      <div class="divider"></div>
+      <div class="info-section">
+        <div class="info-label">年审/季审要求</div>
+        <div class="info-value">近一年累计季审不合规次数少于2次，或通过当年年审</div>
+        <div class="badge-list">
+          <span class="badge warn">季审 ≤ 2次不合规</span>
+          <span class="badge success">或通过年审</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 200元 -->
+    <div class="price-card" style="border-left-color: #52c41a;">
+      <div class="price-header">
+        <span class="price-value">200</span>
+        <span class="price-unit">元/次</span>
+        <span class="price-label lv2">基础档</span>
+      </div>
+      <div class="info-section">
+        <div class="info-label">入驻时间</div>
+        <div class="info-value">一年以上</div>
+      </div>
+      <div class="info-section">
+        <div class="info-label">提价前评分</div>
+        <div class="info-value">不要求</div>
+      </div>
+      <div class="divider"></div>
+      <div class="info-section">
+        <div class="info-label">年审/季审要求</div>
+        <div class="info-value">近一年累计季审不合规次数少于2次，或通过当年年审</div>
+        <div class="badge-list">
+          <span class="badge warn">季审 ≤ 2次不合规</span>
+          <span class="badge success">或通过年审</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 300元 -->
+    <div class="price-card" style="border-left-color: #fa8c16;">
+      <div class="price-header">
+        <span class="price-value">300</span>
+        <span class="price-unit">元/次</span>
+        <span class="price-label lv3">进阶档</span>
+      </div>
+      <div class="info-section">
+        <div class="info-label">入驻时间</div>
+        <div class="info-value">一年以上，且距离上一次提价超过 <b>6个月</b></div>
+      </div>
+      <div class="info-section">
+        <div class="info-label">提价前评分</div>
+        <div class="info-value"><b>50-69分</b></div>
+      </div>
+      <div class="divider"></div>
+      <div class="info-section">
+        <div class="info-label">年审/季审要求</div>
+        <div class="info-value">近一年累计季审不合规次数少于2次，或通过当年年审</div>
+        <div class="badge-list">
+          <span class="badge warn">季审 ≤ 2次不合规</span>
+          <span class="badge success">或通过年审</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 400元 -->
+    <div class="price-card" style="border-left-color: #cf1322;">
+      <div class="price-header">
+        <span class="price-value">400</span>
+        <span class="price-unit">元/次</span>
+        <span class="price-label lv4">高级档</span>
+      </div>
+      <div class="info-section">
+        <div class="info-label">入驻时间</div>
+        <div class="info-value">一年以上，且距离上一次提价超过 <b>1年</b></div>
+      </div>
+      <div class="info-section">
+        <div class="info-label">提价前评分</div>
+        <div class="info-value highlight"><b>70-79分</b></div>
+      </div>
+      <div class="divider"></div>
+      <div class="info-section">
+        <div class="info-label">年审/季审要求</div>
+        <div class="info-value highlight">通过当年年审</div>
+        <div class="badge-list">
+          <span class="badge danger">必须通过年审</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 完整表格 -->
+  <div class="full-table">
+    <h2>完整要求对照表</h2>
+    <table>
+      <thead>
+        <tr>
+          <th class="col-price">单次咨询定价</th>
+          <th>提价前评分</th>
+          <th>入驻时间</th>
+          <th class="col-review">年审/季审要求</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="col-price">99元</td>
+          <td>—</td>
+          <td>一年以内</td>
+          <td class="col-review">近一年累计季审不合规次数少于2次<br/>或通过当年年审</td>
+        </tr>
+        <tr>
+          <td class="col-price">200元</td>
+          <td>—</td>
+          <td>一年以上</td>
+          <td class="col-review">近一年累计季审不合规次数少于2次<br/>或通过当年年审</td>
+        </tr>
+        <tr>
+          <td class="col-price">300元</td>
+          <td>50-69分</td>
+          <td>一年以上<br/>距上次提价超过6个月</td>
+          <td class="col-review">近一年累计季审不合规次数少于2次<br/>或通过当年年审</td>
+        </tr>
+        <tr>
+          <td class="col-price">400元</td>
+          <td>70-79分</td>
+          <td>一年以上<br/>距上次提价超过1年</td>
+          <td class="col-review">通过当年年审</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="footnote">
+      注：提价前评分指提价面谈评分，300元档需达到50-69分，400元档需达到70-79分，99元和200元档不要求面谈评分。
+    </div>
+  </div>
+</div>
+</body>
+</html>

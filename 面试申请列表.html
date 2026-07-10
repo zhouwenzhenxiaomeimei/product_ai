@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>面试申请列表</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+    background: #f0f2f5;
+    color: #333;
+    font-size: 14px;
+  }
+  /* 侧边栏 */
+  .sidebar {
+    position: fixed;
+    left: 0; top: 0;
+    width: 200px;
+    height: 100vh;
+    background: #001529;
+    padding-top: 16px;
+    overflow-y: auto;
+  }
+  .sidebar-logo {
+    color: #fff;
+    font-size: 16px;
+    font-weight: 700;
+    padding: 0 24px 24px;
+    border-bottom: 1px solid #1f1f1f;
+    margin-bottom: 8px;
+  }
+  .menu-item {
+    padding: 12px 24px;
+    color: rgba(255,255,255,0.65);
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 13px;
+  }
+  .menu-item:hover { color: #fff; background: rgba(255,255,255,0.05); }
+  .menu-item.active { color: #fff; background: #1677ff; }
+  /* 主内容 */
+  .main {
+    margin-left: 200px;
+    padding: 24px;
+  }
+  .page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+  .page-title { font-size: 20px; font-weight: 600; color: #1a1a2e; }
+  /* 筛选区 */
+  .filter-bar {
+    background: #fff;
+    padding: 20px 24px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px 24px;
+    align-items: flex-end;
+  }
+  .filter-item { display: flex; flex-direction: column; gap: 6px; }
+  .filter-label { font-size: 12px; color: #999; }
+  .filter-input, .filter-select {
+    height: 32px;
+    border: 1px solid #d9d9d9;
+    border-radius: 4px;
+    padding: 0 11px;
+    font-size: 13px;
+    color: #333;
+    outline: none;
+    transition: border-color 0.2s;
+    min-width: 140px;
+  }
+  .filter-input:focus, .filter-select:focus { border-color: #1677ff; }
+  .filter-btn {
+    height: 32px;
+    padding: 0 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.2s;
+  }
+  .filter-btn-primary { background: #1677ff; color: #fff; }
+  .filter-btn-primary:hover { background: #4096ff; }
+  .filter-btn-default { background: #fff; border: 1px solid #d9d9d9; color: #555; }
+  .filter-btn-default:hover { border-color: #1677ff; color: #1677ff; }
+  /* 表格 */
+  .table-wrap {
+    background: #fff;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  table { width: 100%; border-collapse: collapse; }
+  th {
+    background: #fafafa;
+    padding: 12px 12px;
+    text-align: left;
+    font-weight: 600;
+    color: #1a1a2e;
+    font-size: 13px;
+    border-bottom: 1px solid #f0f0f0;
+    white-space: nowrap;
+  }
+  th.col-new { background: #e6f7ff; color: #1677ff; position: relative; }
+  th.col-new::after {
+    content: 'NEW';
+    position: absolute;
+    top: 2px; right: 4px;
+    font-size: 9px;
+    background: #ff4d4f;
+    color: #fff;
+    padding: 1px 4px;
+    border-radius: 6px;
+    font-weight: 600;
+  }
+  td {
+    padding: 12px 12px;
+    border-bottom: 1px solid #f5f5f5;
+    font-size: 13px;
+    color: #555;
+  }
+  tr:hover td { background: #fafafa; }
+  /* 状态标签 */
+  .tag {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+  }
+  .tag-blue { background: #e6f7ff; color: #1677ff; border: 1px solid #91d5ff; }
+  .tag-green { background: #f6ffed; color: #52c41a; border: 1px solid #b7eb8f; }
+  .tag-orange { background: #fff7e6; color: #fa8c16; border: 1px solid #ffd591; }
+  .tag-red { background: #fff1f0; color: #cf1322; border: 1px solid #ffa39e; }
+  .tag-gray { background: #fafafa; color: #999; border: 1px solid #d9d9d9; }
+  /* 提价资格 - 可点击 */
+  .qual-link {
+    cursor: pointer;
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: opacity 0.2s;
+  }
+  .qual-link:hover { opacity: 0.8; }
+  .qual-link .qual-icon { font-size: 12px; }
+  /* 操作链接 */
+  .action-link {
+    color: #1677ff;
+    cursor: pointer;
+    text-decoration: none;
+    margin-right: 12px;
+    font-size: 13px;
+  }
+  .action-link:hover { text-decoration: underline; }
+  /* 分页 */
+  .pagination {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 16px 24px;
+  }
+  .page-info { font-size: 13px; color: #999; margin-right: 8px; }
+  .page-btn {
+    min-width: 32px;
+    height: 32px;
+    border: 1px solid #d9d9d9;
+    background: #fff;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    color: #555;
+    transition: all 0.2s;
+  }
+  .page-btn:hover { border-color: #1677ff; color: #1677ff; }
+  .page-btn.active { background: #1677ff; color: #fff; border-color: #1677ff; }
+  /* 弹窗 */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.45);
+    z-index: 1000;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 40px 0;
+    overflow-y: auto;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal-box {
+    background: #fff;
+    border-radius: 12px;
+    width: 920px;
+    max-width: 95%;
+    max-height: 85vh;
+    overflow-y: auto;
+    box-shadow: 0 6px 30px rgba(0,0,0,0.15);
+  }
+  .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px;
+    border-bottom: 1px solid #f0f0f0;
+    position: sticky;
+    top: 0;
+    background: #fff;
+    z-index: 10;
+    border-radius: 12px 12px 0 0;
+  }
+  .modal-title { font-size: 18px; font-weight: 600; color: #1a1a2e; }
+  .modal-close {
+    width: 32px; height: 32px;
+    border: none;
+    background: #f5f5f5;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 16px;
+    color: #999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+  }
+  .modal-close:hover { background: #e8e8e8; color: #333; }
+  .modal-body { padding: 24px; }
+  /* 老师信息卡 */
+  .teacher-card {
+    background: #f5f7fa;
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin-bottom: 20px;
+    display: flex;
+    gap: 32px;
+    align-items: center;
+  }
+  .teacher-card .tc-item { display: flex; flex-direction: column; gap: 4px; }
+  .teacher-card .tc-label { font-size: 12px; color: #999; }
+  .teacher-card .tc-value { font-size: 15px; font-weight: 600; color: #333; }
+  /* 资格对照表 */
+  .qual-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .qual-table th {
+    background: #fafafa;
+    padding: 10px 12px;
+    text-align: left;
+    font-weight: 600;
+    border-bottom: 2px solid #e8e8e8;
+  }
+  .qual-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #f5f5f5;
+    color: #555;
+  }
+  .qual-table tr.current-row td { background: #e6f7ff; }
+  .qual-table tr.current-row td:first-child { font-weight: 700; color: #1677ff; }
+  .qual-table .check { color: #52c41a; font-weight: 700; }
+  .qual-table .cross { color: #ff4d4f; font-weight: 700; }
+  .qual-table .col-price { font-weight: 700; color: #1677ff; }
+  /* 逐项检查 */
+  .check-list { margin-top: 20px; }
+  .check-list-title { font-size: 15px; font-weight: 600; margin-bottom: 12px; color: #1a1a2e; }
+  .check-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 0;
+    border-bottom: 1px solid #f5f5f5;
+  }
+  .check-item:last-child { border-bottom: none; }
+  .check-icon {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .check-icon.pass { background: #f6ffed; color: #52c41a; border: 1px solid #b7eb8f; }
+  .check-icon.fail { background: #fff1f0; color: #ff4d4f; border: 1px solid #ffa39e; }
+  .check-label { font-size: 14px; color: #333; flex: 1; }
+  .check-status { font-size: 13px; font-weight: 500; }
+  .check-status.pass { color: #52c41a; }
+  .check-status.fail { color: #ff4d4f; }
+  /* 审核数据卡片 */
+  .audit-card {
+    background: #fafbfc;
+    border: 1px solid #e8e8e8;
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin: 16px 0;
+  }
+  .audit-title { font-size: 14px; font-weight: 600; color: #1a1a2e; margin-bottom: 12px; }
+  .audit-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 0;
+    border-bottom: 1px solid #f0f0f0;
+  }
+  .audit-row:last-child { border-bottom: none; }
+  .audit-icon { font-size: 14px; width: 20px; text-align: center; flex-shrink: 0; }
+  .audit-label { font-size: 13px; color: #666; width: 100px; flex-shrink: 0; }
+  .audit-value { font-size: 13px; color: #333; font-weight: 500; flex: 1; }
+  .audit-req { font-size: 12px; color: #999; }
+  .audit-row.pass .audit-icon { color: #52c41a; }
+  .audit-row.fail .audit-icon { color: #ff4d4f; }
+  .audit-row.fail .audit-value { color: #cf1322; }
+  .audit-row.na .audit-icon { color: #ccc; }
+  .audit-row.na .audit-value { color: #999; }
+  /* 审核明细子列表 */
+  .audit-sub-list {
+    margin-left: 32px;
+    margin-top: 4px;
+    padding: 8px 12px;
+    background: #fff;
+    border-radius: 4px;
+    border: 1px solid #f0f0f0;
+  }
+  .audit-sub-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0;
+    font-size: 12px;
+  }
+  .audit-sub-label { color: #999; min-width: 150px; }
+  .audit-sub-value { font-weight: 500; }
+  .audit-sub-value.ok { color: #52c41a; }
+  .audit-sub-value.bad { color: #ff4d4f; }
+  .audit-sub-value.pending { color: #999; }
+  .audit-summary {
+    margin-left: 32px;
+    margin-top: 6px;
+    font-size: 13px;
+    font-weight: 500;
+  }
+  .audit-summary.pass { color: #52c41a; }
+  .audit-summary.fail { color: #ff4d4f; }
+  /* 可展开审核项 */
+  .audit-review-item {
+    padding: 6px 0;
+    border-bottom: 1px solid #f5f5f5;
+    cursor: pointer;
+  }
+  .audit-review-item:last-child { border-bottom: none; }
+  .audit-review-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .audit-review-toggle {
+    font-size: 10px;
+    color: #999;
+    transition: transform 0.2s;
+    width: 12px;
+  }
+  .audit-review-item.expanded .audit-review-toggle {
+    transform: rotate(90deg);
+  }
+  .audit-review-detail {
+    display: none;
+    margin-left: 20px;
+    margin-top: 6px;
+    padding: 8px 12px;
+    background: #fafafa;
+    border-radius: 4px;
+  }
+  .audit-review-item.expanded .audit-review-detail { display: block; }
+  .audit-detail-row {
+    display: flex;
+    gap: 16px;
+    padding: 3px 0;
+    font-size: 12px;
+  }
+  .audit-detail-label { color: #999; min-width: 140px; }
+  /* info标注 */
+  .audit-info-icon {
+    display: inline-block;
+    width: 16px; height: 16px;
+    line-height: 16px;
+    text-align: center;
+    border-radius: 50%;
+    background: #e6f7ff;
+    color: #1677ff;
+    font-size: 10px;
+    cursor: help;
+    margin-left: 4px;
+    position: relative;
+    vertical-align: middle;
+  }
+  .audit-info-icon:hover .audit-info-tooltip { display: block; }
+  .audit-info-tooltip {
+    display: none;
+    position: absolute;
+    left: 24px; top: -10px;
+    width: 340px;
+    padding: 12px 16px;
+    background: #fff;
+    border: 1px solid #d9d9d9;
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+    font-size: 12px;
+    line-height: 1.8;
+    color: #666;
+    z-index: 100;
+    white-space: normal;
+    font-weight: normal;
+    text-align: left;
+  }
+  .audit-info-tooltip .tip-title {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 4px;
+  }
+  .audit-info-tooltip .tip-section {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid #f0f0f0;
+  }
+  .audit-info-tooltip .tip-section:first-child {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: none;
+  }
+  /* 模糊化样式 */
+  .blur-table td:not(.qual-cell),
+  .blur-table th:not(.col-new) {
+    filter: blur(1.5px);
+    opacity: 0.6;
+    user-select: none;
+  }
+  .blur-item {
+    filter: blur(1.5px);
+    opacity: 0.6;
+    pointer-events: none;
+  }
+  .blur-sidebar .menu-item:not(.active) {
+    filter: blur(1px);
+    opacity: 0.5;
+  }
+</style>
+</head>
+<body>
+
+<!-- 侧边栏 -->
+<div class="sidebar blur-sidebar">
+  <div class="sidebar-logo">此刻管理系统</div>
+  <div class="menu-item">咨询师管理</div>
+  <div class="menu-item">服务管理</div>
+  <div class="menu-item active">面试申请</div>
+  <div class="menu-item">提价管理</div>
+  <div class="menu-item">资金管理</div>
+  <div class="menu-item">协议管理</div>
+  <div class="menu-item">系统设置</div>
+</div>
+
+<!-- 主内容 -->
+<div class="main">
+  <div class="page-header">
+    <div class="page-title">面试申请列表</div>
+  </div>
+
+  <!-- 筛选区 -->
+  <div class="filter-bar">
+    <div class="filter-item blur-item">
+      <div class="filter-label">姓名</div>
+      <input class="filter-input" placeholder="请输入姓名" />
+    </div>
+    <div class="filter-item blur-item">
+      <div class="filter-label">手机号</div>
+      <input class="filter-input" placeholder="请输入手机号" />
+    </div>
+    <div class="filter-item blur-item">
+      <div class="filter-label">申请类型</div>
+      <select class="filter-select">
+        <option value="">全部</option>
+        <option value="200" selected>提价200元资料审核</option>
+        <option value="300">提价300元资料审核</option>
+        <option value="400">提价400元资料审核</option>
+      </select>
+    </div>
+    <div class="filter-item blur-item">
+      <div class="filter-label">资料审核状态</div>
+      <select class="filter-select">
+        <option value="">全部</option>
+        <option>待审核</option>
+        <option>通过</option>
+        <option>驳回</option>
+      </select>
+    </div>
+    <div class="filter-item">
+      <div class="filter-label">提价资格</div>
+      <select class="filter-select">
+        <option value="">全部</option>
+        <option value="yes">符合</option>
+        <option value="no">不符合</option>
+      </select>
+    </div>
+    <button class="filter-btn filter-btn-primary blur-item">查询</button>
+    <button class="filter-btn filter-btn-default blur-item">重置</button>
+  </div>
+
+  <!-- 表格 -->
+  <div class="table-wrap">
+    <table class="blur-table">
+      <thead>
+        <tr>
+          <th style="width:70px;">ID</th>
+          <th style="width:80px;">姓名</th>
+          <th style="width:120px;">国家城市</th>
+          <th style="width:150px;">申请类型</th>
+          <th style="width:110px;">资料审核状态</th>
+          <th style="width:100px;">个案审核状态</th>
+          <th style="width:80px;">面试状态</th>
+          <th class="col-new" style="width:100px;">提价资格</th>
+          <th style="width:150px;">申请时间</th>
+          <th style="width:150px;">更新时间</th>
+          <th style="width:140px;">操作</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody">
+        <tr>
+          <td>7871</td>
+          <td>谢青</td>
+          <td>成都</td>
+          <td><span class="tag tag-blue">提价200元</span></td>
+          <td><span class="tag tag-green">通过</span></td>
+          <td><span class="tag tag-gray">未上传</span></td>
+          <td><span class="tag tag-gray">—</span></td>
+          <td class="qual-cell"><a class="qual-link" style="color:#cf1322;" onclick="openQualModal(7871,'谢青','不符合',200)">不符合 <span class="qual-icon">📋</span></a></td>
+          <td style="color:#999;">2026-06-28 15:33:31</td>
+          <td style="color:#999;">2026-06-30 14:41:52</td>
+          <td>
+            <a class="action-link">查看资料</a>
+            <a class="action-link">审核记录</a>
+          </td>
+        </tr>
+        <tr>
+          <td>7849</td>
+          <td>任艳超</td>
+          <td>河北唐山</td>
+          <td><span class="tag tag-blue">提价200元</span></td>
+          <td><span class="tag tag-green">通过</span></td>
+          <td><span class="tag tag-gray">未上传</span></td>
+          <td><span class="tag tag-gray">—</span></td>
+          <td class="qual-cell"><a class="qual-link" style="color:#cf1322;" onclick="openQualModal(7849,'任艳超','不符合',200)">不符合 <span class="qual-icon">📋</span></a></td>
+          <td style="color:#999;">2026-06-27 10:22:15</td>
+          <td style="color:#999;">2026-06-29 16:08:33</td>
+          <td>
+            <a class="action-link">查看资料</a>
+            <a class="action-link">审核记录</a>
+          </td>
+        </tr>
+        <tr>
+          <td>7809</td>
+          <td>陈思杰</td>
+          <td>河北省衡水市</td>
+          <td><span class="tag tag-blue">提价200元</span></td>
+          <td><span class="tag tag-green">通过</span></td>
+          <td><span class="tag tag-green">通过</span></td>
+          <td><span class="tag tag-green">通过</span></td>
+          <td class="qual-cell"><a class="qual-link" style="color:#52c41a;" onclick="openQualModal(7809,'陈思杰','符合',200)">符合 <span class="qual-icon">📋</span></a></td>
+          <td style="color:#999;">2026-06-25 14:10:00</td>
+          <td style="color:#999;">2026-06-28 09:30:00</td>
+          <td>
+            <a class="action-link">查看资料</a>
+            <a class="action-link">审核记录</a>
+          </td>
+        </tr>
+        <tr>
+          <td>7821</td>
+          <td>丁群</td>
+          <td>广州</td>
+          <td><span class="tag tag-blue">提价200元</span></td>
+          <td><span class="tag tag-green">通过</span></td>
+          <td><span class="tag tag-green">通过</span></td>
+          <td><span class="tag tag-orange">待面试</span></td>
+          <td class="qual-cell"><a class="qual-link" style="color:#52c41a;" onclick="openQualModal(7821,'丁群','符合',200)">符合 <span class="qual-icon">📋</span></a></td>
+          <td style="color:#999;">2026-06-26 11:45:20</td>
+          <td style="color:#999;">2026-06-30 10:15:00</td>
+          <td>
+            <a class="action-link">查看资料</a>
+            <a class="action-link">审核记录</a>
+          </td>
+        </tr>
+        <tr>
+          <td>7793</td>
+          <td>艾扬威</td>
+          <td>北京</td>
+          <td><span class="tag tag-blue">提价200元</span></td>
+          <td><span class="tag tag-green">通过</span></td>
+          <td><span class="tag tag-gray">未上传</span></td>
+          <td><span class="tag tag-gray">—</span></td>
+          <td class="qual-cell"><a class="qual-link" style="color:#cf1322;" onclick="openQualModal(7793,'艾扬威','不符合',200)">不符合 <span class="qual-icon">📋</span></a></td>
+          <td style="color:#999;">2026-06-24 09:20:00</td>
+          <td style="color:#999;">2026-06-25 15:30:00</td>
+          <td>
+            <a class="action-link">查看资料</a>
+            <a class="action-link">审核记录</a>
+          </td>
+        </tr>
+        <tr>
+          <td>7768</td>
+          <td>王梓涵</td>
+          <td>上海</td>
+          <td><span class="tag tag-blue">提价200元</span></td>
+          <td><span class="tag tag-green">通过</span></td>
+          <td><span class="tag tag-green">通过</span></td>
+          <td><span class="tag tag-green">通过</span></td>
+          <td class="qual-cell"><a class="qual-link" style="color:#52c41a;" onclick="openQualModal(7768,'王梓涵','符合',200)">符合 <span class="qual-icon">📋</span></a></td>
+          <td style="color:#999;">2026-06-22 16:00:00</td>
+          <td style="color:#999;">2026-06-27 11:20:00</td>
+          <td>
+            <a class="action-link">查看资料</a>
+            <a class="action-link">审核记录</a>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="pagination">
+      <span class="page-info">共 6 条</span>
+      <button class="page-btn">‹</button>
+      <button class="page-btn active">1</button>
+      <button class="page-btn">›</button>
+    </div>
+  </div>
+</div>
+
+<!-- 提价资格弹窗 -->
+<div class="modal-overlay" id="qualModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-title">提价要求一览表</div>
+      <button class="modal-close" onclick="closeQualModal()">✕</button>
+    </div>
+    <div class="modal-body" id="qualModalBody"></div>
+  </div>
+</div>
+
+<script>
+// 模拟老师数据（含提价资格检查项）
+const teacherData = {
+  7871: {
+    name: '谢青', targetPrice: 200,
+    entryDate: '2026-01-15',
+    lastPriceRiseYM: null,
+    quarterlyReviews: [
+      { period: '2026年第二季度', supervisionAudit: '通过', supervisionSupplement: '否', dataAudit: '通过', dataSupplement: '否' },
+      { period: '2026年第一季度', supervisionAudit: '通过', supervisionSupplement: '否', dataAudit: '通过', dataSupplement: '否' },
+      { period: '2025年第四季度', supervisionAudit: '未参加', supervisionSupplement: '—', dataAudit: '未参加', dataSupplement: '—' },
+      { period: '2025年第三季度', supervisionAudit: '未参加', supervisionSupplement: '—', dataAudit: '未参加', dataSupplement: '—' },
+    ],
+    annualReview: { period: '2026年度', supervisionAudit: '未参加', supervisionSupplement: '—', dataAudit: '未参加', dataSupplement: '—' },
+    result: '不符合'
+  },
+  7849: {
+    name: '任艳超', targetPrice: 200,
+    entryDate: '2025-10-20',
+    lastPriceRiseYM: null,
+    quarterlyReviews: [
+      { period: '2026年第二季度', supervisionAudit: '通过', supervisionSupplement: '否', dataAudit: '通过', dataSupplement: '否' },
+      { period: '2026年第一季度', supervisionAudit: '不通过', supervisionSupplement: '是', dataAudit: '通过', dataSupplement: '否' },
+      { period: '2025年第四季度', supervisionAudit: '未参加', supervisionSupplement: '—', dataAudit: '未参加', dataSupplement: '—' },
+      { period: '2025年第三季度', supervisionAudit: '未参加', supervisionSupplement: '—', dataAudit: '未参加', dataSupplement: '—' },
+    ],
+    annualReview: { period: '2026年度', supervisionAudit: '未参加', supervisionSupplement: '—', dataAudit: '未参加', dataSupplement: '—' },
+    result: '不符合'
+  },
+  7809: {
+    name: '陈思杰', targetPrice: 200,
+    entryDate: '2025-01-10',
+    lastPriceRiseYM: null,
+    quarterlyReviews: [
+      { period: '2026年第二季度', supervisionAudit: '通过', supervisionSupplement: '否', dataAudit: '通过', dataSupplement: '否' },
+      { period: '2026年第一季度', supervisionAudit: '通过', supervisionSupplement: '否', dataAudit: '通过', dataSupplement: '否' },
+      { period: '2025年第四季度', supervisionAudit: '通过', supervisionSupplement: '否', dataAudit: '通过', dataSupplement: '否' },
+      { period: '2025年第三季度', supervisionAudit: '通过', supervisionSupplement: '否', dataAudit: '通过', dataSupplement: '否' },
+    ],
+    annualReview: { period: '2026年度', supervisionAudit: '通过', supervisionSupplement: '否', dataAudit: '通过', dataSupplement: '否' },
+    result: '符合'
+  },
+  7821: {
+    name: '丁群', targetPrice: 200,
+    entryDate: '2025-06-15',
+    lastPriceRiseYM: null,
+    quarterlyReviews: [
+      { period: '2026年第二季度', supervisionAudit: '通过', supervisionSupplement: '否', dataAudit: '不通过', dataSupplement: '是' },
+      { period: '2026年第一季度', supervisionAudit: '通过', supervisionSupplement: '否', dataAudit: '通过', dataSupplement: '否' },
+      { period: '2025年第四季度', supervisionAudit: '通过', supervisionSupplement: '否', dataAudit: '通过', dataSupplement: '否' },
+      { period: '2025年第三季度', supervisionAudit: '通过', supervisionSupplement: '否', dataAudit: '通过', dataSupplement: '否' },
+    ],
+    annualReview: { period: '2026年度', supervisionAudit: '通过', supervisionSupplement: '否', dataAudit: '通过', dataSupplement: '否' },
+    result: '符合'
+  },
+  7793: {
+    name: '艾扬威', targetPrice: 200,
+    entryDate: '2026-01-05',
+    lastPriceRiseYM: null,
+    quarterlyReviews: [
+      { period: '2026年第二季度', supervisionAudit: '不通过', supervisionSupplement: '是', dataAudit: '通过', dataSupplement: '否' },
+      { period: '2026年第一季度', supervisionAudit: '通过', supervisionSupplement: '否', dataAudit: '不通过', dataSupplement: '是' },
+      { period: '2025年第四季度', supervisionAudit: '未参加', supervisionSupplement: '—', dataAudit: '未参加', dataSupplement: '—' },
+      { period: '2025年第三季度', supervisionAudit: '未参加', supervisionSupplement: '—', dataAudit: '未参加', dataSupplement: '—' },
+    ],
+    annualReview: { period: '2026年度', supervisionAudit: '未参加', supervisionSupplement: '—', dataAudit: '未参加', dataSupplement: '—' },
+    result: '不符合'
+  },
+  7768: {
+    name: '王梓涵', targetPrice: 200,
+    entryDate: '2024-12-01',
+    lastPriceRiseYM: null,
+    quarterlyReviews: [
+      { period: '2026年第二季度', supervisionAudit: '通过', supervisionSupplement: '否', dataAudit: '通过', dataSupplement: '否' },
+      { period: '2026年第一季度', supervisionAudit: '通过', supervisionSupplement: '否', dataAudit: '通过', dataSupplement: '否' },
+      { period: '2025年第四季度', supervisionAudit: '通过', supervisionSupplement: '否', dataAudit: '通过', dataSupplement: '否' },
+      { period: '2025年第三季度', supervisionAudit: '通过', supervisionSupplement: '否', dataAudit: '通过', dataSupplement: '否' },
+    ],
+    annualReview: { period: '2026年度', supervisionAudit: '通过', supervisionSupplement: '否', dataAudit: '通过', dataSupplement: '否' },
+    result: '符合'
+  },
+};
+
+// 要求标准
+const requirements = {
+  200: { entryTime: '一年以上', review: '近一年季度审核不合格次数少于2次，或通过当年年度审核' },
+  300: { entryTime: '一年以上，距上次提价超6个月', review: '近一年季度审核不合格次数少于2次，或通过当年年度审核' },
+  400: { entryTime: '一年以上，距上次提价超1年', review: '通过当年年度审核' },
+};
+
+// 计算单次审核结果：4项全满足=合格，有记录但不全满足=不合格，无记录=未参加
+function computeReviewResult(r) {
+  if (!r) return '未参加';
+  if (r.supervisionAudit === '未参加' && r.dataAudit === '未参加') return '未参加';
+  if (r.supervisionAudit === '通过' && r.supervisionSupplement === '否' && r.dataAudit === '通过' && r.dataSupplement === '否') return '合格';
+  return '不合格';
+}
+
+// 渲染可展开审核项（默认只看结果，点击展开明细）
+function renderReviewItem(review) {
+  var result = computeReviewResult(review);
+  var cls = result === '合格' ? 'ok' : result === '不合格' ? 'bad' : 'pending';
+  var saCls = review.supervisionAudit === '通过' ? 'ok' : review.supervisionAudit === '不通过' ? 'bad' : 'pending';
+  var daCls = review.dataAudit === '通过' ? 'ok' : review.dataAudit === '不通过' ? 'bad' : 'pending';
+  return '<div class="audit-review-item" onclick="this.classList.toggle(\'expanded\')">'
+    + '<div class="audit-review-header">'
+    + '<span class="audit-review-toggle">▶</span>'
+    + '<span class="audit-sub-label">' + review.period + '</span>'
+    + '<span class="audit-sub-value ' + cls + '">' + result + '</span>'
+    + '</div>'
+    + '<div class="audit-review-detail">'
+    + '<div class="audit-detail-row"><span class="audit-detail-label">督导审核</span><span class="audit-sub-value ' + saCls + '">' + review.supervisionAudit + '</span></div>'
+    + '<div class="audit-detail-row"><span class="audit-detail-label">督导是否补充资料通过</span><span>' + review.supervisionSupplement + '</span></div>'
+    + '<div class="audit-detail-row"><span class="audit-detail-label">数据收审核</span><span class="audit-sub-value ' + daCls + '">' + review.dataAudit + '</span></div>'
+    + '<div class="audit-detail-row"><span class="audit-detail-label">数据是否补充资料通过</span><span>' + review.dataSupplement + '</span></div>'
+    + '</div>'
+    + '</div>';
+}
+
+function openQualModal(id, name, result, targetPrice) {
+  const req = requirements[targetPrice];
+  const isPass = result === '符合';
+  const t = teacherData[id];
+  const now = new Date('2026-07-07');
+
+  // 入驻时间判定
+  const entryDate = new Date(t.entryDate);
+  const entryYears = (now - entryDate) / (365.25 * 24 * 3600 * 1000);
+  const entryPass = entryYears >= 1;
+  const entryReq = '一年以上';
+
+  // 上次提价时间
+  const lastRiseDisplay = t.lastPriceRiseYM || '未提过价';
+  let lastRiseHtml;
+  if (targetPrice === 300 || targetPrice === 400) {
+    const minMonths = targetPrice === 300 ? 6 : 12;
+    let lastRisePass = true;
+    if (t.lastPriceRiseYM) {
+      const parts = t.lastPriceRiseYM.split('-');
+      const lastRiseDate = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1);
+      const monthsDiff = (now.getFullYear() - lastRiseDate.getFullYear()) * 12 + (now.getMonth() - lastRiseDate.getMonth());
+      lastRisePass = monthsDiff >= minMonths;
+    }
+    lastRiseHtml = `
+      <div class="audit-row ${lastRisePass ? 'pass' : 'fail'}">
+        <span class="audit-icon">${lastRisePass ? '✅' : '❌'}</span>
+        <span class="audit-label">上次提价时间</span>
+        <span class="audit-value">${lastRiseDisplay}</span>
+        <span class="audit-req">要求：距上次提价超过${minMonths}个月</span>
+      </div>`;
+  } else {
+    lastRiseHtml = `
+      <div class="audit-row na">
+        <span class="audit-icon">—</span>
+        <span class="audit-label">上次提价时间</span>
+        <span class="audit-value">${lastRiseDisplay}</span>
+      </div>`;
+  }
+
+  // 年审/季审判定
+  var quarterlyResults = t.quarterlyReviews.map(function(q) { return computeReviewResult(q); });
+  var nonCompliantCount = quarterlyResults.filter(function(r) { return r === '不合格'; }).length;
+  var annualResult = computeReviewResult(t.annualReview);
+  var annualPassed = annualResult === '合格';
+  var reviewPass = targetPrice === 400 ? annualPassed : (nonCompliantCount < 2 || annualPassed);
+  var reviewReq = targetPrice === 400 ? '必须通过当年年度审核' : '近一年季度审核不合格次数少于2次，或通过当年年度审核';
+
+  // 构建审核明细列表
+  var reviewListHtml = t.quarterlyReviews.map(function(q) { return renderReviewItem(q); }).join('');
+  reviewListHtml += renderReviewItem(t.annualReview);
+
+  // 综合判定
+  var reviewSummary;
+  if (targetPrice === 400) {
+    reviewSummary = annualPassed ? '✅ 当年年度审核合格' : '❌ 当年年度审核不合格';
+  } else {
+    if (nonCompliantCount < 2) {
+      reviewSummary = '✅ 近一年季度审核不合格' + nonCompliantCount + '次（少于2次），满足条件';
+    } else if (annualPassed) {
+      reviewSummary = '✅ 季度审核不合格' + nonCompliantCount + '次，但当年年度审核合格';
+    } else {
+      reviewSummary = '❌ 季度审核不合格' + nonCompliantCount + '次且当年年度审核不合格';
+    }
+  }
+
+  // info标注
+  var infoTooltip = '<span class="audit-info-icon">ℹ<span class="audit-info-tooltip">'
+    + '<div class="tip-section"><div class="tip-title">季度审核</div>'
+    + '近一年4个季度审核。<br>'
+    + '例如当前为2026年7月（第三季度），则获取：<br>'
+    + '2026年第二季度、2026年第一季度、<br>'
+    + '2025年第四季度、2025年第三季度'
+    + '</div>'
+    + '<div class="tip-section"><div class="tip-title">当年年度审核</div>'
+    + '当前年份的年度审核。例如当前为2026年，<br>'
+    + '则指2026年度审核'
+    + '</div>'
+    + '<div class="tip-section"><div class="tip-title">合格标准</div>'
+    + '同时满足以下4项即为合格：<br>'
+    + '① 督导审核 = 通过<br>'
+    + '② 督导是否补充资料通过 = 否<br>'
+    + '③ 数据收审核 = 通过<br>'
+    + '④ 数据是否补充资料通过 = 否'
+    + '</div>'
+    + '<div class="tip-section"><div class="tip-title">审核结果取值</div>'
+    + '通过 / 不通过 / 未参加<br>'
+    + '（找不到记录视为未参加）<br>'
+    + '未参加不计入不合格次数'
+    + '</div>'
+    + '</span></span>';
+
+  // 表格行
+  var tableRows = [
+    { price: 200, entryTime: '一年以上', review: '近一年季度审核不合格<br/>次数少于2次，或通过<br/>当年年度审核' },
+    { price: 300, entryTime: '一年以上<br/>距上次提价>6月', review: '近一年季度审核不合格<br/>次数少于2次，或通过<br/>当年年度审核' },
+    { price: 400, entryTime: '一年以上<br/>距上次提价>1年', review: '通过当年年度审核' },
+  ];
+  var tableRowsHtml = tableRows.map(function(r) {
+    var cls = r.price === targetPrice ? ' class="current-row"' : '';
+    return '<tr' + cls + '><td class="col-price">' + r.price + '元</td><td>' + r.entryTime + '</td><td>' + r.review + '</td></tr>';
+  }).join('');
+
+  document.getElementById('qualModalBody').innerHTML = `
+    <div class="teacher-card">
+      <div class="tc-item">
+        <div class="tc-label">咨询师</div>
+        <div class="tc-value">${name}（ID: ${id}）</div>
+      </div>
+      <div class="tc-item">
+        <div class="tc-label">申请提价</div>
+        <div class="tc-value" style="color:#1677ff;">${targetPrice}元/次</div>
+      </div>
+      <div class="tc-item">
+        <div class="tc-label">提价资格</div>
+        <div class="tc-value" style="color:${isPass ? '#52c41a' : '#cf1322'};">
+          <span class="tag ${isPass ? 'tag-green' : 'tag-red'}" style="font-size:14px;">${result}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="audit-card">
+      <div class="audit-title">审核数据</div>
+      <div class="audit-row ${entryPass ? 'pass' : 'fail'}">
+        <span class="audit-icon">${entryPass ? '✅' : '❌'}</span>
+        <span class="audit-label">入驻时间</span>
+        <span class="audit-value">${t.entryDate}</span>
+        <span class="audit-req">要求：${entryReq}</span>
+      </div>
+      ${lastRiseHtml}
+      <div class="audit-row ${reviewPass ? 'pass' : 'fail'}">
+        <span class="audit-icon">${reviewPass ? '✅' : '❌'}</span>
+        <span class="audit-label">年审/季审 ${infoTooltip}</span>
+        <span class="audit-req">${reviewReq}</span>
+      </div>
+      <div class="audit-sub-list">${reviewListHtml}</div>
+      <div class="audit-summary ${reviewPass ? 'pass' : 'fail'}">${reviewSummary}</div>
+    </div>
+
+    <table class="qual-table">
+      <thead>
+        <tr>
+          <th style="width:90px;">定价档位</th>
+          <th>入驻时间</th>
+          <th>年审/季审</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${tableRowsHtml}
+      </tbody>
+    </table>
+  `;
+
+  document.getElementById('qualModal').classList.add('show');
+}
+
+function closeQualModal() {
+  document.getElementById('qualModal').classList.remove('show');
+}
+
+// 点击遮罩关闭
+document.getElementById('qualModal').addEventListener('click', function(e) {
+  if (e.target === this) closeQualModal();
+});
+</script>
+</body>
+</html>
