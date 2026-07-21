@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>导师服务账单 - 结算系统</title>
+    <link rel="stylesheet" href="https://unpkg.com/element-ui@2.15.14/lib/theme-chalk/index.css">
+    <style>
+        body { margin: 0; font-family: 'PingFang SC','Microsoft YaHei',sans-serif; }
+        .el-container { height: 100vh; }
+        .el-aside { background: #001529; }
+        .el-menu { border-right: none; }
+        .sidebar-title { color: #fff; text-align: center; padding: 20px 0; font-size: 16px; font-weight: 600; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .el-main { background: #f0f2f5; padding: 16px; }
+        .el-table th { background: #fafafa !important; }
+        .wl-filter-form .el-form-item { margin-bottom: 8px; margin-right: 12px; }
+        .wl-table .el-table__footer-wrapper td { background: #fff7e6 !important; color: #fa8c16; font-weight: 600; }
+        .wl-table .el-table__footer-wrapper td .cell { font-weight: 600; }
+    </style>
+</head>
+<body>
+<div id="app">
+    <el-container>
+        <el-aside width="220px">
+            <div class="sidebar-title">🎓 导师服务账单</div>
+            <el-menu default-active="grad-bill" background-color="#001529" text-color="rgba(255,255,255,0.65)" active-text-color="#fff">
+                <el-menu-item index="grad-bill">
+                    <i class="el-icon-s-claim"></i>
+                    <span>导师服务账单</span>
+                </el-menu-item>
+            </el-menu>
+        </el-aside>
+
+        <el-container>
+            <el-header style="background:#fff;display:flex;align-items:center;justify-content:space-between;box-shadow:0 1px 4px rgba(0,0,0,0.08);">
+                <el-breadcrumb separator="/">
+                    <el-breadcrumb-item>首页</el-breadcrumb-item>
+                    <el-breadcrumb-item>资金管理</el-breadcrumb-item>
+                    <el-breadcrumb-item>导师服务账单</el-breadcrumb-item>
+                </el-breadcrumb>
+                <div>
+                    <el-avatar size="small" style="background:#1890ff;">财</el-avatar>
+                    <span style="margin-left:8px;font-size:14px;">财务专员</span>
+                </div>
+            </el-header>
+
+            <el-main>
+                <el-card>
+                    <div slot="header" style="display:flex;justify-content:space-between;align-items:center;">
+                        <span style="font-weight:600;">导师服务账单</span>
+                        <el-button size="small" icon="el-icon-download" @click="$message.success('导出Excel')">导出</el-button>
+                    </div>
+                    <!-- 筛选条件 -->
+                    <el-form :inline="true" size="small" label-width="75px" class="wl-filter-form" style="margin-bottom:8px;">
+                        <el-form-item label="结算状态">
+                            <el-select v-model="filterStatus" placeholder="全部" clearable style="width:120px;">
+                                <el-option label="待结算" value="待结算"></el-option>
+                                <el-option label="结算中" value="结算中"></el-option>
+                                <el-option label="已结算" value="已结算"></el-option>
+                            </el-select>
+                        </el-form-item>
+                        <el-form-item label="项目名称">
+                            <el-select v-model="filterCourseName" placeholder="全部" clearable style="width:180px;">
+                                <el-option label="朝阳计划4.0-初阶" value="朝阳计划4.0-初阶"></el-option>
+                                <el-option label="朝阳计划4.0-中阶" value="朝阳计划4.0-中阶"></el-option>
+                                <el-option label="朝阳计划4.0-高阶" value="朝阳计划4.0-高阶"></el-option>
+                            </el-select>
+                        </el-form-item>
+                        <el-form-item label="完成时间">
+                            <el-date-picker v-model="filterDateRange" type="datetimerange" range-separator="至" start-placeholder="开始时间" end-placeholder="结束时间" style="width:360px;" value-format="yyyy-MM-dd HH:mm:ss"></el-date-picker>
+                        </el-form-item>
+                        <el-form-item label="关键字">
+                            <el-input v-model="filterKeyword" placeholder="导师名称" prefix-icon="el-icon-search" style="width:240px;" clearable></el-input>
+                        </el-form-item>
+                        <el-form-item label-width="0">
+                            <el-button type="primary" icon="el-icon-search" @click="$message.info('查询')">查询</el-button>
+                            <el-button icon="el-icon-refresh-left" @click="resetFilter">重置</el-button>
+                        </el-form-item>
+                    </el-form>
+                    <el-table :data="filteredData" border stripe size="small" style="width:100%;" class="wl-table" :header-cell-style="{background:'#fafafa'}" show-summary :summary-method="getSummaries">
+                        <el-table-column type="index" label="序号" width="55" fixed="left"></el-table-column>
+                        <el-table-column prop="tutorName" label="老师姓名" width="100"></el-table-column>
+                        <el-table-column prop="courseName" label="项目内容" min-width="160" show-overflow-tooltip></el-table-column>
+                        <el-table-column prop="stageType" label="导师服务" width="100">
+                            <template slot-scope="scope">
+                                <el-tag size="mini" type="primary">{{ scope.row.stageType }}</el-tag>
+                            </template>
+                        </el-table-column>
+                        <el-table-column prop="currentCourseName" label="期" min-width="160" show-overflow-tooltip></el-table-column>
+                        <el-table-column label="完成时间" width="170">
+                            <template slot-scope="scope">
+                                {{ scope.row.serviceTime }}
+                            </template>
+                        </el-table-column>
+                        <el-table-column label="服务日期" width="110">
+                            <template slot-scope="scope">
+                                {{ (scope.row.serviceTime || '').slice(0, 10) }}
+                            </template>
+                        </el-table-column>
+                        <el-table-column label="服务时间" width="200">
+                            <template slot-scope="scope">
+                                {{ (scope.row.serviceTime || '').slice(11) }} 至 {{ formatEndTime(scope.row.serviceTime).slice(11) }}
+                            </template>
+                        </el-table-column>
+                        <el-table-column label="结算方式" width="100">
+                            <template slot-scope="scope">
+                                <span>按次数</span>
+                            </template>
+                        </el-table-column>
+                        <el-table-column prop="settleAmount" width="140">
+                            <template slot="header">
+                                应结算金额
+                                <el-tooltip content="初阶=50元，中阶=100元，高阶=150元" placement="top">
+                                    <i class="el-icon-question" style="color:#909399;"></i>
+                                </el-tooltip>
+                            </template>
+                            <template slot-scope="scope">
+                                <span style="color:#fa8c16;font-weight:600;">{{ scope.row.settleAmount }}</span>
+                            </template>
+                        </el-table-column>
+                        <el-table-column prop="status" label="待结算状态" width="110" fixed="right">
+                            <template slot-scope="scope">
+                                <el-tag size="mini" :type="statusTag(scope.row.status)">{{ scope.row.status }}</el-tag>
+                            </template>
+                        </el-table-column>
+                    </el-table>
+                </el-card>
+            </el-main>
+        </el-container>
+    </el-container>
+</div>
+
+<script src="https://unpkg.com/vue@2.7.16/dist/vue.min.js"></script>
+<script src="https://unpkg.com/element-ui@2.15.14/lib/index.js"></script>
+<script>
+new Vue({
+    el: '#app',
+    data() {
+        return {
+            filterStatus: '',
+            filterCourseName: '',
+            filterKeyword: '',
+            filterDateRange: [],
+            // 数据来源：athena.zxs_tutor_relation（生产-只读-xinletu）
+            // 筛选条件：course_id=565(period_id>=1133), course_id=566(period_id>=1412), course_id=567(period_id>=1120)
+            // 应结算金额规则：初阶(565)=50，中阶(566)=100，高阶(567)=150
+            // 结算状态为模拟数据：2026-06-15后=待结算，2026-05-01后=结算中，更早=已结算
+            allData: [
+                { tutorName: '陆盈', studentName: '高英', phone: '18917088281', stageType: '导师服务', serviceTime: '2026-07-03 10:58:21', courseName: '朝阳计划4.0-高阶', currentCourseName: '朝阳高阶2025年4月01期', courseId: 567, periodId: 1120, settleAmount: '¥150.00', status: '待结算' },
+                { tutorName: '陆盈', studentName: '方秀莲', phone: '18759996693', stageType: '导师服务', serviceTime: '2026-07-01 10:04:04', courseName: '朝阳计划4.0-高阶', currentCourseName: '朝阳高阶2025年4月01期', courseId: 567, periodId: 1120, settleAmount: '¥150.00', status: '待结算' },
+                { tutorName: '陆盈', studentName: '梁秀清', phone: '18916825589', stageType: '导师服务', serviceTime: '2026-06-30 22:54:13', courseName: '朝阳计划4.0-高阶', currentCourseName: '朝阳高阶2025年4月01期', courseId: 567, periodId: 1120, settleAmount: '¥150.00', status: '待结算' },
+                { tutorName: '陆盈', studentName: '会飞的野马', phone: '17717613594', stageType: '导师服务', serviceTime: '2026-06-30 19:14:42', courseName: '朝阳计划4.0-高阶', currentCourseName: '朝阳高阶2025年4月01期', courseId: 567, periodId: 1120, settleAmount: '¥150.00', status: '待结算' },
+                { tutorName: '陆盈', studentName: '景文', phone: '13158570092', stageType: '导师服务', serviceTime: '2026-06-30 18:07:49', courseName: '朝阳计划4.0-高阶', currentCourseName: '朝阳高阶2025年4月01期', courseId: 567, periodId: 1120, settleAmount: '¥150.00', status: '待结算' },
+                { tutorName: '许静', studentName: '白日梦', phone: '15102280312', stageType: '导师服务', serviceTime: '2026-06-30 18:05:00', courseName: '朝阳计划4.0-高阶', currentCourseName: '朝阳高阶2025年4月01期', courseId: 567, periodId: 1120, settleAmount: '¥150.00', status: '待结算' },
+                { tutorName: '马一铭', studentName: '宇宙佛', phone: '18999660161', stageType: '导师服务', serviceTime: '2026-06-30 18:03:06', courseName: '朝阳计划4.0-高阶', currentCourseName: '朝阳高阶2025年4月01期', courseId: 567, periodId: 1120, settleAmount: '¥150.00', status: '待结算' },
+                { tutorName: '马一铭', studentName: '雪弎', phone: '13982115683', stageType: '导师服务', serviceTime: '2026-06-30 11:35:53', courseName: '朝阳计划4.0-高阶', currentCourseName: '朝阳高阶2025年4月01期', courseId: 567, periodId: 1120, settleAmount: '¥150.00', status: '待结算' },
+                { tutorName: '张现利', studentName: '💜', phone: '13379584985', stageType: '导师服务', serviceTime: '2026-06-29 17:52:27', courseName: '朝阳计划4.0-高阶', currentCourseName: '朝阳高阶2025年4月01期', courseId: 567, periodId: 1120, settleAmount: '¥150.00', status: '待结算' },
+                { tutorName: '马彦', studentName: '朱莎莎', phone: '15002878523', stageType: '导师服务', serviceTime: '2026-06-29 17:52:27', courseName: '朝阳计划4.0-高阶', currentCourseName: '朝阳高阶2025年4月01期', courseId: 567, periodId: 1120, settleAmount: '¥150.00', status: '待结算' },
+                { tutorName: '马彦', studentName: '简单', phone: '18678696077', stageType: '导师服务', serviceTime: '2026-06-29 17:52:27', courseName: '朝阳计划4.0-高阶', currentCourseName: '朝阳高阶2025年4月01期', courseId: 567, periodId: 1120, settleAmount: '¥150.00', status: '待结算' },
+                { tutorName: '马彦', studentName: '朱波', phone: '13558835586', stageType: '导师服务', serviceTime: '2026-06-29 17:52:27', courseName: '朝阳计划4.0-高阶', currentCourseName: '朝阳高阶2025年4月01期', courseId: 567, periodId: 1120, settleAmount: '¥150.00', status: '待结算' },
+                { tutorName: '刘晖', studentName: '晨露', phone: '13997065539', stageType: '导师服务', serviceTime: '2026-06-29 17:44:31', courseName: '朝阳计划4.0-高阶', currentCourseName: '朝阳高阶2025年4月01期', courseId: 567, periodId: 1120, settleAmount: '¥150.00', status: '待结算' },
+                { tutorName: '刘晖', studentName: '井进', phone: '13597119392', stageType: '导师服务', serviceTime: '2026-06-29 17:44:30', courseName: '朝阳计划4.0-高阶', currentCourseName: '朝阳高阶2025年4月01期', courseId: 567, periodId: 1120, settleAmount: '¥150.00', status: '待结算' },
+                { tutorName: '刘晖', studentName: '赵同学', phone: '18649092179', stageType: '导师服务', serviceTime: '2026-06-29 17:44:30', courseName: '朝阳计划4.0-高阶', currentCourseName: '朝阳高阶2025年4月01期', courseId: 567, periodId: 1120, settleAmount: '¥150.00', status: '待结算' },
+                { tutorName: '牟红梅', studentName: '咨询师2516', phone: '17279002516', stageType: '导师服务', serviceTime: '2026-06-29 07:48:30', courseName: '朝阳计划4.0-初阶', currentCourseName: '朝阳计划-初阶26年2月01期', courseId: 565, periodId: 1365, settleAmount: '¥50.00', status: '待结算' },
+                { tutorName: '牟红梅', studentName: '余忠旺', phone: '18119745347', stageType: '导师服务', serviceTime: '2026-06-27 13:10:59', courseName: '朝阳计划4.0-初阶', currentCourseName: '朝阳计划-初阶26年2月01期', courseId: 565, periodId: 1365, settleAmount: '¥50.00', status: '待结算' },
+                { tutorName: '牟红梅', studentName: 'Denise', phone: '18640265207', stageType: '导师服务', serviceTime: '2026-06-26 11:23:04', courseName: '朝阳计划4.0-初阶', currentCourseName: '朝阳计划-初阶26年2月01期', courseId: 565, periodId: 1365, settleAmount: '¥50.00', status: '待结算' },
+                { tutorName: '牟红梅', studentName: '莉莉杨', phone: '15162117640', stageType: '导师服务', serviceTime: '2026-06-23 20:49:05', courseName: '朝阳计划4.0-初阶', currentCourseName: '朝阳计划-初阶26年2月01期', courseId: 565, periodId: 1365, settleAmount: '¥50.00', status: '待结算' },
+                { tutorName: '牟红梅', studentName: '咨询师8531', phone: '13405728531', stageType: '导师服务', serviceTime: '2026-06-23 13:43:41', courseName: '朝阳计划4.0-初阶', currentCourseName: '朝阳计划-初阶26年2月01期', courseId: 565, periodId: 1365, settleAmount: '¥50.00', status: '待结算' },
+                { tutorName: '牟红梅', studentName: '房尧', phone: '13869057756', stageType: '导师服务', serviceTime: '2026-06-23 07:51:42', courseName: '朝阳计划4.0-初阶', currentCourseName: '朝阳计划-初阶26年2月01期', courseId: 565, periodId: 1365, settleAmount: '¥50.00', status: '待结算' },
+                { tutorName: '牟红梅', studentName: '鲨鱼爆米花桶', phone: '13650934162', stageType: '导师服务', serviceTime: '2026-06-22 19:41:04', courseName: '朝阳计划4.0-初阶', currentCourseName: '朝阳计划-初阶26年2月01期', courseId: 565, periodId: 1365, settleAmount: '¥50.00', status: '待结算' },
+                { tutorName: '马晓宏', studentName: '肖岳泉', phone: '13087365238', stageType: '导师服务', serviceTime: '2026-06-05 11:18:09', courseName: '朝阳计划4.0-初阶', currentCourseName: '朝阳计划-初阶26年01月01期', courseId: 565, periodId: 1360, settleAmount: '¥50.00', status: '结算中' },
+                { tutorName: '马晓宏', studentName: '李越', phone: '15150013450', stageType: '导师服务', serviceTime: '2026-06-05 11:18:09', courseName: '朝阳计划4.0-初阶', currentCourseName: '朝阳计划-初阶26年01月01期', courseId: 565, periodId: 1360, settleAmount: '¥50.00', status: '结算中' },
+                { tutorName: '马晓宏', studentName: '蒲雪莲', phone: '18980600585', stageType: '导师服务', serviceTime: '2026-06-05 11:18:09', courseName: '朝阳计划4.0-初阶', currentCourseName: '朝阳计划-初阶26年01月01期', courseId: 565, periodId: 1360, settleAmount: '¥50.00', status: '结算中' },
+                { tutorName: '马晓宏', studentName: '蔡杭池', phone: '13798601539', stageType: '导师服务', serviceTime: '2026-06-05 11:18:08', courseName: '朝阳计划4.0-初阶', currentCourseName: '朝阳计划-初阶26年01月01期', courseId: 565, periodId: 1360, settleAmount: '¥50.00', status: '结算中' },
+                { tutorName: '马晓宏', studentName: '伊颜。', phone: '13838348559', stageType: '导师服务', serviceTime: '2026-06-05 11:18:08', courseName: '朝阳计划4.0-初阶', currentCourseName: '朝阳计划-初阶26年01月01期', courseId: 565, periodId: 1360, settleAmount: '¥50.00', status: '结算中' },
+                { tutorName: '马晓宏', studentName: '曹莉', phone: '15918476598', stageType: '导师服务', serviceTime: '2026-06-05 11:18:08', courseName: '朝阳计划4.0-初阶', currentCourseName: '朝阳计划-初阶26年01月01期', courseId: 565, periodId: 1360, settleAmount: '¥50.00', status: '结算中' },
+                { tutorName: '马晓宏', studentName: '黄啸', phone: '13611770560', stageType: '导师服务', serviceTime: '2026-06-05 11:18:08', courseName: '朝阳计划4.0-初阶', currentCourseName: '朝阳计划-初阶26年01月01期', courseId: 565, periodId: 1360, settleAmount: '¥50.00', status: '结算中' },
+                { tutorName: '马晓宏', studentName: '邓丽平', phone: '13890067995', stageType: '导师服务', serviceTime: '2026-06-05 11:18:08', courseName: '朝阳计划4.0-初阶', currentCourseName: '朝阳计划-初阶26年01月01期', courseId: 565, periodId: 1360, settleAmount: '¥50.00', status: '结算中' },
+                { tutorName: '马晓宏', studentName: '张扬', phone: '13060337183', stageType: '导师服务', serviceTime: '2026-06-05 11:18:08', courseName: '朝阳计划4.0-初阶', currentCourseName: '朝阳计划-初阶26年01月01期', courseId: 565, periodId: 1360, settleAmount: '¥50.00', status: '结算中' },
+                { tutorName: '马晓宏', studentName: '黄绍芬', phone: '15801931930', stageType: '导师服务', serviceTime: '2026-06-05 11:18:08', courseName: '朝阳计划4.0-初阶', currentCourseName: '朝阳计划-初阶26年01月01期', courseId: 565, periodId: 1360, settleAmount: '¥50.00', status: '结算中' },
+                { tutorName: '马晓宏', studentName: '王梦娟', phone: '15001255417', stageType: '导师服务', serviceTime: '2026-06-05 11:18:08', courseName: '朝阳计划4.0-初阶', currentCourseName: '朝阳计划-初阶26年01月01期', courseId: 565, periodId: 1360, settleAmount: '¥50.00', status: '结算中' },
+                { tutorName: '马晓宏', studentName: '莫田柱', phone: '13694243405', stageType: '导师服务', serviceTime: '2026-06-05 11:18:07', courseName: '朝阳计划4.0-初阶', currentCourseName: '朝阳计划-初阶26年01月01期', courseId: 565, periodId: 1360, settleAmount: '¥50.00', status: '结算中' },
+                { tutorName: '马晓宏', studentName: '花儿', phone: '18356021485', stageType: '导师服务', serviceTime: '2026-06-05 11:18:07', courseName: '朝阳计划4.0-初阶', currentCourseName: '朝阳计划-初阶26年01月01期', courseId: 565, periodId: 1360, settleAmount: '¥50.00', status: '结算中' },
+                { tutorName: '马晓宏', studentName: '李菁雯', phone: '13120169542', stageType: '导师服务', serviceTime: '2026-06-05 11:18:07', courseName: '朝阳计划4.0-初阶', currentCourseName: '朝阳计划-初阶26年01月01期', courseId: 565, periodId: 1360, settleAmount: '¥50.00', status: '结算中' },
+                { tutorName: '马晓宏', studentName: '王娟', phone: '15810062960', stageType: '导师服务', serviceTime: '2026-06-05 11:18:07', courseName: '朝阳计划4.0-初阶', currentCourseName: '朝阳计划-初阶26年01月01期', courseId: 565, periodId: 1360, settleAmount: '¥50.00', status: '结算中' },
+                { tutorName: '马晓宏', studentName: '会飞的车', phone: '15309921775', stageType: '导师服务', serviceTime: '2026-06-05 11:18:07', courseName: '朝阳计划4.0-初阶', currentCourseName: '朝阳计划-初阶26年01月01期', courseId: 565, periodId: 1360, settleAmount: '¥50.00', status: '结算中' },
+                { tutorName: '马晓宏', studentName: '王金萍', phone: '18766195363', stageType: '导师服务', serviceTime: '2026-06-05 11:18:07', courseName: '朝阳计划4.0-初阶', currentCourseName: '朝阳计划-初阶26年01月01期', courseId: 565, periodId: 1360, settleAmount: '¥50.00', status: '结算中' },
+                { tutorName: '马晓宏', studentName: '吴梦菲', phone: '18106025544', stageType: '导师服务', serviceTime: '2026-06-05 11:18:07', courseName: '朝阳计划4.0-初阶', currentCourseName: '朝阳计划-初阶26年01月01期', courseId: 565, periodId: 1360, settleAmount: '¥50.00', status: '结算中' },
+            ],
+        };
+    },
+    computed: {
+        filteredData() {
+            let data = this.allData;
+            if (this.filterStatus) data = data.filter(r => r.status === this.filterStatus);
+            if (this.filterCourseName) data = data.filter(r => r.courseName === this.filterCourseName);
+            if (this.filterDateRange && this.filterDateRange.length === 2) {
+                const [s, e] = this.filterDateRange;
+                data = data.filter(r => {
+                    const d = r.serviceTime || '';
+                    return d >= s && d <= e;
+                });
+            }
+            if (this.filterKeyword) {
+                const kw = this.filterKeyword.toLowerCase();
+                data = data.filter(r => r.tutorName.toLowerCase().includes(kw));
+            }
+            return data;
+        }
+    },
+    methods: {
+        resetFilter() {
+            this.filterStatus = '';
+            this.filterCourseName = '';
+            this.filterKeyword = '';
+            this.filterDateRange = [];
+        },
+        formatEndTime(time) {
+            if (!time) return '';
+            var d = new Date(time.replace(/-/g, '/'));
+            d.setMinutes(d.getMinutes() + 30);
+            var pad = function(n) { return String(n).padStart(2, '0'); };
+            return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
+        },
+        statusTag(status) {
+            const map = { '待结算': 'info', '结算中': 'warning', '已结算': 'success' };
+            return map[status] || 'info';
+        },
+        getSummaries({ columns, data }) {
+            const sumProps = ['settleAmount'];
+            return columns.map((col, idx) => {
+                if (idx === 0) return '合计';
+                if (idx === 1) return (data && data.length ? data.length + ' 条' : '');
+                if (!sumProps.includes(col.property)) return '';
+                let sum = 0, hasNum = false;
+                (data || []).forEach(r => {
+                    const v = parseFloat(String(r[col.property] || '').replace(/[¥,\s]/g, ''));
+                    if (!isNaN(v)) { sum += v; hasNum = true; }
+                });
+                if (!hasNum) return '-';
+                return '¥' + sum.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+            });
+        }
+    }
+});
+</script>
+</body>
+</html>
