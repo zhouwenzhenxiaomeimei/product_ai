@@ -104,9 +104,6 @@
             <el-table-column prop="amount" label="含税金额（元）" width="120" align="right">
                 <template slot-scope="{row}">{{ formatAmount(row.amount) }}</template>
             </el-table-column>
-            <el-table-column label="已红冲金额（元）" width="130" align="right">
-                <template slot-scope="{row}">{{ row.redAmount ? formatAmount(row.redAmount) : '-' }}</template>
-            </el-table-column>
             <el-table-column label="不含税金额（元）" width="130" align="right">
                 <template slot-scope="{row}">{{ noTaxAmount(row.amount) }}</template>
             </el-table-column>
@@ -158,7 +155,6 @@
                     </template>
                     <template v-else-if="row.status==='已红冲'">
                         <a class="action-link" @click="openDetailDialog(row)">详情</a>
-                        <a class="action-link" @click="openRedDialog(row)">申请红冲</a>
                         <a class="action-link" @click="handleDownloadInvoice(row)">下载发票</a>
                     </template>
                     <a class="action-link" @click="openLogDialog(row)" style="margin-left:4px;">日志</a>
@@ -427,7 +423,7 @@
                 <div class="detail-row"><div class="detail-label">ID</div><div class="detail-value">{{ currentRow.id }}</div></div>
                 <div class="detail-row"><div class="detail-label">发票号码</div><div class="detail-value">{{ currentRow.invoiceCode }}</div></div>
                 <div class="detail-row"><div class="detail-label">发票金额</div><div class="detail-value">{{ formatAmount(currentRow.amount) }} 元</div></div>
-                <div class="detail-row"><div class="detail-label">红冲金额</div><div class="detail-value" style="color:#f56c6c;">{{ formatAmount(currentRow.redAmount) }} 元</div></div>
+                <div class="detail-row"><div class="detail-label">红冲金额</div><div class="detail-value" style="color:#f56c6c;">全额红冲 {{ formatAmount(currentRow.amount) }} 元</div></div>
                 <div class="detail-row"><div class="detail-label">红冲原因</div><div class="detail-value">{{ currentRow.redReason }}</div></div>
             </div>
             <el-form label-width="120px" size="small" style="margin-top:20px;">
@@ -526,17 +522,13 @@
             <div class="detail-row"><div class="detail-label">ID</div><div class="detail-value">{{ currentRow.id }}</div></div>
             <div class="detail-row"><div class="detail-label">发票号码</div><div class="detail-value">{{ currentRow.invoiceCode }}</div></div>
             <div class="detail-row"><div class="detail-label">发票金额</div><div class="detail-value">{{ formatAmount(currentRow.amount) }} 元</div></div>
-            <div class="detail-row" v-if="currentRow.redAmount"><div class="detail-label">已红冲金额</div><div class="detail-value" style="color:#f56c6c;">{{ formatAmount(currentRow.redAmount) }} 元</div></div>
         </div>
 
         <el-form label-width="80px" size="small" style="margin-top:20px;">
-            <el-form-item label="红冲金额" required>
-                <el-input v-model="redAmount" placeholder="请输入红冲金额" style="width:200px;">
-                    <template slot="append">元</template>
-                </el-input>
-                <span style="margin-left:8px;font-size:12px;color:#909399;">可红冲金额：{{ formatAmount((currentRow.amount||0) - (currentRow.redAmount||0)) }} 元</span>
+            <el-form-item label="红冲金额">
+                <el-tag type="danger" size="small">全额红冲 {{ formatAmount(currentRow.amount) }} 元</el-tag>
             </el-form-item>
-            <el-form-item v-if="isFullRed" label="" style="margin-top:-10px;">
+            <el-form-item label="" style="margin-top:-10px;">
                 <el-checkbox v-model="redNeedReissue">需要重开</el-checkbox>
                 <span style="margin-left:8px;font-size:12px;color:#909399;">勾选后将复制一条一模一样的发票信息，运营可按需编辑后重新提交</span>
             </el-form-item>
@@ -597,10 +589,10 @@ new Vue({
         tableData: [
             { id:1, entity:'广州市人心网络科技有限公司', bizType:'EAP 项目', productCategory:'EAP 服务', productSubCategory:'EAP 项目', channel:'平台用户', period:'2026年06月 ~ 2026年07月', payer:'某某科技有限公司', amount:12800.00, invoiceType:'增值税电子普通发票', titleType:'企业', invoiceTitle:'武汉荟友网络科技有限公司', invoiceTaxNo:'91420100MA4K26Q136', email:'finance@huiyou.com', contact:'13800138001', isPaid:'已收款', status:'待开票', applicant:'张运营', applyTime:'2026-07-18 10:30', orderNos:'20260701001；20260702002；20260703003', bankAccount:'公账收款' },
             { id:2, entity:'心乐土（北京）教育科技有限公司', bizType:'线上咨询', productCategory:'咨询服务', productSubCategory:'线上咨询', channel:'合作渠道', period:'2026年07月 ~ 2026年07月', payer:'某某健康管理公司', amount:56000.00, invoiceType:'增值税电子专用发票', titleType:'企业', invoiceTitle:'北京康健健康管理有限公司', invoiceTaxNo:'91110108MA01C3D4E5', email:'billing@kangjian.cn', contact:'13900139002', isPaid:'已收款', status:'开票中', applicant:'李运营', applyTime:'2026-07-17 14:20', channelName:'健康管理合作渠道', bankAccount:'线上收款' },
-            { id:3, entity:'广州市直觉网络科技有限公司', bizType:'线上倾诉', productCategory:'咨询服务', productSubCategory:'线上倾诉', channel:'平台用户', period:'2026年07月 ~ 2026年07月', payer:'张某', amount:3600.00, invoiceType:'增值税电子普通发票', titleType:'个人', personalName:'张伟', email:'zhangwei@example.com', contact:'13700137003', isPaid:'已收款', status:'已开票', applicant:'张运营', applyTime:'2026-07-15 09:10', orderNos:'20260701001；20260702002', invoiceCode:'24312000000012345678', invoiceDate:'2026-07-15', bankAccount:'支付宝收款', redAmount:1200, redRejectReason:'红冲金额与实际退款金额不符', logs:[
+            { id:3, entity:'广州市直觉网络科技有限公司', bizType:'线上倾诉', productCategory:'咨询服务', productSubCategory:'线上倾诉', channel:'平台用户', period:'2026年07月 ~ 2026年07月', payer:'张某', amount:3600.00, invoiceType:'增值税电子普通发票', titleType:'个人', personalName:'张伟', email:'zhangwei@example.com', contact:'13700137003', isPaid:'已收款', status:'已开票', applicant:'张运营', applyTime:'2026-07-15 09:10', orderNos:'20260701001；20260702002', invoiceCode:'24312000000012345678', invoiceDate:'2026-07-15', bankAccount:'支付宝收款', redRejectReason:'退款金额与发票金额不符，请核实后重新申请', logs:[
                 { time:'2026-07-15 09:10', operator:'张运营', action:'创建发票', detail:'', type:'primary' },
-                { time:'2026-07-16 14:00', operator:'张运营', action:'申请红冲', detail:'红冲金额 1,200.00 元，原因：客户退款', type:'warning' },
-                { time:'2026-07-16 14:30', operator:'李财务', action:'财务驳回红冲', detail:'驳回原因 红冲金额与实际退款金额不符', type:'danger' },
+                { time:'2026-07-16 14:00', operator:'张运营', action:'申请红冲', detail:'全额红冲，原因：客户退款', type:'warning' },
+                { time:'2026-07-16 14:30', operator:'李财务', action:'财务驳回红冲', detail:'驳回原因 退款金额与发票金额不符，请核实后重新申请', type:'danger' },
             ] },
             { id:4, entity:'广州鲸鱼门诊有限公司', bizType:'线下工作坊', productCategory:'培训课程', productSubCategory:'线下工作坊', channel:'合作渠道', period:'2026年06月 ~ 2026年06月', payer:'某某企业管理咨询公司', amount:88000.00, invoiceType:'增值税电子专用发票', titleType:'企业', invoiceTitle:'杭州博雅企业管理咨询有限公司', invoiceTaxNo:'91330106MA2B5C6D7E', email:'admin@boya.com', contact:'13600136004', isPaid:'已收款', status:'开票驳回', applicant:'王运营', applyTime:'2026-07-10 16:45', channelName:'企业管理合作渠道', bankAccount:'微信收款', failReason:'开票内容与实际业务不符', logs:[
                 { time:'2026-07-10 16:45', operator:'王运营', action:'创建发票', detail:'', type:'primary' },
@@ -609,21 +601,21 @@ new Vue({
             { id:5, entity:'珠海鲸鱼心理咨询服务有限公司', bizType:'心理倾听师', productCategory:'咨询服务', productSubCategory:'线上倾诉', channel:'平台用户', period:'2026年06月 ~ 2026年06月', payer:'李某', amount:1280.00, invoiceType:'增值税电子普通发票', titleType:'个人', personalName:'李娜', email:'lina@example.com', contact:'13500135005', isPaid:'已收款', status:'已取消', applicant:'张运营', applyTime:'2026-07-08 11:20', orderNos:'20260601001', bankAccount:'公账收款', cancelReason:'订单退款，无需开票', logs:[
                 { time:'2026-07-08 11:20', operator:'张运营', action:'创建发票', detail:'', type:'primary' },
             ] },
-            { id:6, entity:'广州市人心网络科技有限公司', bizType:'此刻心理', productCategory:'咨询服务', productSubCategory:'此刻心理', channel:'平台用户', period:'2026年07月 ~ 2026年07月', payer:'某某互联网公司', amount:45000.00, invoiceType:'增值税电子普通发票', titleType:'企业', invoiceTitle:'上海云启信息技术有限公司', invoiceTaxNo:'91310115MA1K4P2Q3R', email:'finance@yunqi.com', contact:'13400134006', isPaid:'已收款', status:'待冲红', applicant:'李运营', applyTime:'2026-07-05 15:30', orderNos:'20260701001', invoiceCode:'24312000000023456789', invoiceDate:'2026-07-06', bankAccount:'线上收款', redAmount:45000, redReason:'客户退款', logs:[
+            { id:6, entity:'广州市人心网络科技有限公司', bizType:'此刻心理', productCategory:'咨询服务', productSubCategory:'此刻心理', channel:'平台用户', period:'2026年07月 ~ 2026年07月', payer:'某某互联网公司', amount:45000.00, invoiceType:'增值税电子普通发票', titleType:'企业', invoiceTitle:'上海云启信息技术有限公司', invoiceTaxNo:'91310115MA1K4P2Q3R', email:'finance@yunqi.com', contact:'13400134006', isPaid:'已收款', status:'待冲红', applicant:'李运营', applyTime:'2026-07-05 15:30', orderNos:'20260701001', invoiceCode:'24312000000023456789', invoiceDate:'2026-07-06', bankAccount:'线上收款', redReason:'客户退款', logs:[
                 { time:'2026-07-05 15:30', operator:'李运营', action:'创建发票', detail:'', type:'primary' },
-                { time:'2026-07-18 10:00', operator:'李运营', action:'申请红冲', detail:'红冲金额 45,000.00 元，原因：客户退款', type:'warning' },
+                { time:'2026-07-18 10:00', operator:'李运营', action:'申请红冲', detail:'全额红冲，原因：客户退款', type:'warning' },
             ] },
             { id:7, entity:'广州来都来了科技有限公司', bizType:'AI 心理督导', productCategory:'AI 产品', productSubCategory:'AI 心理督导', channel:'合作渠道', period:'2026年07月 ~ 2026年07月', payer:'某某教育科技公司', amount:22000.00, invoiceType:'增值税电子普通发票', titleType:'企业', invoiceTitle:'深圳市优学教育科技有限公司', invoiceTaxNo:'91440300MA5F8J2K4L', email:'pay@youxue.com', contact:'13300133007', isPaid:'未收款', status:'待开票', applicant:'王运营', applyTime:'2026-07-19 09:00', channelName:'教育科技合作渠道', bankAccount:'支付宝收款' },
-            { id:11, entity:'广州鲸鱼门诊有限公司', bizType:'线下工作坊', productCategory:'培训课程', productSubCategory:'线下工作坊', channel:'合作渠道', period:'2026年06月 ~ 2026年06月', payer:'某某企业管理咨询公司', amount:56000.00, invoiceType:'增值税电子专用发票', titleType:'企业', invoiceTitle:'杭州博雅企业管理咨询有限公司', invoiceTaxNo:'91330106MA2B5C6D7E', email:'admin@boya.com', contact:'13600136004', isPaid:'已收款', status:'待冲红', applicant:'王运营', applyTime:'2026-07-15 10:00', orderNos:'20260601001', invoiceCode:'24312000000056789012', invoiceDate:'2026-07-16', bankAccount:'微信收款', redAmount:56000, redReason:'合同金额调整', logs:[
+            { id:11, entity:'广州鲸鱼门诊有限公司', bizType:'线下工作坊', productCategory:'培训课程', productSubCategory:'线下工作坊', channel:'合作渠道', period:'2026年06月 ~ 2026年06月', payer:'某某企业管理咨询公司', amount:56000.00, invoiceType:'增值税电子专用发票', titleType:'企业', invoiceTitle:'杭州博雅企业管理咨询有限公司', invoiceTaxNo:'91330106MA2B5C6D7E', email:'admin@boya.com', contact:'13600136004', isPaid:'已收款', status:'待冲红', applicant:'王运营', applyTime:'2026-07-15 10:00', orderNos:'20260601001', invoiceCode:'24312000000056789012', invoiceDate:'2026-07-16', bankAccount:'微信收款', redReason:'合同金额调整', logs:[
                 { time:'2026-07-15 10:00', operator:'王运营', action:'创建发票', detail:'', type:'primary' },
-                { time:'2026-07-18 09:00', operator:'王运营', action:'申请红冲', detail:'红冲金额 56,000.00 元，原因：合同金额调整', type:'warning' },
+                { time:'2026-07-18 09:00', operator:'王运营', action:'申请红冲', detail:'全额红冲，原因：合同金额调整', type:'warning' },
             ] },
             { id:10, entity:'心乐土（上海）心理咨询有限公司', bizType:'线下咨询', productCategory:'咨询服务', productSubCategory:'线下咨询', channel:'合作渠道', period:'2026年07月 ~ 2026年07月', payer:'某某教育科技公司', amount:32000.00, invoiceType:'增值税电子普通发票', titleType:'企业', invoiceTitle:'深圳市优学教育科技有限公司', invoiceTaxNo:'91440300MA5F8J2K4L', email:'pay@youxue.com', contact:'13300133007', isPaid:'已收款', status:'待开票', applicant:'王运营', applyTime:'2026-07-19 09:00', channelName:'教育科技合作渠道', bankAccount:'支付宝收款', logs:[
                 { time:'2026-07-19 09:00', operator:'王运营', action:'创建发票', detail:'', type:'primary' },
             ] },
             { id:8, entity:'广州数羊科技有限公司', bizType:'护航计划', productCategory:'EAP 服务', productSubCategory:'护航计划', channel:'平台用户', period:'2026年06月 ~ 2026年07月', payer:'某某生物科技公司', amount:156000.00, invoiceType:'增值税电子专用发票', titleType:'企业', invoiceTitle:'成都慧心生物科技有限公司', invoiceTaxNo:'91510100MA6G7H8J9K', email:'finance@huixin.com', contact:'13200132008', isPaid:'已收款', status:'已红冲', applicant:'张运营', applyTime:'2026-07-01 10:00', orderNos:'20260601001；20260701002', invoiceCode:'24312000000034567890', invoiceDate:'2026-07-02', bankAccount:'微信收款', logs:[
                 { time:'2026-07-01 10:00', operator:'张运营', action:'创建发票', detail:'', type:'primary' },
-                { time:'2026-07-10 11:00', operator:'张运营', action:'申请红冲', detail:'红冲金额 156,000.00 元，原因：合同变更', type:'warning' },
+                { time:'2026-07-10 11:00', operator:'张运营', action:'申请红冲', detail:'全额红冲，原因：合同变更', type:'warning' },
             ] },
             { id:9, entity:'广州市人心网络科技有限公司', bizType:'EAP 项目', productCategory:'EAP 服务', productSubCategory:'EAP 项目', channel:'合作渠道', period:'2026年05月 ~ 2026年06月', payer:'某某集团', amount:200000.00, invoiceType:'增值税电子专用发票', titleType:'企业', invoiceTitle:'武汉荟友网络科技有限公司', invoiceTaxNo:'91420100MA4K26Q136', email:'finance@huiyou.com', contact:'13800138001', isPaid:'已收款', status:'已红冲', applicant:'李运营', applyTime:'2026-06-20 14:00', channelName:'集团合作渠道', invoiceCode:'24312000000045678901', invoiceDate:'2026-06-21', bankAccount:'公账收款', redReason:'合同变更，需重新开票' },
         ],
@@ -643,7 +635,6 @@ new Vue({
         // 取消
         cancelReason: '',
         // 红冲
-        redAmount: '',
         redReason: '',
         redNeedReissue: false,
         // 红冲确认
@@ -660,10 +651,7 @@ new Vue({
             return this.productSubCategoryMap[this.form.productCategory] || [];
         },
         // 红冲金额等于发票金额时为全额红冲，展示「需要重开」复选框
-        isFullRed() {
-            const amt = Number(this.redAmount);
-            return !isNaN(amt) && amt > 0 && this.currentRow && amt === (this.currentRow.amount || 0);
-        },
+        // isFullRed 已移除，全额红冲模式下始终展示
         // 详情弹窗内嵌财务审核模块（待开票，仅财务入口）
         isAuditMode() {
             return this.isDetail && this.financeMode && this.currentRow && this.currentRow.status === '待开票';
@@ -753,7 +741,7 @@ new Vue({
                 invoiceBank: row.invoiceBank || '', invoiceBankNo: row.invoiceBankNo || ''
             };
         },
-        openRedDialog(row) { this.currentRow = row; this.redAmount = ''; this.redReason = ''; this.redNeedReissue = false; this.redDialogVisible = true; },
+        openRedDialog(row) { this.currentRow = row; this.redReason = ''; this.redNeedReissue = false; this.redDialogVisible = true; },
         onChannelChange(val) {
             if (val === '平台用户') { this.form.channelName = ''; }
             else { this.form.orderNos = ''; }
@@ -793,14 +781,9 @@ new Vue({
             this.$message.success('已取消开票，状态变为已取消');
         },
         handleRedSubmit() {
-            const amt = Number(this.redAmount);
-            const max = (this.currentRow.amount || 0) - (this.currentRow.redAmount || 0);
-            if (!this.redAmount || isNaN(amt)) { this.$message.warning('请输入有效的红冲金额'); return; }
-            if (amt <= 0) { this.$message.warning('红冲金额必须大于 0'); return; }
-            if (amt > max) { this.$message.warning('红冲金额不能超过可红冲金额 ' + this.formatAmount(max) + ' 元'); return; }
             if (!this.redReason) { this.$message.warning('请输入红冲原因'); return; }
             this.redDialogVisible = false;
-            this.$message.success(this.redNeedReissue && this.isFullRed
+            this.$message.success(this.redNeedReissue
                 ? '红冲申请已提交，状态变为待冲红，等待财务确认；财务确认后将复制一条新发票供编辑'
                 : '红冲申请已提交，状态变为待冲红，等待财务确认');
         },
