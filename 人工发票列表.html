@@ -143,6 +143,7 @@
                     <template v-else-if="row.status==='已开票'">
                         <a class="action-link" @click="openDetailDialog(row)">详情</a>
                         <a class="action-link" @click="openRedDialog(row)">申请红冲</a>
+                        <a class="action-link" @click="handleDownloadInvoice(row)">下载发票</a>
                     </template>
                     <template v-else-if="row.status==='开票驳回'">
                         <a class="action-link" @click="openDetailDialog(row)">详情</a>
@@ -158,6 +159,7 @@
                     <template v-else-if="row.status==='已红冲'">
                         <a class="action-link" @click="openDetailDialog(row)">详情</a>
                         <a class="action-link" @click="openRedDialog(row)">申请红冲</a>
+                        <a class="action-link" @click="handleDownloadInvoice(row)">下载发票</a>
                     </template>
                     <a class="action-link" @click="openLogDialog(row)" style="margin-left:4px;">日志</a>
                 </template>
@@ -397,6 +399,24 @@
                 <el-form-item v-if="auditResult==='reject'" label="驳回原因" required>
                     <el-input v-model="auditReason" type="textarea" :rows="3" placeholder="请输入驳回原因，运营将根据原因修改后重新提交"></el-input>
                 </el-form-item>
+                <el-form-item v-if="auditResult==='approve' && !isAutoBaiwang(currentRow.entity)" label="发票附件" required>
+                    <el-alert
+                        title="该主体未对接百望系统，请上传已开好的发票 PDF/OFD 附件"
+                        type="warning"
+                        :closable="false"
+                        show-icon
+                        style="margin-bottom:8px;">
+                    </el-alert>
+                    <el-upload
+                        action="#"
+                        :auto-upload="false"
+                        :on-change="handleInvoiceFileChange"
+                        :limit="1"
+                        :file-list="invoiceFile ? [{name: invoiceFile, url: '#'}] : []">
+                        <el-button size="small" type="primary" icon="el-icon-upload">点击上传</el-button>
+                        <div slot="tip" class="el-upload__tip">上传后状态将直接变为已开票</div>
+                    </el-upload>
+                </el-form-item>
             </el-form>
         </template>
 
@@ -420,6 +440,24 @@
                 <el-form-item v-if="redConfirmResult==='reject'" label="驳回原因" required>
                     <el-input v-model="redConfirmReason" type="textarea" :rows="3" placeholder="请输入驳回红冲的原因"></el-input>
                 </el-form-item>
+                <el-form-item v-if="redConfirmResult==='approve' && !isAutoBaiwang(currentRow.entity)" label="红冲附件" required>
+                    <el-alert
+                        title="该主体未对接百望系统，请上传红冲后的新发票 PDF/OFD 附件"
+                        type="warning"
+                        :closable="false"
+                        show-icon
+                        style="margin-bottom:8px;">
+                    </el-alert>
+                    <el-upload
+                        action="#"
+                        :auto-upload="false"
+                        :on-change="handleRedInvoiceFileChange"
+                        :limit="1"
+                        :file-list="redInvoiceFile ? [{name: redInvoiceFile, url: '#'}] : []">
+                        <el-button size="small" type="primary" icon="el-icon-upload">点击上传</el-button>
+                        <div slot="tip" class="el-upload__tip">上传后状态将直接变为已红冲</div>
+                    </el-upload>
+                </el-form-item>
             </el-form>
         </template>
 
@@ -433,6 +471,7 @@
                 <el-button type="primary" @click="handleRedConfirmSubmit">确认</el-button>
             </template>
             <template v-else-if="isDetail">
+                <el-button v-if="currentRow.status==='已开票' || currentRow.status==='已红冲'" type="primary" plain icon="el-icon-download" @click="handleDownloadInvoice(currentRow)">下载发票</el-button>
                 <el-button @click="formDialogVisible=false">关闭</el-button>
             </template>
             <template v-else>
@@ -575,6 +614,13 @@ new Vue({
                 { time:'2026-07-18 10:00', operator:'李运营', action:'申请红冲', detail:'红冲金额 45,000.00 元，原因：客户退款', type:'warning' },
             ] },
             { id:7, entity:'广州来都来了科技有限公司', bizType:'AI 心理督导', productCategory:'AI 产品', productSubCategory:'AI 心理督导', channel:'合作渠道', period:'2026年07月 ~ 2026年07月', payer:'某某教育科技公司', amount:22000.00, invoiceType:'增值税电子普通发票', titleType:'企业', invoiceTitle:'深圳市优学教育科技有限公司', invoiceTaxNo:'91440300MA5F8J2K4L', email:'pay@youxue.com', contact:'13300133007', isPaid:'未收款', status:'待开票', applicant:'王运营', applyTime:'2026-07-19 09:00', channelName:'教育科技合作渠道', bankAccount:'支付宝收款' },
+            { id:11, entity:'广州鲸鱼门诊有限公司', bizType:'线下工作坊', productCategory:'培训课程', productSubCategory:'线下工作坊', channel:'合作渠道', period:'2026年06月 ~ 2026年06月', payer:'某某企业管理咨询公司', amount:56000.00, invoiceType:'增值税电子专用发票', titleType:'企业', invoiceTitle:'杭州博雅企业管理咨询有限公司', invoiceTaxNo:'91330106MA2B5C6D7E', email:'admin@boya.com', contact:'13600136004', isPaid:'已收款', status:'待冲红', applicant:'王运营', applyTime:'2026-07-15 10:00', orderNos:'20260601001', invoiceCode:'24312000000056789012', invoiceDate:'2026-07-16', bankAccount:'微信收款', redAmount:56000, redReason:'合同金额调整', logs:[
+                { time:'2026-07-15 10:00', operator:'王运营', action:'创建发票', detail:'', type:'primary' },
+                { time:'2026-07-18 09:00', operator:'王运营', action:'申请红冲', detail:'红冲金额 56,000.00 元，原因：合同金额调整', type:'warning' },
+            ] },
+            { id:10, entity:'心乐土（上海）心理咨询有限公司', bizType:'线下咨询', productCategory:'咨询服务', productSubCategory:'线下咨询', channel:'合作渠道', period:'2026年07月 ~ 2026年07月', payer:'某某教育科技公司', amount:32000.00, invoiceType:'增值税电子普通发票', titleType:'企业', invoiceTitle:'深圳市优学教育科技有限公司', invoiceTaxNo:'91440300MA5F8J2K4L', email:'pay@youxue.com', contact:'13300133007', isPaid:'已收款', status:'待开票', applicant:'王运营', applyTime:'2026-07-19 09:00', channelName:'教育科技合作渠道', bankAccount:'支付宝收款', logs:[
+                { time:'2026-07-19 09:00', operator:'王运营', action:'创建发票', detail:'', type:'primary' },
+            ] },
             { id:8, entity:'广州数羊科技有限公司', bizType:'护航计划', productCategory:'EAP 服务', productSubCategory:'护航计划', channel:'平台用户', period:'2026年06月 ~ 2026年07月', payer:'某某生物科技公司', amount:156000.00, invoiceType:'增值税电子专用发票', titleType:'企业', invoiceTitle:'成都慧心生物科技有限公司', invoiceTaxNo:'91510100MA6G7H8J9K', email:'finance@huixin.com', contact:'13200132008', isPaid:'已收款', status:'已红冲', applicant:'张运营', applyTime:'2026-07-01 10:00', orderNos:'20260601001；20260701002', invoiceCode:'24312000000034567890', invoiceDate:'2026-07-02', bankAccount:'微信收款', logs:[
                 { time:'2026-07-01 10:00', operator:'张运营', action:'创建发票', detail:'', type:'primary' },
                 { time:'2026-07-10 11:00', operator:'张运营', action:'申请红冲', detail:'红冲金额 156,000.00 元，原因：合同变更', type:'warning' },
@@ -603,6 +649,9 @@ new Vue({
         // 红冲确认
         redConfirmResult: '',
         redConfirmReason: '',
+        // 附件上传（非百望直连主体使用）
+        invoiceFile: '',
+        redInvoiceFile: '',
         // 当前行
         currentRow: {},
     },
@@ -642,6 +691,18 @@ new Vue({
             const map = { '待开票':'warning', '开票中':'', '已开票':'success', '开票驳回':'danger', '已取消':'info', '待冲红':'danger', '已红冲':'danger' };
             return map[status] || 'info';
         },
+        // 判断业务主体是否支持自动对接百望系统
+        isAutoBaiwang(entity) {
+            return ['广州市人心网络科技有限公司', '珠海市唯壹科技有限公司'].includes(entity);
+        },
+        // 下载发票（原型中仅提示）
+        handleDownloadInvoice(row) {
+            if (!row.invoiceFile && !row.redInvoiceFile) {
+                this.$message.warning('发票文件暂未上传');
+                return;
+            }
+            this.$message.success('开始下载发票文件：' + (row.invoiceFile || row.redInvoiceFile));
+        },
         handleSearch() { this.$message.info('查询功能（原型）'); },
         handleReset() { this.filters = { status:'', bizType:'', channel:'', entity:'', keyword:'' }; },
         handleExport() {
@@ -672,6 +733,8 @@ new Vue({
             this.auditReason = '';
             this.redConfirmResult = '';
             this.redConfirmReason = '';
+            this.invoiceFile = row.invoiceFile || '';
+            this.redInvoiceFile = row.redInvoiceFile || '';
             this.fillForm(row);
             this.formDialogVisible = true;
         },
@@ -712,8 +775,17 @@ new Vue({
         handleAuditSubmit() {
             if (!this.auditResult) { this.$message.warning('请选择审核结果'); return; }
             if (this.auditResult === 'reject' && !this.auditReason) { this.$message.warning('请输入驳回原因'); return; }
+            if (this.auditResult === 'approve' && !this.isAutoBaiwang(this.currentRow.entity) && !this.invoiceFile) { this.$message.warning('请先上传发票附件'); return; }
             this.formDialogVisible = false;
-            this.$message.success(this.auditResult === 'approve' ? '审核通过，已调用百望接口开票，状态变为开票中' : '已驳回，状态变为开票驳回');
+            if (this.auditResult === 'approve') {
+                if (this.isAutoBaiwang(this.currentRow.entity)) {
+                    this.$message.success('审核通过，已调用百望接口开票，状态变为开票中，开票成功后将发送邮件至客户邮箱');
+                } else {
+                    this.$message.success('审核通过，已上传发票附件，状态变为已开票，已发送邮件至客户邮箱');
+                }
+            } else {
+                this.$message.info('已驳回，状态变为开票驳回');
+            }
         },
         handleCancelSubmit() {
             if (!this.cancelReason) { this.$message.warning('请输入取消原因'); return; }
@@ -736,12 +808,26 @@ new Vue({
         handleRedConfirmSubmit() {
             if (!this.redConfirmResult) { this.$message.warning('请选择确认结果'); return; }
             if (this.redConfirmResult === 'reject' && !this.redConfirmReason) { this.$message.warning('请输入驳回原因'); return; }
+            if (this.redConfirmResult === 'approve' && !this.isAutoBaiwang(this.currentRow.entity) && !this.redInvoiceFile) { this.$message.warning('请先上传红冲附件'); return; }
             this.formDialogVisible = false;
             if (this.redConfirmResult === 'approve') {
-                this.$message.success('已确认红冲，正在调用百望红字接口，如失败将发送钉钉告警');
+                if (this.isAutoBaiwang(this.currentRow.entity)) {
+                    this.$message.success('已确认红冲，正在调用百望红字接口，如失败将发送钉钉告警');
+                } else {
+                    this.$message.success('已确认红冲，已上传红冲附件，状态变为已红冲');
+                }
             } else {
                 this.$message.info('已驳回红冲申请，状态恢复为已开票');
             }
+        },
+        // 上传组件 change 回调（原型中仅记录文件名）
+        handleInvoiceFileChange(file) {
+            this.invoiceFile = file.name;
+            this.$message.success('发票附件已选择：' + file.name);
+        },
+        handleRedInvoiceFileChange(file) {
+            this.redInvoiceFile = file.name;
+            this.$message.success('红冲附件已选择：' + file.name);
         },
     }
 });
