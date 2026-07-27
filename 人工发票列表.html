@@ -248,27 +248,27 @@
             <template v-if="form.isPaid==='已收款'">
                 <el-form-item label="收款账户">
                     <el-select v-model="form.bankAccount" placeholder="请选择" style="width:100%;" :disabled="isDetail">
-                        <el-option label="线上收款" value="线上收款"></el-option>
-                        <el-option label="公账收款" value="公账收款"></el-option>
-                        <el-option label="支付宝收款" value="支付宝收款"></el-option>
-                        <el-option label="微信收款" value="微信收款"></el-option>
+                        <el-option label="公账收款（客户转账至公司对公银行账户）" value="公账收款"></el-option>
+                        <el-option label="支付宝收款（客户通过支付宝转账收款）" value="支付宝收款"></el-option>
+                        <el-option label="微信收款（客户通过微信转账收款）" value="微信收款"></el-option>
+                        <el-option label="线上收款（用户自主在平台发起支付，无需运营提供官方收款账号）" value="线上收款"></el-option>
                     </el-select>
                 </el-form-item>
-                <el-form-item label="付款人名称">
+                <el-form-item label="付款人名称" :required="['公账收款','支付宝收款','微信收款'].includes(form.bankAccount)">
                     <el-input v-model="form.payer" placeholder="请输入付款人名称（个人或企业）" :disabled="isDetail"></el-input>
                 </el-form-item>
-                <el-form-item label="收款时间">
+                <el-form-item label="收款时间" :required="['公账收款','支付宝收款','微信收款'].includes(form.bankAccount)">
                     <el-date-picker v-model="form.payTime" type="date" placeholder="选择收款时间" style="width:100%;"
                         format="yyyy-MM-dd" value-format="yyyy-MM-dd" :disabled="isDetail"></el-date-picker>
                 </el-form-item>
             </template>
-            <el-form-item v-if="form.isPaid==='已收款'" label="付款凭证" :required="form.channel==='合作渠道'">
+            <el-form-item v-if="form.isPaid==='已收款'" label="付款凭证" :required="['公账收款','支付宝收款','微信收款'].includes(form.bankAccount)">
                 <el-upload action="#" list-type="picture-card" :auto-upload="false" :limit="9" :disabled="isDetail">
                     <i class="el-icon-plus"></i>
                 </el-upload>
                 <div style="font-size:12px;color:#909399;">最多选择9张</div>
             </el-form-item>
-            <el-form-item label="附件">
+            <el-form-item label="附件" :required="form.isPaid==='未收款'">
                 <el-upload action="#" :auto-upload="false" :limit="1" :disabled="isDetail">
                     <el-button size="small" icon="el-icon-upload2">上传合同等附件</el-button>
                 </el-upload>
@@ -278,7 +278,7 @@
             <div style="margin:8px 0 16px;padding:8px 15px;background:#f5f7fa;border-radius:4px;font-size:13px;font-weight:600;color:#303133;">开票信息</div>
             <el-row :gutter="16">
                 <el-col :span="12">
-                    <el-form-item label="结算金额（含税）" required>
+                    <el-form-item label="开票金额（含税）" required>
                         <el-input v-model="form.invoiceAmount" placeholder="请输入金额" :disabled="isDetail">
                             <template slot="suffix">元</template>
                         </el-input>
@@ -373,6 +373,9 @@
                     </el-col>
                 </el-row>
             </template>
+            <el-form-item label="备注">
+                <el-input v-model="form.remark" type="textarea" :rows="2" maxlength="200" show-word-limit placeholder="请输入备注信息（选填）" :disabled="isDetail"></el-input>
+            </el-form-item>
         </el-form>
 
         <!-- 财务审核模块（待开票详情内嵌） -->
@@ -628,7 +631,7 @@ new Vue({
         isEdit: false,
         isDetail: false,
         financeMode: false,
-        form: { entity:'', bizType:'', productCategory:'', productSubCategory:'', channel:'', channelName:'', settleRange:[], orderNos:'', invoiceAmount:undefined, invoiceType:'', invoiceContent:'', invoiceTitle:'', invoiceTaxNo:'', invoiceAddress:'', invoicePhone:'', invoiceBank:'', invoiceBankNo:'', isPaid:'', bankAccount:'', payer:'', payTime:'' },
+        form: { entity:'', bizType:'', productCategory:'', productSubCategory:'', channel:'', channelName:'', settleRange:[], orderNos:'', invoiceAmount:undefined, invoiceType:'', invoiceContent:'', invoiceTitle:'', invoiceTaxNo:'', invoiceAddress:'', invoicePhone:'', invoiceBank:'', invoiceBankNo:'', isPaid:'', bankAccount:'', payer:'', payTime:'', remark:'' },
         // 审核
         auditResult: '',
         auditReason: '',
@@ -699,7 +702,7 @@ new Vue({
         openAddDialog() {
             this.isEdit = false;
             this.isDetail = false;
-            this.form = { entity:'', bizType:'', productCategory:'', productSubCategory:'', channel:'', channelName:'', settleRange:[], orderNos:'', invoiceAmount:undefined, invoiceType:'', invoiceContent:'', titleType:'企业', personalName:'', invoiceTitle:'', invoiceTaxNo:'', email:'', contact:'', invoiceAddress:'', invoicePhone:'', invoiceBank:'', invoiceBankNo:'', isPaid:'', bankAccount:'', payer:'', payTime:'' };
+            this.form = { entity:'', bizType:'', productCategory:'', productSubCategory:'', channel:'', channelName:'', settleRange:[], orderNos:'', invoiceAmount:undefined, invoiceType:'', invoiceContent:'', titleType:'企业', personalName:'', invoiceTitle:'', invoiceTaxNo:'', email:'', contact:'', invoiceAddress:'', invoicePhone:'', invoiceBank:'', invoiceBankNo:'', isPaid:'', bankAccount:'', payer:'', payTime:'', remark:'' };
             this.formDialogVisible = true;
         },
         openEditDialog(row) {
@@ -738,7 +741,8 @@ new Vue({
                 invoiceTitle: row.invoiceTitle || '', invoiceTaxNo: row.invoiceTaxNo || '',
                 email: row.email || '', contact: row.contact || '',
                 invoiceAddress: row.invoiceAddress || '', invoicePhone: row.invoicePhone || '',
-                invoiceBank: row.invoiceBank || '', invoiceBankNo: row.invoiceBankNo || ''
+                invoiceBank: row.invoiceBank || '', invoiceBankNo: row.invoiceBankNo || '',
+                remark: row.remark || ''
             };
         },
         openRedDialog(row) { this.currentRow = row; this.redReason = ''; this.redNeedReissue = false; this.redDialogVisible = true; },
