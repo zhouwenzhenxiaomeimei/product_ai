@@ -1,0 +1,1557 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>老师合同列表 - 后台管理系统</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: #f0f2f5;
+            color: #333;
+        }
+
+        /* 顶部导航 */
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 0 24px;
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            z-index: 1000;
+        }
+        .header-title { font-size: 20px; font-weight: 600; }
+        .header-user { display: flex; align-items: center; gap: 12px; font-size: 14px; }
+        .user-avatar {
+            width: 36px; height: 36px; border-radius: 50%;
+            background: rgba(255,255,255,0.3);
+            display: flex; align-items: center; justify-content: center; font-size: 16px;
+        }
+
+        /* 布局 */
+        .layout { display: flex; margin-top: 64px; min-height: calc(100vh - 64px); }
+
+        /* 左侧菜单 */
+        .sidebar { display: none; }
+        .menu-item {
+            padding: 16px 24px; cursor: pointer; transition: all 0.3s;
+            border-left: 3px solid transparent;
+            display: flex; align-items: center; gap: 12px;
+            font-size: 14px; color: #666;
+        }
+        .menu-item:hover { background: #f6f7f9; color: #667eea; }
+        .menu-item.active { background: #f0f2ff; color: #667eea; border-left-color: #667eea; font-weight: 500; }
+        .menu-icon { font-size: 18px; }
+
+        /* 主内容区 */
+        .main-content { flex: 1; padding: 24px; }
+
+        /* 页面标题 */
+        .page-header {
+            background: white; padding: 24px; border-radius: 12px;
+            margin-bottom: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        }
+        .page-header h1 { font-size: 20px; font-weight: 600; color: #333; margin-bottom: 8px; }
+        .page-header p { font-size: 13px; color: #999; margin: 0; }
+
+        /* 筛选栏 */
+        .filter-bar {
+            background: white; padding: 16px 20px; border-radius: 12px;
+            margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            display: flex; gap: 16px; align-items: center; flex-wrap: wrap;
+        }
+        .filter-item { display: flex; align-items: center; gap: 8px; }
+        .filter-label { font-size: 13px; color: #666; white-space: nowrap; }
+        .filter-input, .filter-select {
+            padding: 8px 12px; border: 1px solid #d9d9d9; border-radius: 6px;
+            font-size: 13px; min-width: 120px;
+        }
+        .filter-input:focus, .filter-select:focus { outline: none; border-color: #667eea; }
+        /* 多选下拉 */
+        .multiselect-wrap { position: relative; min-width: 160px; }
+        .multiselect-trigger {
+            padding: 8px 30px 8px 12px; border: 1px solid #d9d9d9; border-radius: 6px;
+            font-size: 13px; cursor: pointer; background: white; user-select: none;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            display: flex; align-items: center; justify-content: space-between; gap: 6px;
+        }
+        .multiselect-trigger:hover { border-color: #667eea; }
+        .multiselect-trigger.open { border-color: #667eea; box-shadow: 0 0 0 2px rgba(102,126,234,0.15); }
+        .multiselect-arrow { font-size: 10px; color: #999; flex-shrink: 0; }
+        .multiselect-dropdown {
+            display: none; position: absolute; top: calc(100% + 4px); left: 0;
+            background: white; border: 1px solid #e0e0e0; border-radius: 8px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.12); z-index: 999;
+            min-width: 200px; max-height: 280px; overflow-y: auto;
+            padding: 4px 0;
+        }
+        .multiselect-dropdown.open { display: block; }
+        .multiselect-option {
+            display: flex; align-items: center; gap: 8px;
+            padding: 7px 14px; font-size: 13px; cursor: pointer; color: #333;
+        }
+        .multiselect-option:hover { background: #f5f7ff; }
+        .multiselect-option input[type=checkbox] { accent-color: #667eea; width: 14px; height: 14px; flex-shrink: 0; cursor: pointer; }
+        .multiselect-selected-count {
+            display: inline-block; background: #667eea; color: white;
+            border-radius: 10px; font-size: 11px; padding: 1px 6px; margin-left: 4px;
+        }
+
+        /* 按钮 */
+        .btn { padding: 8px 16px; border-radius: 6px; font-size: 13px; cursor: pointer; border: none; transition: all 0.3s; }
+        .btn-primary { background: #667eea; color: white; }
+        .btn-primary:hover { background: #5a67d8; }
+        .btn-default { background: white; border: 1px solid #d9d9d9; color: #666; }
+        .btn-default:hover { border-color: #667eea; color: #667eea; }
+        .btn-purple { background: #7c3aed; color: white; }
+        .btn-purple:hover { background: #6d28d9; }
+        .btn-danger { background: #ff4d4f; color: white; }
+        .btn-danger:hover { background: #d9363e; }
+
+        /* 表格 */
+        .table-container {
+            background: white; border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04); overflow: hidden;
+        }
+        .table-wrapper { overflow-x: auto; }
+        .data-table { width: 100%; border-collapse: collapse; min-width: 1200px; }
+        .data-table th {
+            background: #fafafa; padding: 14px 12px; text-align: left;
+            font-size: 13px; font-weight: 600; color: #666;
+            border-bottom: 1px solid #f0f0f0; white-space: nowrap;
+        }
+        .data-table td {
+            padding: 12px 12px; font-size: 13px; color: #333;
+            border-bottom: 1px solid #f0f0f0; vertical-align: middle;
+        }
+        .data-table tr:hover { background: #f8f9ff; }
+        .data-table tr:last-child td { border-bottom: none; }
+
+        /* 合同编号 */
+        .contract-no { font-family: 'SF Mono', monospace; color: #667eea; font-weight: 500; }
+
+        /* 合同名称 */
+        .contract-name { font-size: 12px; color: #555; max-width: 200px; line-height: 1.4; }
+
+        /* 老师姓名 */
+        .teacher-name { font-weight: 500; }
+
+        /* 合同类型标签 */
+        .contract-type-tag { display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: 500; white-space: nowrap; }
+        .type-labor { background: #e6f7ff; color: #1890ff; }
+        .type-company { background: #f6ffed; color: #52c41a; }
+
+        /* 签署状态标签 */
+        .sign-status-tag {
+            display: inline-flex; align-items: center; gap: 5px;
+            padding: 3px 9px; border-radius: 4px; font-size: 12px; font-weight: 500; white-space: nowrap;
+        }
+        .sign-status-dot { width: 6px; height: 6px; border-radius: 50%; }
+        .sign-status-pending { background: #f5f5f5; color: #888; }
+        .sign-status-pending .sign-status-dot { background: #bbb; }
+        .sign-status-reviewing { background: #fff7e6; color: #d46b08; }
+        .sign-status-reviewing .sign-status-dot { background: #fa8c16; }
+        .sign-status-void { background: #f5f5f5; color: #999; text-decoration: line-through; }
+        .sign-status-void .sign-status-dot { background: #bfbfbf; }
+        /* 法大大各状态 */
+        .sign-status-fadada { background: #e6f7ff; color: #096dd9; }
+        .sign-status-fadada .sign-status-dot { background: #1890ff; }
+        .sign-status-fadada-done { background: #f6ffed; color: #389e0d; }
+        .sign-status-fadada-done .sign-status-dot { background: #52c41a; }
+        .sign-status-fadada-end { background: #f0f0f0; color: #595959; }
+        .sign-status-fadada-end .sign-status-dot { background: #8c8c8c; }
+        .sign-status-fadada-abnormal { background: #fff1f0; color: #cf1322; }
+        .sign-status-fadada-abnormal .sign-status-dot { background: #ff4d4f; }
+
+        /* 操作按钮 */
+        .action-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+        .action-btn {
+            padding: 3px 9px; border-radius: 4px; font-size: 12px; cursor: pointer;
+            border: none; transition: all 0.3s; white-space: nowrap;
+        }
+        .action-btn-view { background: #e6f7ff; color: #1890ff; }
+        .action-btn-view:hover { background: #1890ff; color: white; }
+        .action-btn-download { background: #f6ffed; color: #52c41a; }
+        .action-btn-download:hover { background: #52c41a; color: white; }
+        .action-btn-initiate { background: #f0f0ff; color: #7c3aed; }
+        .action-btn-initiate:hover { background: #7c3aed; color: white; }
+        .action-btn-progress { background: #fff7e6; color: #d46b08; }
+        .action-btn-progress:hover { background: #fa8c16; color: white; }
+        .action-btn-signed { background: #f6ffed; color: #389e0d; border: 1px solid #b7eb8f; }
+        .action-btn-signed:hover { background: #52c41a; color: white; border-color: #52c41a; }
+
+        /* 双签合同列 */
+        .signed-file-cell { font-size: 12px; }
+        .signed-file-name { color: #333; margin-bottom: 4px; }
+        .signed-file-time { color: #999; font-size: 11px; }
+        .signed-file-empty { color: #bbb; }
+
+        /* 分页 */
+        .pagination {
+            display: flex; justify-content: flex-end; align-items: center;
+            padding: 16px 20px; border-top: 1px solid #f0f0f0; gap: 8px;
+        }
+        .page-btn {
+            padding: 6px 12px; border: 1px solid #d9d9d9; background: white;
+            border-radius: 6px; cursor: pointer; font-size: 13px; color: #666; transition: all 0.3s;
+        }
+        .page-btn:hover:not(:disabled) { border-color: #667eea; color: #667eea; }
+        .page-btn.active { background: #667eea; border-color: #667eea; color: white; }
+        .page-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .page-info { font-size: 13px; color: #666; margin: 0 12px; }
+
+        /* 合同详情侧边栏 */
+        .overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5); opacity: 0; visibility: hidden;
+            transition: all 0.3s; z-index: 1001;
+        }
+        .overlay.show { opacity: 1; visibility: visible; }
+        .detail-sidebar {
+            position: fixed; top: 0; right: -620px; width: 620px; height: 100vh;
+            background: white; box-shadow: -2px 0 20px rgba(0,0,0,0.1);
+            transition: right 0.3s; z-index: 1002; overflow-y: auto;
+        }
+        .detail-sidebar.open { right: 0; }
+        .detail-header {
+            padding: 20px 24px; border-bottom: 1px solid #f0f0f0;
+            display: flex; justify-content: space-between; align-items: center;
+            position: sticky; top: 0; background: white; z-index: 10;
+        }
+        .detail-title { font-size: 18px; font-weight: 600; }
+        .detail-close {
+            width: 32px; height: 32px; border-radius: 6px; border: none;
+            background: #f5f5f5; cursor: pointer; font-size: 18px; color: #666;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .detail-close:hover { background: #e8e8e8; }
+        .detail-content { padding: 24px; }
+        .detail-section { margin-bottom: 24px; }
+        .detail-section-title {
+            font-size: 14px; font-weight: 600; color: #333;
+            margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #f0f0f0;
+        }
+        .detail-row { display: flex; margin-bottom: 12px; }
+        .detail-label { width: 100px; font-size: 13px; color: #666; flex-shrink: 0; }
+        .detail-value { flex: 1; font-size: 13px; color: #333; }
+
+        /* 时间轴 */
+        .timeline { position: relative; padding-left: 24px; }
+        .timeline::before {
+            content: ''; position: absolute; left: 6px; top: 0; bottom: 0;
+            width: 2px; background: #e8e8e8;
+        }
+        .timeline-item { position: relative; padding-bottom: 20px; }
+        .timeline-item::before {
+            content: ''; position: absolute; left: -20px; top: 2px;
+            width: 10px; height: 10px; border-radius: 50%;
+            background: #e8e8e8; border: 2px solid white; box-shadow: 0 0 0 2px #e8e8e8;
+        }
+        .timeline-item.active::before { background: #667eea; box-shadow: 0 0 0 2px #667eea; }
+        .timeline-item.completed::before { background: #52c41a; box-shadow: 0 0 0 2px #52c41a; }
+        .timeline-item.rejected::before { background: #ff4d4f; box-shadow: 0 0 0 2px #ff4d4f; }
+        .timeline-time { font-size: 12px; color: #999; margin-bottom: 4px; }
+        .timeline-title { font-size: 13px; font-weight: 500; color: #333; }
+        .timeline-desc { font-size: 12px; color: #666; margin-top: 4px; }
+
+        /* 合同预览区域 */
+        .contract-preview-box {
+            background: #fafafa; border: 1px solid #e8e8e8; border-radius: 8px;
+            padding: 20px; margin-top: 16px; max-height: 300px; overflow-y: auto;
+        }
+        .preview-placeholder { text-align: center; color: #999; padding: 40px; }
+
+        /* 已签文件卡片 */
+        .signed-file-card {
+            display: flex; align-items: center; gap: 12px;
+            padding: 12px 16px; background: #f6ffed; border: 1px solid #b7eb8f;
+            border-radius: 8px; margin-top: 12px;
+        }
+        .signed-file-icon { font-size: 28px; }
+        .signed-file-info { flex: 1; }
+        .signed-file-card-name { font-size: 13px; font-weight: 500; color: #333; }
+        .signed-file-card-time { font-size: 12px; color: #999; margin-top: 2px; }
+        .signed-file-actions { display: flex; gap: 8px; }
+
+        /* ===== 弹窗通用 ===== */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.55); z-index: 2000;
+            display: none; align-items: center; justify-content: center;
+        }
+        .modal-overlay.show { display: flex; }
+        .modal-box {
+            background: white; border-radius: 12px; width: 580px; max-width: 95vw;
+            max-height: 85vh; overflow-y: auto;
+            box-shadow: 0 8px 40px rgba(0,0,0,0.18); animation: modalIn 0.25s ease;
+        }
+        @keyframes modalIn { from { transform: scale(0.92); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .modal-header {
+            padding: 20px 24px 16px; border-bottom: 1px solid #f0f0f0;
+            display: flex; justify-content: space-between; align-items: center;
+            position: sticky; top: 0; background: white; z-index: 10;
+        }
+        .modal-title { font-size: 17px; font-weight: 600; color: #222; }
+        .modal-close {
+            width: 30px; height: 30px; border-radius: 6px; border: none;
+            background: #f5f5f5; cursor: pointer; font-size: 17px; color: #666;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .modal-close:hover { background: #e8e8e8; }
+        .modal-body { padding: 20px 24px; }
+        .modal-footer {
+            padding: 14px 24px; border-top: 1px solid #f0f0f0;
+            display: flex; justify-content: flex-end; gap: 10px;
+            position: sticky; bottom: 0; background: white;
+        }
+
+        /* 合同摘要条 */
+        .contract-summary {
+            background: #f8f9ff; border: 1px solid #e0e4ff; border-radius: 8px;
+            padding: 12px 16px; margin-bottom: 20px; display: flex; gap: 20px; flex-wrap: wrap;
+        }
+        .summary-item { font-size: 13px; color: #555; }
+        .summary-label { color: #999; margin-right: 4px; }
+        .summary-value { font-weight: 500; color: #333; }
+
+        /* 水平审核步骤条 */
+        .approval-steps {
+            display: flex; align-items: flex-start; margin-bottom: 24px; overflow-x: auto;
+        }
+        .approval-step-item { display: flex; flex-direction: column; align-items: center; flex: 1; min-width: 80px; }
+        .approval-step-item:not(:last-child) { position: relative; }
+        .approval-step-item:not(:last-child)::after {
+            content: ''; position: absolute; top: 14px; left: 50%; right: -50%;
+            height: 2px; background: #e8e8e8; z-index: 0;
+        }
+        .approval-step-item.step-done:not(:last-child)::after { background: #52c41a; }
+        .step-circle {
+            width: 28px; height: 28px; border-radius: 50%; border: 2px solid #e8e8e8;
+            background: white; display: flex; align-items: center; justify-content: center;
+            font-size: 12px; font-weight: 600; color: #bbb; z-index: 1; position: relative;
+        }
+        .step-done .step-circle { border-color: #52c41a; background: #52c41a; color: white; }
+        .step-active .step-circle { border-color: #667eea; background: #667eea; color: white; }
+        .step-pending .step-circle { border-color: #e8e8e8; background: white; color: #bbb; }
+        .step-rejected .step-circle { border-color: #ff4d4f; background: #ff4d4f; color: white; }
+        .step-label { font-size: 11px; color: #666; margin-top: 6px; text-align: center; line-height: 1.3; }
+        .step-done .step-label { color: #52c41a; }
+        .step-active .step-label { color: #667eea; font-weight: 600; }
+        .step-rejected .step-label { color: #ff4d4f; }
+
+        /* 审核人卡片 */
+        .approver-list { display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px; }
+        .approver-card {
+            display: flex; align-items: center; gap: 14px;
+            padding: 14px 16px; border: 1px solid #e8e8e8; border-radius: 8px;
+            background: #fafafa;
+        }
+        .approver-avatar {
+            width: 38px; height: 38px; border-radius: 50%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white; font-size: 15px; font-weight: 600;
+            display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+        }
+        .approver-info { flex: 1; }
+        .approver-name { font-size: 14px; font-weight: 500; color: #333; }
+        .approver-dept { font-size: 12px; color: #999; margin-top: 2px; }
+        .approver-time { font-size: 11px; color: #bbb; margin-top: 3px; }
+        .approver-comment { font-size: 12px; color: #555; margin-top: 4px; font-style: italic; }
+        .approver-badge {
+            padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 500; white-space: nowrap;
+        }
+        .badge-pending { background: #f5f5f5; color: #888; }
+        .badge-approved { background: #f6ffed; color: #389e0d; }
+        .badge-rejected { background: #fff1f0; color: #cf1322; }
+
+        /* 提示文案 */
+        .tip-box {
+            background: #fffbe6; border: 1px solid #ffe58f; border-radius: 6px;
+            padding: 10px 14px; font-size: 12px; color: #7d5a00; margin-bottom: 4px;
+            display: flex; gap: 8px; align-items: flex-start;
+        }
+        .tip-icon { font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+
+        /* 审核顺序说明 */
+        .approval-mode-tag {
+            display: inline-block; padding: 3px 10px; border-radius: 4px;
+            font-size: 12px; background: #f0f0ff; color: #7c3aed; margin-bottom: 16px;
+        }
+
+        /* 状态说明标签（void作废原因）*/
+        .void-tip {
+            background: #fff1f0; border: 1px solid #ffccc7; border-radius: 6px;
+            padding: 10px 14px; font-size: 12px; color: #cf1322; margin-top: 8px;
+        }
+
+        /* Tab 标签页 */
+        .tab-bar {
+            display: flex; gap: 0; border-bottom: 2px solid #f0f0f0;
+            margin-bottom: 20px; background: white;
+            border-radius: 12px 12px 0 0; padding: 0 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        }
+        .tab-item {
+            padding: 16px 24px; font-size: 14px; color: #666; cursor: pointer;
+            border-bottom: 2px solid transparent; margin-bottom: -2px;
+            transition: all 0.2s; display: flex; align-items: center; gap: 8px;
+            white-space: nowrap; user-select: none;
+        }
+        .tab-item:hover { color: #667eea; }
+        .tab-item.active { color: #667eea; border-bottom-color: #667eea; font-weight: 600; }
+        .tab-badge {
+            background: #ff4d4f; color: white; font-size: 11px;
+            padding: 1px 6px; border-radius: 10px; font-weight: 600;
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* 待审核列表 */
+        .review-table-empty {
+            text-align: center; padding: 60px 0; color: #bbb; font-size: 14px;
+        }
+        .review-table-empty-icon { font-size: 40px; margin-bottom: 12px; }
+
+        /* 操作按钮—审核 */
+        .action-btn-review { background: #fff0f6; color: #eb2f96; }
+        .action-btn-review:hover { background: #eb2f96; color: white; }
+        /* 操作按钮—作废 */
+        .action-btn-void { background: #fff1f0; color: #ff4d4f; }
+        .action-btn-void:hover { background: #ff4d4f; color: white; }
+
+        /* 拒绝标记 */
+        .reject-badge {
+            display: inline-flex; align-items: center; gap: 3px;
+            background: #fff1f0; color: #cf1322; font-size: 11px;
+            padding: 2px 7px; border-radius: 10px; border: 1px solid #ffccc7;
+            margin-left: 4px; white-space: nowrap;
+        }
+
+        /* 作废表单 */
+        .void-form-label { font-size: 13px; color: #555; margin-bottom: 8px; display: block; }
+        .void-form-label span { color: #ff4d4f; }
+        .void-textarea {
+            width: 100%; padding: 10px 12px; border: 1px solid #d9d9d9; border-radius: 6px;
+            font-size: 13px; resize: vertical; min-height: 90px; outline: none;
+            font-family: inherit;
+        }
+        .void-textarea:focus { border-color: #667eea; }
+
+        /* 审核操作表单 */
+        .review-action-wrap { display: flex; flex-direction: column; gap: 14px; }
+        .review-radio-group { display: flex; gap: 20px; }
+        .review-radio-item {
+            display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px;
+        }
+        .review-radio-item input[type=radio] { width: 16px; height: 16px; accent-color: #667eea; cursor: pointer; }
+        .review-comment-area {
+            width: 100%; padding: 10px 12px; border: 1px solid #d9d9d9; border-radius: 6px;
+            font-size: 13px; resize: vertical; min-height: 80px; outline: none; font-family: inherit;
+        }
+        .review-comment-area:focus { border-color: #667eea; }
+
+        /* 重点审核内容：项目名称 + 选项值（多个项目分组，与线上一致的黄色背景） */
+        .key-review-box {
+            background: #fffbe6; border: 1px solid #ffe58f; border-radius: 6px;
+            padding: 10px 12px;
+        }
+        .key-review-project + .key-review-project {
+            margin-top: 10px; padding-top: 10px; border-top: 1px solid #ffe58f;
+        }
+        .key-review-project-name {
+            font-size: 12.5px; color: #d48806; font-weight: 600; margin-bottom: 4px;
+            display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+        }
+        .key-review-count {
+            font-weight: 400; background: #fff; border: 1px solid #ffe58f;
+            border-radius: 3px; padding: 0 6px; font-size: 11px; color: #d48806;
+        }
+        .key-review-item {
+            font-size: 12.5px; color: #333; line-height: 1.9; text-align: justify;
+            padding: 2px 0 2px 12px;
+        }
+        .key-review-item b { color: #d48806; font-weight: 600; }
+        .key-review-empty { font-size: 12px; color: #999; }
+
+    </style>
+</head>
+<body>
+    <!-- 顶部导航 -->
+    <header class="header">
+        <div class="header-title">📚 教师合同管理系统</div>
+        <div class="header-user">
+            <span>欢迎，管理员</span>
+            <div class="user-avatar">👤</div>
+        </div>
+    </header>
+
+    <!-- 布局容器 -->
+    <div class="layout">
+        <!-- 左侧菜单 -->
+        <aside class="sidebar">
+            <div class="menu-item active">
+                <span class="menu-icon">📄</span>
+                <span>合同管理</span>
+            </div>
+        </aside>
+
+        <!-- 主内容区 -->
+        <main class="main-content">
+            <!-- 页面标题 -->
+            <div class="page-header" style="margin-bottom:0; border-radius:12px 12px 0 0;">
+                <h1>合同管理</h1>
+                <p>管理所有教师合作合同，支持发起签署、追踪审核进度及下载双签合同</p>
+            </div>
+
+            <!-- Tab 标签页 -->
+            <div class="tab-bar">
+                <div class="tab-item active" id="tab-list" onclick="switchTab('list')">
+                    📝 合同列表
+                </div>
+                <div class="tab-item" id="tab-review" onclick="switchTab('review')">
+                    ✏️ 待审核
+                    <span class="tab-badge" id="tabReviewBadge" style="display:none;">0</span>
+                </div>
+            </div>
+
+            <!-- Tab内容：合同列表 -->
+            <div class="tab-content active" id="tabContent-list">
+            <!-- 筛选栏 -->
+            <div class="filter-bar">
+                <div class="filter-item">
+                    <span class="filter-label">合同编号</span>
+                    <input type="text" class="filter-input" id="filterContractNo" placeholder="请输入合同编号">
+                </div>
+                <div class="filter-item">
+                    <span class="filter-label">老师姓名</span>
+                    <input type="text" class="filter-input" id="filterTeacherName" placeholder="请输入老师姓名">
+                </div>
+                <div class="filter-item">
+                    <span class="filter-label">业务线</span>
+                    <select class="filter-select">
+                        <option value="">全部</option>
+                        <option>咨询</option>
+                        <option>倾诉</option>
+                        <option>督导</option>
+                    </select>
+                </div>
+                <div class="filter-item">
+                    <span class="filter-label">合同类型</span>
+                    <select class="filter-select">
+                        <option value="">全部</option>
+                        <option>劳务模式</option>
+                        <option>对公模式</option>
+                    </select>
+                </div>
+                <div class="filter-item">
+                    <span class="filter-label">签署状态</span>
+                    <div class="multiselect-wrap" id="signStatusMultiselect">
+                        <div class="multiselect-trigger" id="signStatusTrigger" onclick="toggleSignStatusDropdown(event)">
+                            <span id="signStatusLabel">全部</span>
+                            <span class="multiselect-arrow">▼</span>
+                        </div>
+                        <div class="multiselect-dropdown" id="signStatusDropdown">
+                            <label class="multiselect-option"><input type="checkbox" value="pending"> 待发起</label>
+                            <label class="multiselect-option"><input type="checkbox" value="reviewing"> 审核中</label>
+                            <label class="multiselect-option"><input type="checkbox" value="void"> 已作废</label>
+                            <label class="multiselect-option"><input type="checkbox" value="task_created"> 任务创建中 (法大大)</label>
+                            <label class="multiselect-option"><input type="checkbox" value="finish_creation"> 已创建 (法大大)</label>
+                            <label class="multiselect-option"><input type="checkbox" value="fill_progress"> 填写进行中 (法大大)</label>
+                            <label class="multiselect-option"><input type="checkbox" value="fill_completed"> 填写已完成 (法大大)</label>
+                            <label class="multiselect-option"><input type="checkbox" value="sign_progress"> 签署进行中 (法大大)</label>
+                            <label class="multiselect-option"><input type="checkbox" value="sign_completed"> 签署已完成 (法大大)</label>
+                            <label class="multiselect-option"><input type="checkbox" value="task_finished"> 任务已结束 (法大大)</label>
+                            <label class="multiselect-option"><input type="checkbox" value="task_terminated"> 任务异常停止 (法大大)</label>
+                            <label class="multiselect-option"><input type="checkbox" value="expired"> 已逾期 (法大大)</label>
+                            <label class="multiselect-option"><input type="checkbox" value="abolishing"> 作废中 (法大大)</label>
+                        </div>
+                    </div>
+                </div>
+                <div style="margin-left: auto;">
+                    <button class="btn btn-default" onclick="resetFilters()"> 重置</button>
+                    <button class="btn btn-primary" style="margin-left: 8px;" onclick="applyFilters()">查询</button>
+                </div>
+            </div>
+
+            <!-- 表格区域 -->
+            <div class="table-container">
+                <div class="table-wrapper">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th style="width:36px;"><input type="checkbox"></th>
+                                <th>合同编号</th>
+                                <th>合同模板名称</th>
+                                <th>合同名称</th>
+                                <th>业务线</th>
+                                <th>老师姓名</th>
+                                <th>合同类型</th>
+                                <th>签署状态</th>
+                                <th>双签合同</th>
+                                <th>创建时间</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody">
+                            <!-- 由JS动态渲染 -->
+                        </tbody>
+                    </table>
+                </div>
+                <!-- 分页 -->
+                <div class="pagination">
+                    <button class="page-btn" disabled>上一页</button>
+                    <button class="page-btn active">1</button>
+                    <button class="page-btn">2</button>
+                    <button class="page-btn">3</button>
+                    <button class="page-btn">下一页</button>
+                    <span class="page-info">共 128 条，每页 10 条</span>
+                </div>
+            </div>
+            </div><!-- /tabContent-list -->
+
+            <!-- Tab内容：待审核 -->
+            <div class="tab-content" id="tabContent-review">
+                <div class="table-container">
+                    <div class="table-wrapper">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>合同编号</th>
+                                    <th>合同名称</th>
+                                    <th>老师姓名</th>
+                                    <th>业务线</th>
+                                    <th>审核状态</th>
+                                    <th>创建时间</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="reviewTableBody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div><!-- /tabContent-review -->
+        </main>
+    </div>
+
+    <!-- ===== 审核操作弹窗 ===== -->
+    <div class="modal-overlay" id="reviewActionModal">
+        <div class="modal-box" style="width:480px;">
+            <div class="modal-header">
+                <div class="modal-title">审核操作</div>
+                <button class="modal-close" onclick="closeModal('reviewActionModal')">&#x2715;</button>
+            </div>
+            <div class="modal-body" id="reviewActionModalBody"></div>
+            <div class="modal-footer">
+                <button class="btn btn-default" onclick="closeModal('reviewActionModal')">取消</button>
+                <button class="btn btn-primary" onclick="submitReview()">确认提交</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== 作废确认弹窗 ===== -->
+    <div class="modal-overlay" id="voidModal">
+        <div class="modal-box" style="width:440px;">
+            <div class="modal-header">
+                <div class="modal-title" style="color:#ff4d4f;">⚠️ 作废合同</div>
+                <button class="modal-close" onclick="closeModal('voidModal')">&#x2715;</button>
+            </div>
+            <div class="modal-body">
+                <div id="voidModalContractName" style="font-size:13px;color:#666;margin-bottom:16px;"></div>
+                <label class="void-form-label">作废原因 <span>*（必填）</span></label>
+                <textarea class="void-textarea" id="voidReasonInput" placeholder="请输入作废原因..."></textarea>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-default" onclick="closeModal('voidModal')">取消</button>
+                <button class="btn btn-danger" onclick="submitVoid()">确认作废</button>
+            </div>
+        </div>
+    </div>
+    <div class="overlay" id="overlay" onclick="closeDetail()"></div>
+
+    <!-- 合同详情侧边栏 -->
+    <div class="detail-sidebar" id="detailSidebar">
+        <div class="detail-header">
+            <div class="detail-title">📋 合同详情</div>
+            <button class="detail-close" onclick="closeDetail()">✕</button>
+        </div>
+        <div class="detail-content" id="detailContent">
+            <!-- 由JS动态渲染 -->
+        </div>
+    </div>
+
+    <!-- ===== 发起签署 / 查看审核进度 弹窗 ===== -->
+    <div class="modal-overlay" id="approvalModal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <div class="modal-title" id="approvalModalTitle">发起合同签署</div>
+                <button class="modal-close" onclick="closeModal('approvalModal')">✕</button>
+            </div>
+            <div class="modal-body" id="approvalModalBody">
+                <!-- 由JS动态渲染 -->
+            </div>
+            <div class="modal-footer" id="approvalModalFooter">
+                <!-- 由JS动态渲染 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== 签署进度弹窗 ===== -->
+    <div class="modal-overlay" id="signingModal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <div class="modal-title">签署进度</div>
+                <button class="modal-close" onclick="closeModal('signingModal')">✕</button>
+            </div>
+            <div class="modal-body" id="signingModalBody">
+                <!-- 由JS动态渲染 -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-default" onclick="closeModal('signingModal')">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // ===================================================
+    // Task 1: Mock 数据
+    // ===================================================
+    const contracts = [
+        {
+            id: 1,
+            templateId: 1001,
+            templateName: '专业课讲师合作协议',
+            bizLine: '咨询',
+            teacherName: '沈传新',
+            contractType: 'labor',
+            companyName: '',
+            contractName: '专业课讲师合作协议（广州人心网络科技有限公司_沈传新）劳务结算合作协议',
+            signStatus: 'pending',
+            createTime: '2026-04-15',
+            signedFileUrl: '',
+            signedFileName: '',
+            signedTime: '',
+            approvers: [
+                { name: '李晓雯', dept: '财务合规部', status: 'pending', time: '', comment: '' },
+                { name: '王海涛', dept: '法务部', status: 'pending', time: '', comment: '' }
+            ],
+            voidReason: ''
+        },
+        {
+            id: 2,
+            templateId: 1002,
+            templateName: '课程项目合作协议',
+            bizLine: '倾诉',
+            teacherName: '张明华',
+            contractType: 'company',
+            companyName: '深圳明华咨询有限公司',
+            contractName: '课程项目合作协议（广州人心网络科技有限公司_深圳明华咋询有限公司_张明华）对公结算合作协议',
+            signStatus: 'reviewing',
+            createTime: '2026-04-14',
+            signedFileUrl: '',
+            signedFileName: '',
+            signedTime: '',
+            approvers: [
+                { name: '李晓雯', dept: '财务合规部', status: 'approved', time: '2026-04-14 10:32', comment: '合同内容符合规范，同意签署' },
+                { name: '王海涛', dept: '法务部', status: 'pending', time: '', comment: '' },
+                { name: '陈志远', dept: '业务部', status: 'rejected', time: '2026-04-14 15:08', comment: '合同金额有误，请核实后重新提交' }
+            ],
+            // 重点审核内容：项目名称 + 选项值（可有多个项目）
+            keyReview: [
+                {
+                    projectName: '团体督导结算内容',
+                    items: [
+                        { templateId: 'st1', ratio: { 甲方: 30, 乙方: 70 } },
+                        { templateId: 'st2', amount: 1000 },
+                        { templateId: 'st5', amount: 7000 }
+                    ]
+                },
+                {
+                    projectName: '朝阳项目课程分组配置',
+                    items: [
+                        { text: '小白组' },
+                        { text: '进阶组' }
+                    ]
+                }
+            ],
+            voidReason: ''
+        },
+        {
+            id: 3,
+            templateId: 1003,
+            templateName: '团体督导合作协议',
+            bizLine: '督导',
+            teacherName: '王建国',
+            contractType: 'labor',
+            companyName: '',
+            contractName: '团体督导合作协议（广州人心网络科技有限公司_王建国）劳务结算合作协议',
+            signStatus: 'sign_progress',
+            createTime: '2026-03-10',
+            signedFileUrl: '',
+            signedFileName: '',
+            signedTime: '',
+            approvers: [
+                { name: '李晓雯', dept: '财务合规部', status: 'approved', time: '2026-03-10 09:15', comment: '已审核，符合要求' },
+                { name: '王海涛', dept: '法务部', status: 'approved', time: '2026-03-10 11:40', comment: '法务审核通过' }
+            ],
+            keyReview: [
+                {
+                    projectName: '团体督导结算内容',
+                    items: [
+                        { templateId: 'st3', amount: 150 },
+                        { templateId: 'st4', amount: 7000 }
+                    ]
+                }
+            ],
+            voidReason: ''
+        },
+        {
+            id: 4,
+            templateId: 1004,
+            templateName: '训练营助教合作协议',
+            bizLine: '咨询',
+            teacherName: '陈美玲',
+            contractType: 'company',
+            companyName: '北京美玲教育科技有限公司',
+            contractName: '训练营助教合作协议（广州人心网络科技有限公司_北京美玲教育科技有限公司_陈美玲）对公结算合作协议',
+            signStatus: 'sign_completed',
+            createTime: '2026-02-20',
+            signedFileUrl: '#',
+            signedFileName: '训练营助教合作协议_双签版_20260225.pdf',
+            signedTime: '2026-02-25 16:08',
+            approvers: [
+                { name: '李晓雯', dept: '财务合规部', status: 'approved', time: '2026-02-20 14:00', comment: '审核通过' },
+                { name: '王海涛', dept: '法务部', status: 'approved', time: '2026-02-20 16:30', comment: '法务确认无误' }
+            ],
+            voidReason: ''
+        },
+        {
+            id: 5,
+            templateId: 1005,
+            templateName: '课程在线直播合同',
+            bizLine: '咨询',
+            teacherName: '刘志强',
+            contractType: 'labor',
+            companyName: '',
+            contractName: '课程在线直播合同（广州人心网络科技有限公司_刘志强）劳务结算合作协议',
+            signStatus: 'void',
+            createTime: '2025-01-08',
+            signedFileUrl: '',
+            signedFileName: '',
+            signedTime: '',
+            approvers: [
+                { name: '李晓雯', dept: '财务合规部', status: 'approved', time: '2025-01-08 10:00', comment: '同意' },
+                { name: '王海涛', dept: '法务部', status: 'rejected', time: '2025-01-08 14:20', comment: '合同条款与公司规定不符，建议重新拟定' }
+            ],
+            voidReason: '审核人"王海涛"拒绝审核：合同条款与公司规定不符，建议重新拟定'
+        }
+    ];
+
+    // ===================================================
+    // Task 6: 辅助函数
+    // ===================================================
+
+    const signStatusConfig = {
+        pending:          { label: '待发起',                cls: 'sign-status-pending' },
+        reviewing:        { label: '审核中',                cls: 'sign-status-reviewing' },
+        void:             { label: '已作废',                cls: 'sign-status-void' },
+        task_created:     { label: '任务创建中 (法大大)',   cls: 'sign-status-fadada' },
+        finish_creation:  { label: '已创建 (法大大)',       cls: 'sign-status-fadada' },
+        fill_progress:    { label: '填写进行中 (法大大)',   cls: 'sign-status-fadada' },
+        fill_completed:   { label: '填写已完成 (法大大)',   cls: 'sign-status-fadada' },
+        sign_progress:    { label: '签署进行中 (法大大)',   cls: 'sign-status-fadada' },
+        sign_completed:   { label: '签署已完成 (法大大)',   cls: 'sign-status-fadada-done' },
+        task_finished:    { label: '任务已结束 (法大大)',   cls: 'sign-status-fadada-end' },
+        task_terminated:  { label: '任务异常停止 (法大大)', cls: 'sign-status-fadada-abnormal' },
+        expired:          { label: '已逾期 (法大大)',       cls: 'sign-status-fadada-abnormal' },
+        abolishing:       { label: '作废中 (法大大)',       cls: 'sign-status-fadada-abnormal' }
+    };
+
+    function getSignStatusTag(c) {
+        const status = typeof c === 'object' ? c.signStatus : c;
+        const cfg = signStatusConfig[status] || signStatusConfig.pending;
+        let tag = `<div style="display:flex;flex-direction:column;align-items:flex-start;gap:6px;">
+            <span class="sign-status-tag ${cfg.cls}">
+                <span class="sign-status-dot"></span>${cfg.label}
+            </span>`;
+        if (typeof c === 'object') {
+            if (status === 'pending') {
+                tag += `<button class="action-btn action-btn-initiate" onclick="openApprovalModal(${c.id}, 'initiate')">发起签署</button>`;
+            } else if (status === 'reviewing') {
+                const hasRejected = c.approvers && c.approvers.some(a => a.status === 'rejected');
+                tag += `<button class="action-btn action-btn-progress" onclick="openApprovalModal(${c.id}, 'view')">查看审核进度</button>`;
+                if (hasRejected) {
+                    tag += `<span class="reject-badge">⚠ 有拒绝</span>`;
+                }
+            }
+        }
+        tag += `</div>`;
+        return tag;
+    }
+
+    function getContractTypeTag(type) {
+        if (type === 'labor') return `<span class="contract-type-tag type-labor">劳务模式</span>`;
+        return `<span class="contract-type-tag type-company">对公模式</span>`;
+    }
+
+    function getSignedFileCell(c) {
+        if (c.signStatus === 'completed' && c.signedFileName) {
+            return `<div class="signed-file-cell">
+                        <div class="signed-file-name">📄 ${c.signedFileName}</div>
+                        <div class="signed-file-time">${c.signedTime}</div>
+                        <button class="action-btn action-btn-signed" style="margin-top:6px;" onclick="downloadSignedFile(${c.id})">下载双签合同</button>
+                    </div>`;
+        }
+        return `<span class="signed-file-empty">—</span>`;
+    }
+
+    function getActionButtons(c) {
+        let btns = `<button class="action-btn action-btn-view" onclick="openDetail(${c.id})">\u67e5\u770b</button>`;
+        if (c.signStatus === 'pending' || c.signStatus === 'reviewing') {
+            btns += `<button class="action-btn action-btn-download" onclick="alert('\u6b63\u5728\u4e0b\u8f7d\u5408\u540c\uff1a${c.contractName}')">\u4e0b\u8f7d</button>`;
+        } else if (c.signStatus === 'signing' || c.signStatus === 'fadada_signing') {
+            btns += `<button class="action-btn action-btn-download" onclick="alert('\u6b63\u5728\u4e0b\u8f7d\u5408\u540c\uff1a${c.contractName}')">\u4e0b\u8f7d</button>`;
+        } else if (c.signStatus === 'completed') {
+            btns += `<button class="action-btn action-btn-download" onclick="alert('\u6b63\u5728\u4e0b\u8f7d\u5408\u540c\uff1a${c.contractName}')">下载</button>`;
+        }
+        if (c.signStatus === 'pending' || c.signStatus === 'reviewing') {
+            btns += `<button class="action-btn action-btn-void" onclick="openVoidModal(${c.id})">作废</button>`;
+        }
+        // 合同列表tab不显示审核按钮
+        return `<div class="action-btns">${btns}</div>`;
+    }
+
+    // Task 3: 多选下拉逻辑
+    function toggleSignStatusDropdown(e) {
+        e.stopPropagation();
+        const trigger = document.getElementById('signStatusTrigger');
+        const dropdown = document.getElementById('signStatusDropdown');
+        const isOpen = dropdown.classList.contains('open');
+        dropdown.classList.toggle('open', !isOpen);
+        trigger.classList.toggle('open', !isOpen);
+    }
+    document.addEventListener('click', function(e) {
+        const wrap = document.getElementById('signStatusMultiselect');
+        if (wrap && !wrap.contains(e.target)) {
+            document.getElementById('signStatusDropdown').classList.remove('open');
+            document.getElementById('signStatusTrigger').classList.remove('open');
+        }
+    });
+    function getSelectedSignStatuses() {
+        return Array.from(document.querySelectorAll('#signStatusDropdown input[type=checkbox]:checked')).map(cb => cb.value);
+    }
+    function updateSignStatusLabel() {
+        const selected = getSelectedSignStatuses();
+        const label = document.getElementById('signStatusLabel');
+        if (selected.length === 0) {
+            label.innerHTML = '全部';
+        } else {
+            label.innerHTML = '已选 <span class="multiselect-selected-count">' + selected.length + '</span>';
+        }
+    }
+    document.getElementById('signStatusDropdown').addEventListener('change', updateSignStatusLabel);
+
+    // 筛选和重置
+    function applyFilters() {
+        const contractNo = document.getElementById('filterContractNo') ? document.getElementById('filterContractNo').value.trim() : '';
+        const teacherName = document.getElementById('filterTeacherName') ? document.getElementById('filterTeacherName').value.trim() : '';
+        const selectedStatuses = getSelectedSignStatuses();
+        const tbody = document.getElementById('tableBody');
+        const filtered = contracts.filter(c => {
+            if (contractNo && !String(c.id).includes(contractNo)) return false;
+            if (teacherName && !c.teacherName.includes(teacherName)) return false;
+            if (selectedStatuses.length > 0 && !selectedStatuses.includes(c.signStatus)) return false;
+            return true;
+        });
+        tbody.innerHTML = filtered.map(c => `
+            <tr>
+                <td><input type="checkbox"></td>
+                <td><span class="contract-no">${c.id}</span></td>
+                <td>${c.templateName}</td>
+                <td><div class="contract-name">${c.contractName}</div></td>
+                <td><span class="contract-type-tag type-labor" style="background:#f0f5ff;color:#4e6ef2;">${c.bizLine}</span></td>
+                <td><span class="teacher-name">${c.teacherName}</span></td>
+                <td>${getContractTypeTag(c.contractType)}</td>
+                <td>${getSignStatusTag(c)}</td>
+                <td>${getSignedFileCell(c)}</td>
+                <td>${c.createTime}</td>
+                <td>${getActionButtons(c)}</td>
+            </tr>
+        `).join('');
+        if (filtered.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;color:#999;padding:32px;">暂无匹配的合同</td></tr>';
+        }
+    }
+    function resetFilters() {
+        if (document.getElementById('filterContractNo')) document.getElementById('filterContractNo').value = '';
+        if (document.getElementById('filterTeacherName')) document.getElementById('filterTeacherName').value = '';
+        document.querySelectorAll('#signStatusDropdown input[type=checkbox]').forEach(cb => cb.checked = false);
+        updateSignStatusLabel();
+        renderTable();
+    }
+
+    // Task 3: 渲染表格
+    function renderTable() {
+        const tbody = document.getElementById('tableBody');
+        tbody.innerHTML = contracts.map(c => `
+            <tr>
+                <td><input type="checkbox"></td>
+                <td><span class="contract-no">${c.id}</span></td>
+                <td>${c.templateName}</td>
+                <td><div class="contract-name">${c.contractName}</div></td>
+                <td><span class="contract-type-tag type-labor" style="background:#f0f5ff;color:#4e6ef2;">${c.bizLine}</span></td>
+                <td><span class="teacher-name">${c.teacherName}</span></td>
+                <td>${getContractTypeTag(c.contractType)}</td>
+                <td>${getSignStatusTag(c)}</td>
+                <td>${getSignedFileCell(c)}</td>
+                <td>${c.createTime}</td>
+                <td>${getActionButtons(c)}</td>
+            </tr>
+        `).join('');
+    }
+
+    // ===================================================
+    // 合同详情侧边栏
+    // ===================================================
+    function openDetail(contractId) {
+        const c = contracts.find(x => x.id === contractId);
+        if (!c) return;
+        const content = document.getElementById('detailContent');
+
+        let approvalSection = buildApprovalTimeline(c);
+        let fileSection = '';
+        if (c.signStatus === 'completed') {
+            fileSection = `
+            <div class="detail-section">
+                <div class="detail-section-title">双签合同文件</div>
+                <div class="signed-file-card">
+                    <div class="signed-file-icon">📄</div>
+                    <div class="signed-file-info">
+                        <div class="signed-file-card-name">${c.signedFileName}</div>
+                        <div class="signed-file-card-time">签署完成：${c.signedTime}</div>
+                    </div>
+                    <div class="signed-file-actions">
+                        <button class="btn btn-default" style="font-size:12px;padding:5px 10px;" onclick="alert('预览功能：${c.signedFileName}')">查看</button>
+                        <button class="btn btn-primary" style="font-size:12px;padding:5px 10px;" onclick="downloadSignedFile(${c.id})">下载</button>
+                    </div>
+                </div>
+            </div>`;
+        }
+
+        let voidSection = '';
+        if (c.signStatus === 'void' && c.voidReason) {
+            voidSection = `<div class="void-tip">⚠️ 作废原因：${c.voidReason}</div>`;
+        }
+
+        content.innerHTML = `
+            <div class="detail-section">
+                <div class="detail-section-title">基本信息</div>
+                <div class="detail-row"><div class="detail-label">合同编号</div><div class="detail-value"><span class="contract-no">${c.id}</span></div></div>
+                <div class="detail-row"><div class="detail-label">合同名称</div><div class="detail-value" style="font-size:12px;line-height:1.5;">${c.contractName}</div></div>
+                <div class="detail-row"><div class="detail-label">合同模板</div><div class="detail-value">${c.templateName}</div></div>
+                <div class="detail-row"><div class="detail-label">合同类型</div><div class="detail-value">${getContractTypeTag(c.contractType)}</div></div>
+                <div class="detail-row"><div class="detail-label">业务线</div><div class="detail-value">${c.bizLine}</div></div>
+                <div class="detail-row"><div class="detail-label">签署状态</div><div class="detail-value">${getSignStatusTag(c.signStatus)}</div></div>
+                <div class="detail-row"><div class="detail-label">创建时间</div><div class="detail-value">${c.createTime}</div></div>
+                ${voidSection}
+            </div>
+            <div class="detail-section">
+                <div class="detail-section-title">老师信息</div>
+                <div class="detail-row"><div class="detail-label">老师姓名</div><div class="detail-value">${c.teacherName}</div></div>
+                ${c.contractType === 'company' ? `<div class="detail-row"><div class="detail-label">乙方公司</div><div class="detail-value">${c.companyName}</div></div>` : ''}
+            </div>
+            ${approvalSection}
+            ${fileSection}
+            <div class="detail-section">
+                <div class="detail-section-title">合同文件（原件）</div>
+                <div class="contract-preview-box">
+                    <div class="preview-placeholder">📄 合同预览区域<br><small>点击下载查看完整合同</small></div>
+                </div>
+                <div style="margin-top:14px;text-align:center;">
+                    <button class="btn btn-primary" onclick="alert('正在下载合同：${c.contractName}')">📥 下载合同</button>
+                </div>
+            </div>
+        `;
+
+        document.getElementById('overlay').classList.add('show');
+        document.getElementById('detailSidebar').classList.add('open');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function buildApprovalTimeline(c) {
+        const stepMap = { pending: '', reviewing: '', signing: 'completed', completed: 'completed', void: '' };
+        const items = c.approvers.map(ap => {
+            let cls = 'timeline-item';
+            if (ap.status === 'approved') cls += ' completed';
+            else if (ap.status === 'rejected') cls += ' rejected';
+            else cls += ' active';
+            let commentHtml = ap.comment ? `<div class="timeline-desc">意见：${ap.comment}</div>` : '';
+            let timeHtml = ap.time ? `<div class="timeline-time">${ap.time}</div>` : '<div class="timeline-time">—</div>';
+            let statusLabel = ap.status === 'approved' ? '✅ 审核通过' : ap.status === 'rejected' ? '❌ 已拒绝' : '⏳ 待审核';
+            return `<div class="${cls}">
+                ${timeHtml}
+                <div class="timeline-title">${ap.name} · ${statusLabel}</div>
+                ${commentHtml}
+            </div>`;
+        }).join('');
+
+        let fadadaItem = '';
+        if (['signing', 'fadada_signing', 'completed'].includes(c.signStatus)) {
+            const isActive = c.signStatus === 'signing';
+            const isDone = c.signStatus !== 'signing';
+            fadadaItem = `<div class="timeline-item ${isDone ? 'completed' : 'active'}">
+                <div class="timeline-time">${c.signStatus === 'completed' ? c.signedTime : '处理中'}</div>
+                <div class="timeline-title">法大大签署任务创建</div>
+                <div class="timeline-desc">系统自动调用法大大API发起电子签署</div>
+            </div>`;
+        }
+
+        return `<div class="detail-section">
+            <div class="detail-section-title">审核 & 签署进度</div>
+            <div class="timeline">
+                <div class="timeline-item completed">
+                    <div class="timeline-time">${c.createTime}</div>
+                    <div class="timeline-title">合同创建</div>
+                    <div class="timeline-desc">管理员创建合同</div>
+                </div>
+                ${items}
+                ${fadadaItem}
+                ${c.signStatus === 'completed' ? `<div class="timeline-item completed">
+                    <div class="timeline-time">${c.signedTime}</div>
+                    <div class="timeline-title">双签完成，文件已同步</div>
+                    <div class="timeline-desc">已自动从法大大获取双签合同文件并归档</div>
+                </div>` : ''}
+            </div>
+        </div>`;
+    }
+
+    function closeDetail() {
+        document.getElementById('overlay').classList.remove('show');
+        document.getElementById('detailSidebar').classList.remove('open');
+        document.body.style.overflow = '';
+    }
+
+    // ===================================================
+    // Task 4: 发起签署 / 查看审核进度 弹窗
+    // ===================================================
+    function openApprovalModal(contractId, mode) {
+        const c = contracts.find(x => x.id === contractId);
+        if (!c) return;
+        const title = document.getElementById('approvalModalTitle');
+        const body = document.getElementById('approvalModalBody');
+        const footer = document.getElementById('approvalModalFooter');
+
+        title.textContent = mode === 'initiate' ? '发起合同签署' : '查看审核进度';
+
+        // 水平步骤条
+        let steps = [
+            { label: '提交申请', state: 'step-done' },
+        ];
+        c.approvers.forEach((ap, i) => {
+            let state = 'step-pending';
+            if (ap.status === 'approved') state = 'step-done';
+            else if (ap.status === 'rejected') state = 'step-rejected';
+            else if (c.signStatus === 'reviewing') state = 'step-active';
+            steps.push({ label: `审核人${i+1}\n${ap.name}`, state });
+        });
+        const fadadaState = (['signing', 'fadada_signing', 'completed'].includes(c.signStatus)) ? 'step-done' : 'step-pending';
+        steps.push({ label: '法大大签署', state: fadadaState });
+
+        const stepsHtml = steps.map((s, i) => {
+            const isDone = s.state === 'step-done';
+            const circle = isDone ? '✓' : (i + 1);
+            return `<div class="approval-step-item ${s.state}">
+                <div class="step-circle">${circle}</div>
+                <div class="step-label">${s.label}</div>
+            </div>`;
+        }).join('');
+
+        // 审核人卡片
+        const approverCards = c.approvers.map(ap => {
+            const badgeCls = ap.status === 'approved' ? 'badge-approved' : ap.status === 'rejected' ? 'badge-rejected' : 'badge-pending';
+            const badgeLabel = ap.status === 'approved' ? '已通过' : ap.status === 'rejected' ? '已拒绝' : '待审核';
+            return `<div class="approver-card">
+                <div class="approver-info">
+                    <div class="approver-name">${ap.name}</div>
+                    ${ap.time ? `<div class="approver-time">审核时间：${ap.time}</div>` : ''}
+                    ${ap.comment ? `<div class="approver-comment">"${ap.comment}"</div>` : ''}
+                </div>
+                <span class="approver-badge ${badgeCls}">${badgeLabel}</span>
+            </div>`;
+        }).join('');
+
+        body.innerHTML = `
+            <div class="contract-summary">
+                <span class="summary-item"><span class="summary-label">合同名称：</span><span class="summary-value">${c.contractName}</span></span>
+                <span class="summary-item"><span class="summary-label">老师：</span><span class="summary-value">${c.teacherName}</span></span>
+                <span class="summary-item"><span class="summary-label">类型：</span><span class="summary-value">${c.contractType === 'labor' ? '劳务模式' : '对公模式'}</span></span>
+            </div>
+            <div class="approval-steps">${stepsHtml}</div>
+            <div class="approval-mode-tag">无序审核</div>
+            <div class="approver-list">${approverCards}</div>
+            ${mode === 'initiate' ? `<div class="tip-box"><span class="tip-icon">💡</span>审核人将收到系统通知，全部审核通过后将自动向法大大平台发起合同电子签署</div>` : ''}
+            ${c.signStatus === 'void' && c.voidReason ? `<div class="void-tip">⚠️ ${c.voidReason}</div>` : ''}
+        `;
+
+        if (mode === 'initiate') {
+            footer.innerHTML = `
+                <button class="btn btn-default" onclick="closeModal('approvalModal')">取消</button>
+                <button class="btn btn-purple" onclick="confirmInitiateSigning(${c.id})">确认发起签署</button>
+            `;
+        } else {
+            footer.innerHTML = `<button class="btn btn-default" onclick="closeModal('approvalModal')">关闭</button>`;
+        }
+
+        document.getElementById('approvalModal').classList.add('show');
+    }
+
+    function confirmInitiateSigning(contractId) {
+        const c = contracts.find(x => x.id === contractId);
+        if (!c) return;
+        c.signStatus = 'reviewing';
+        c.approvers.forEach(ap => { ap.status = 'pending'; ap.time = ''; ap.comment = ''; });
+        renderTable();
+        closeModal('approvalModal');
+        setTimeout(() => alert(`✅ 已成功发起签署审核！\n合同：${c.contractName}\n审核通知已发送给 ${c.approvers.map(a=>a.name).join('、')}`), 100);
+    }
+
+    // ===================================================
+    // Task 5: 签署进度弹窗
+    // ===================================================
+    function openSigningModal(contractId) {
+        const c = contracts.find(x => x.id === contractId);
+        if (!c) return;
+        const body = document.getElementById('signingModalBody');
+
+        const isCompleted = c.signStatus === 'completed';
+        const isFadadaSigning = c.signStatus === 'fadada_signing';
+        const isSigning = c.signStatus === 'signing'; // 创建中
+        const isFadadaStarted = isSigning || isFadadaSigning || isCompleted;
+
+        body.innerHTML = `
+            <div class="contract-summary">
+                <span class="summary-item"><span class="summary-label">合同：</span><span class="summary-value">${c.contractName}</span></span>
+            </div>
+            <div class="timeline">
+                <div class="timeline-item completed">
+                    <div class="timeline-time">${c.createTime}</div>
+                    <div class="timeline-title">合同创建</div>
+                    <div class="timeline-desc">管理员创建合同</div>
+                </div>
+                ${c.approvers.map(ap => `
+                <div class="timeline-item completed">
+                    <div class="timeline-time">${ap.time || c.createTime}</div>
+                    <div class="timeline-title">${ap.name} 审核通过</div>
+                    <div class="timeline-desc">${ap.comment || ''}</div>
+                </div>`).join('')}
+                <div class="timeline-item ${isFadadaStarted ? 'completed' : 'active'}">
+                    <div class="timeline-time">${c.approvers[c.approvers.length-1]?.time || c.createTime}</div>
+                    <div class="timeline-title">法大大签署任务创建（创建中）</div>
+                    <div class="timeline-desc">系统自动调用法大大API，签署任务已创建，等待各方签署</div>
+                </div>
+                <div class="timeline-item ${(isFadadaSigning || isCompleted) ? 'completed' : isSigning ? 'active' : ''}">
+                    <div class="timeline-time">${isCompleted ? c.signedTime : (isFadadaSigning ? '签署中...' : '—')}</div>
+                    <div class="timeline-title">签署中（法大大）</div>
+                    <div class="timeline-desc">${isCompleted ? '各方已完成电子签署' : (isFadadaSigning ? '签署任务进行中，等待町刀乙双方签署' : '待签署任务创建后触发')}</div>
+                </div>
+                <div class="timeline-item ${isCompleted ? 'completed' : ''}">
+                    <div class="timeline-time">${isCompleted ? c.signedTime : '—'}</div>
+                    <div class="timeline-title">双签文件同步归档</div>
+                    <div class="timeline-desc">${isCompleted ? '双签合同已自动从法大大获取并存入系统' : '待双签完成后自动归档'}</div>
+                </div>
+            </div>
+            ${isCompleted ? `
+            <div style="margin-top:20px;">
+                <div class="signed-file-card">
+                    <div class="signed-file-icon">📄</div>
+                    <div class="signed-file-info">
+                        <div class="signed-file-card-name">${c.signedFileName}</div>
+                        <div class="signed-file-card-time">签署完成：${c.signedTime}</div>
+                    </div>
+                    <div class="signed-file-actions">
+                        <button class="btn btn-default" style="font-size:12px;padding:5px 10px;" onclick="alert('预览双签合同')">查看</button>
+                        <button class="btn btn-primary" style="font-size:12px;padding:5px 10px;" onclick="downloadSignedFile(${c.id})">下载</button>
+                    </div>
+                </div>
+            </div>` : ''}
+        `;
+
+        document.getElementById('signingModal').classList.add('show');
+    }
+
+    // ===================================================
+    // 通用功能函数
+    // ===================================================
+    function closeModal(id) {
+        document.getElementById(id).classList.remove('show');
+    }
+
+    function openModal(id) {
+        document.getElementById(id).classList.add('show');
+    }
+
+    function downloadSignedFile(contractId) {
+        const c = contracts.find(x => x.id === contractId);
+        if (!c || !c.signedFileName) { alert('暂无双签合同文件'); return; }
+        alert(`正在下载双签合同：${c.signedFileName}`);
+    }
+
+    // ESC 关闭
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeDetail();
+            closeModal('approvalModal');
+            closeModal('signingModal');
+        }
+    });
+
+    // 点击遮罩关闭弹窗
+    document.querySelectorAll('.modal-overlay').forEach(el => {
+        el.addEventListener('click', function(e) {
+            if (e.target === el) el.classList.remove('show');
+        });
+    });
+
+    // 页面初始化
+    renderTable();
+    updateReviewBadge();
+
+    // ==============================================
+    // Tab 切换
+    // ==============================================
+    function switchTab(tab) {
+        document.getElementById('tab-list').classList.toggle('active', tab === 'list');
+        document.getElementById('tab-review').classList.toggle('active', tab === 'review');
+        document.getElementById('tabContent-list').classList.toggle('active', tab === 'list');
+        document.getElementById('tabContent-review').classList.toggle('active', tab === 'review');
+        if (tab === 'review') renderReviewTable();
+    }
+
+    function renderReviewTable() {
+        const tbody = document.getElementById('reviewTableBody');
+        const pending = contracts.filter(c =>
+            c.signStatus === 'reviewing' &&
+            c.approvers.some(ap => ap.status === 'pending')
+        );
+        if (pending.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7"><div class="review-table-empty"><div class="review-table-empty-icon">&#x2705;</div><div>暂无待审核合同</div></div></td></tr>';
+            return;
+        }
+        tbody.innerHTML = pending.map(c => {
+            const hasRejected = c.approvers.some(ap => ap.status === 'rejected');
+            const rejTag = hasRejected ? '<span class="reject-badge">&#9888; 有拒绝</span>' : '';
+            return '<tr>' +
+                '<td><span class="contract-no">' + c.id + '</span></td>' +
+                '<td><div class="contract-name" style="max-width:260px;">' + c.contractName + '</div></td>' +
+                '<td><span class="teacher-name">' + c.teacherName + '</span></td>' +
+                '<td>' + c.bizLine + '</td>' +
+                '<td>' + getSignStatusTag(c) + '</td>' +
+                '<td>' + c.createTime + '</td>' +
+                '<td><div class="action-btns">' +
+                '<button class="action-btn action-btn-review" onclick="openReviewActionModal(' + c.id + ')">审核</button>' +
+                '</div></td>' +
+                '</tr>';
+        }).join('');
+    }
+
+    function updateReviewBadge() {
+        const count = contracts.filter(c =>
+            c.signStatus === 'reviewing' &&
+            c.approvers.some(ap => ap.status === 'pending')
+        ).length;
+        const badge = document.getElementById('tabReviewBadge');
+        badge.textContent = count;
+        badge.style.display = count > 0 ? 'inline-block' : 'none';
+    }
+
+    // ==============================================
+    // 审核操作弹窗
+    // ==============================================
+    var _reviewingContractId = null;
+
+    // 结算项模板（来自项目配置的特殊设置类型变量）
+    var SETTLEMENT_ITEM_DB = [
+        { id: 'st1', name: '常规团体督导报酬', calcType: 'ratio' },
+        { id: 'st2', name: '常规团体督导报酬（含税）', calcType: 'fixed', unit: '元/次' },
+        { id: 'st3', name: '[不固定人数项目]团体督导报酬（含税）', calcType: 'per_person', unit: '元/人/次' },
+        { id: 'st4', name: '[朝阳课程项目]团体督导报酬（含税）', calcType: 'per_phase', unit: '元/期' },
+        { id: 'st5', name: '[CBT课程项目]团体督导报酬（含税）', calcType: 'per_phase', unit: '元/期' }
+    ];
+
+    // 数字金额转中文大写（单价场景不带“元整”，如 壹仟）
+    function numToCnShort(n) {
+        if (n == null || isNaN(n) || n < 0) return '';
+        var digits = ['零','壹','贰','叁','肆','伍','陆','柒','捌','玖'];
+        var units = ['','拾','佰','仟'];
+        var bigUnits = ['','万','亿'];
+        var integer = Math.floor(n);
+        if (integer === 0) return '零';
+        var intStr = '', groupIdx = 0;
+        while (integer > 0) {
+            var group = integer % 10000;
+            var groupStr = '', g = group, zeroFlag = false;
+            for (var i = 0; i < 4 && g > 0; i++) {
+                var d = g % 10;
+                if (d === 0) {
+                    if (groupStr && !zeroFlag) { groupStr = '零' + groupStr; zeroFlag = true; }
+                } else {
+                    groupStr = digits[d] + units[i] + groupStr;
+                    zeroFlag = false;
+                }
+                g = Math.floor(g / 10);
+            }
+            if (group > 0) intStr = groupStr + bigUnits[groupIdx] + intStr;
+            else if (intStr && intStr.charAt(0) !== '零') intStr = '零' + intStr;
+            integer = Math.floor(integer / 10000);
+            groupIdx++;
+        }
+        return intStr;
+    }
+
+    // 条款文案：与合同正文“三、费用结算与支付”中的条款完全一致
+    var RATIO_BASE_TEXT = '甲乙双方以【甲方平台实收金额，扣除第三方交易手续费（第三方交易手续费费率 0.6%）后的余额】为结算依据';
+
+    // 单个选项值的文案：结算内容类选项与合同正文条款完全一致，普通选项直接展示选项值
+    function keyReviewClauseHtml(item) {
+        if (item.text) return '<b>' + item.text + '</b>';
+        var tpl = null;
+        for (var i = 0; i < SETTLEMENT_ITEM_DB.length; i++) {
+            if (SETTLEMENT_ITEM_DB[i].id === item.templateId) { tpl = SETTLEMENT_ITEM_DB[i]; break; }
+        }
+        if (!tpl) return '';
+        if (tpl.calcType === 'ratio') {
+            var r = item.ratio || {};
+            return '常规团体督导报酬：' + RATIO_BASE_TEXT +
+                '，按<b>【甲方占 ' + r['甲方'] + '%】</b>、<b>【乙方占 ' + r['乙方'] +
+                '%】</b>（含税）的比例结算，甲方按约定向乙方支付常规团体督导报酬。';
+        }
+        var suffix = (tpl.unit || '元').replace(/^元/, ''); // "/次" "/人/次" "/期"
+        var payTarget = tpl.id === 'st3' ? '不固定人数项目的团体督导报酬'
+            : tpl.id === 'st4' ? '朝阳项目团体督导报酬'
+            : tpl.id === 'st5' ? 'CBT项目团体督导报酬'
+            : '常规团体督导报酬';
+        return tpl.name + '：甲方按<b>¥【' + item.amount + '】元' + suffix +
+            '</b>（大写：人民币<b>【' + numToCnShort(item.amount) + '】</b>元' + suffix +
+            '）向乙方支付' + payTarget + '。';
+    }
+
+    // 重点审核内容：按项目分组展示【项目名称 + 选项值】，支持多个项目
+    function getKeyReviewHtml(c) {
+        var groups = c.keyReview || [];
+        if (groups.length === 0) {
+            return '<div class="key-review-box"><span class="key-review-empty">该合同无需重点核对的项目</span></div>';
+        }
+        var groupsHtml = groups.map(function(g) {
+            var itemsHtml = (g.items || []).map(function(it, idx) {
+                return '<div class="key-review-item">（' + (idx + 1) + '）' + keyReviewClauseHtml(it) + '</div>';
+            }).join('');
+            return '<div class="key-review-project">' +
+                '<div class="key-review-project-name">' + g.projectName +
+                '<span class="key-review-count">已选 ' + (g.items || []).length + ' 项</span></div>' +
+                itemsHtml +
+                '</div>';
+        }).join('');
+        return '<div class="key-review-box">' + groupsHtml + '</div>';
+    }
+
+    function openReviewActionModal(contractId) {
+        _reviewingContractId = contractId;
+        var c = contracts.find(function(x){ return x.id === contractId; });
+        if (!c) return;
+        var body = document.getElementById('reviewActionModalBody');
+        body.innerHTML =
+            '<div class="contract-summary">' +
+            '<span class="summary-item"><span class="summary-label">合同：</span>' +
+            '<span class="summary-value" style="font-size:12px;">' + c.contractName + '</span></span>' +
+            '</div>' +
+            '<div class="review-action-wrap">' +
+            '<div><div style="font-size:13px;color:#555;margin-bottom:10px;font-weight:500;">审核结果</div>' +
+            '<div class="review-radio-group">' +
+            '<label class="review-radio-item"><input type="radio" name="reviewResult" value="approve" checked>' +
+            '<span style="color:#52c41a;font-weight:500;">&#x2714; 通过</span></label>' +
+            '<label class="review-radio-item"><input type="radio" name="reviewResult" value="reject">' +
+            '<span style="color:#ff4d4f;font-weight:500;">&#x2716; 拒绝</span></label>' +
+            '</div></div>' +
+            '<div><div style="font-size:13px;color:#555;margin-bottom:8px;font-weight:500;">重点审核内容 <span style="color:#999;font-weight:400;font-size:12px;">（生成合同时选择的项目及选项值，请重点核对）</span></div>' +
+            getKeyReviewHtml(c) + '</div>' +
+            '<div><div style="font-size:13px;color:#555;margin-bottom:8px;font-weight:500;">审核意见 <span style="color:#999;font-weight:400;font-size:12px;">(可选)</span></div>' +
+            '<textarea class="review-comment-area" id="reviewCommentInput" placeholder="请输入审核意见..."></textarea></div>' +
+            '<div style="font-size:12px;color:#888;padding:8px 12px;background:#fffbe6;border-radius:6px;border:1px solid #ffe58f;">' +
+            '&#x1f4a1; 拒绝审核时必须填写审核意见</div>' +
+            '</div>';
+        openModal('reviewActionModal');
+    }
+
+    function submitReview() {
+        var c = contracts.find(function(x){ return x.id === _reviewingContractId; });
+        if (!c) return;
+        var resultEl = document.querySelector('input[name="reviewResult"]:checked');
+        var result = resultEl ? resultEl.value : 'approve';
+        var comment = (document.getElementById('reviewCommentInput').value || '').trim();
+        if (result === 'reject' && !comment) {
+            alert('拒绝时必须填写审核意见');
+            return;
+        }
+        var ap = null;
+        for (var i = 0; i < c.approvers.length; i++) {
+            if (c.approvers[i].status === 'pending') { ap = c.approvers[i]; break; }
+        }
+        if (!ap) { alert('已无待审核人'); return; }
+        var now = new Date();
+        var pad = function(n){ return String(n).padStart(2,'0'); };
+        ap.time = now.getFullYear() + '-' + pad(now.getMonth()+1) + '-' + pad(now.getDate()) +
+                  ' ' + pad(now.getHours()) + ':' + pad(now.getMinutes());
+        ap.comment = comment || (result === 'approve' ? '审核通过' : '拒绝');
+        if (result === 'reject') {
+            ap.status = 'rejected';
+        } else {
+            ap.status = 'approved';
+            var allApproved = c.approvers.every(function(a){ return a.status === 'approved'; });
+            if (allApproved) c.signStatus = 'signing';
+        }
+        closeModal('reviewActionModal');
+        renderTable();
+        renderReviewTable();
+        updateReviewBadge();
+        setTimeout(function(){
+            alert(result === 'approve' ? '✅ 审核已通过' : '❌ 审核已拒绝');
+        }, 100);
+    }
+
+    // ==============================================
+    // 作废操作
+    // ==============================================
+    var _voidingContractId = null;
+
+    function openVoidModal(contractId) {
+        _voidingContractId = contractId;
+        var c = contracts.find(function(x){ return x.id === contractId; });
+        if (!c) return;
+        document.getElementById('voidModalContractName').innerHTML =
+            '将对以下合同执行作废操作：<br><strong style="color:#333;">' + c.contractName + '</strong>';
+        document.getElementById('voidReasonInput').value = '';
+        openModal('voidModal');
+    }
+
+    function submitVoid() {
+        var c = contracts.find(function(x){ return x.id === _voidingContractId; });
+        if (!c) return;
+        var reason = (document.getElementById('voidReasonInput').value || '').trim();
+        if (!reason) { alert('请填写作废原因'); return; }
+        c.signStatus = 'void';
+        c.voidReason = reason;
+        closeModal('voidModal');
+        renderTable();
+        updateReviewBadge();
+        setTimeout(function(){ alert('合同已作废'); }, 100);
+    }
+    </script>
+</body>
+</html>

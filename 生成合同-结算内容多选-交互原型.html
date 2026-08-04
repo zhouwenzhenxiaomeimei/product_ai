@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>生成合同 - 结算内容多选 交互原型</title>
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+        background: #f0f2f5;
+        color: #333;
+        min-height: 100vh;
+    }
+    .page-header {
+        background: #fff;
+        padding: 16px 24px;
+        border-bottom: 1px solid #e8e8e8;
+    }
+    .page-title { font-size: 18px; font-weight: 600; }
+    .page-sub { font-size: 12px; color: #999; margin-top: 4px; }
+
+    /* 步骤条 */
+    .steps {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: #fff;
+        padding: 14px 24px;
+        border-bottom: 1px solid #e8e8e8;
+    }
+    .step {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        color: #999;
+    }
+    .step-num {
+        width: 22px; height: 22px;
+        border-radius: 50%;
+        border: 1px solid #d9d9d9;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 12px;
+        color: #999;
+        background: #fff;
+        flex-shrink: 0;
+    }
+    .step.done .step-num { background: #f6ffed; border-color: #b7eb8f; color: #52c41a; }
+    .step.done { color: #52c41a; }
+    .step.active .step-num { background: #faad14; border-color: #faad14; color: #fff; }
+    .step.active { color: #d48806; font-weight: 600; }
+    .step-arrow { color: #d9d9d9; font-size: 14px; margin: 0 6px; }
+
+    /* 主体布局 */
+    .main {
+        display: flex;
+        gap: 16px;
+        padding: 16px 24px 32px;
+        align-items: flex-start;
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    /* ===== 左侧配置面板 ===== */
+    .config-panel {
+        width: 430px;
+        flex-shrink: 0;
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+        overflow: hidden;
+        position: sticky;
+        top: 16px;
+    }
+    .panel-header {
+        padding: 14px 16px;
+        border-bottom: 1px solid #f0f0f0;
+        font-size: 15px;
+        font-weight: 600;
+    }
+    .panel-body { padding: 16px; }
+    .info-row {
+        display: flex;
+        font-size: 13px;
+        margin-bottom: 8px;
+    }
+    .info-label { color: #999; width: 80px; flex-shrink: 0; }
+    .info-value { color: #333; }
+    .biz-tag {
+        display: inline-block;
+        padding: 1px 8px;
+        border-radius: 3px;
+        font-size: 12px;
+        background: #fffbe6;
+        border: 1px solid #ffe58f;
+        color: #d48806;
+    }
+    .divider {
+        border-top: 1px dashed #e8e8e8;
+        margin: 14px 0;
+    }
+    .section-title {
+        font-size: 13px;
+        font-weight: 600;
+        margin-bottom: 4px;
+    }
+    .section-tip {
+        font-size: 11px;
+        color: #999;
+        margin-bottom: 12px;
+    }
+    .section-tip b { color: #f5222d; font-weight: 600; }
+
+    /* 结算项卡片 */
+    .sitem {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 10px 12px;
+        background: #fafafa;
+        border: 1px solid #e8e8e8;
+        border-radius: 6px;
+        margin-bottom: 8px;
+        transition: background 0.2s, border-color 0.2s;
+        cursor: pointer;
+    }
+    .sitem:hover { background: #f5f5f5; }
+    .sitem.checked { background: #fffbe6; border-color: #ffe58f; }
+    .sitem input[type=checkbox] {
+        width: 16px; height: 16px;
+        margin-top: 2px;
+        accent-color: #faad14;
+        cursor: pointer;
+        flex-shrink: 0;
+    }
+    .sitem-main { flex: 1; }
+    /* 左侧条款文案：与右侧合同文本一致，变量位置内嵌输入框 */
+    .sitem-text {
+        font-size: 12.5px;
+        color: #333;
+        line-height: 2;
+        text-align: justify;
+    }
+    .sitem-text .var { font-weight: 600; }
+    .cfg-input {
+        width: 72px;
+        padding: 3px 6px;
+        border: 1px solid #d9d9d9;
+        border-radius: 4px;
+        font-size: 12px;
+        text-align: right;
+    }
+    .cfg-input:focus { outline: none; border-color: #faad14; box-shadow: 0 0 0 2px rgba(250,173,20,0.15); }
+    .cfg-input:disabled { background: #f5f5f5; color: #bbb; cursor: not-allowed; }
+    /* 内嵌在条款文案中的行内输入框 */
+    .cfg-inline {
+        width: 48px;
+        padding: 1px 4px;
+        margin: 0 2px;
+        vertical-align: baseline;
+    }
+    .cfg-inline-amt { width: 68px; }
+
+    .count-bar {
+        font-size: 12px;
+        color: #666;
+        margin-bottom: 10px;
+    }
+    .count-bar b { color: #d48806; }
+
+    .panel-footer {
+        padding: 12px 16px;
+        border-top: 1px solid #f0f0f0;
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+    }
+    .btn {
+        padding: 6px 16px;
+        border-radius: 4px;
+        border: 1px solid #d9d9d9;
+        background: #fff;
+        font-size: 13px;
+        cursor: pointer;
+    }
+    .btn:hover { border-color: #faad14; color: #d48806; }
+    .btn-primary {
+        background: #faad14;
+        border-color: #faad14;
+        color: #fff;
+    }
+    .btn-primary:hover { background: #ffc53d; border-color: #ffc53d; color: #fff; }
+    .btn-primary:disabled { background: #bfbfbf; border-color: #bfbfbf; cursor: not-allowed; }
+
+    /* ===== 右侧合同预览 ===== */
+    .preview-wrap { flex: 1; min-width: 0; }
+    .preview-toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 10px;
+    }
+    .preview-title { font-size: 14px; font-weight: 600; }
+    .legend {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+        color: #999;
+    }
+    .legend-swatch {
+        display: inline-block;
+        width: 14px; height: 14px;
+        background: #fffbe6;
+        border-left: 3px solid #faad14;
+        border-radius: 2px;
+    }
+    .paper {
+        background: #fff;
+        border-radius: 4px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        padding: 48px 56px;
+        font-family: "SimSun", "宋体", serif;
+        font-size: 14px;
+        line-height: 2;
+        color: #222;
+        min-height: 600px;
+    }
+    .paper h1 {
+        font-size: 18px;
+        text-align: center;
+        font-family: "SimHei", "黑体", sans-serif;
+        margin-bottom: 6px;
+    }
+    .paper .doc-sub {
+        text-align: center;
+        font-size: 12px;
+        color: #999;
+        margin-bottom: 24px;
+        font-family: -apple-system, "Microsoft YaHei", sans-serif;
+    }
+    .paper h2 {
+        font-size: 15px;
+        font-family: "SimHei", "黑体", sans-serif;
+        margin: 18px 0 8px;
+    }
+    .clause { margin-bottom: 6px; text-align: justify; }
+    .clause-sub { margin-left: 2em; margin-bottom: 4px; text-align: justify; }
+    .ellipsis-line {
+        color: #bbb;
+        text-align: center;
+        letter-spacing: 4px;
+        margin: 4px 0;
+        font-family: -apple-system, sans-serif;
+    }
+    /* 动态生成的条款高亮（对应合同截图中的红框可多选部分） */
+    .dynamic {
+        background: #fffbe6;
+        border-left: 3px solid #faad14;
+        padding: 2px 8px 2px 10px;
+        border-radius: 2px;
+        position: relative;
+        animation: flash 0.5s ease;
+    }
+    @keyframes flash {
+        from { background: #fff1b8; }
+        to { background: #fffbe6; }
+    }
+    .dynamic .var { font-weight: 700; }
+    .empty-clause {
+        color: #f5222d;
+        background: #fff1f0;
+        border: 1px dashed #ffa39e;
+        border-radius: 4px;
+        padding: 10px 14px;
+        font-size: 13px;
+        font-family: -apple-system, "Microsoft YaHei", sans-serif;
+        margin: 6px 0 6px 2em;
+    }
+
+    /* toast */
+    .toast {
+        position: fixed;
+        top: 70px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0,0,0,0.75);
+        color: #fff;
+        font-size: 13px;
+        padding: 8px 18px;
+        border-radius: 4px;
+        z-index: 999;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s;
+    }
+    .toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+    <div class="page-title">生成合同 —— 结算内容多选演示</div>
+    <div class="page-sub">项目配置中定义了结算项模板与默认值；生成合同时按老师实际情况勾选，合同条款实时生成（紫色高亮部分即合同截图中红框的可多选内容）</div>
+</div>
+
+<div class="steps">
+    <div class="step done">
+        <span class="step-num">✓</span>项目配置（团体督导结算内容）
+    </div>
+    <span class="step-arrow">→</span>
+    <div class="step active">
+        <span class="step-num">2</span>生成合同：勾选结算内容并确认比例/金额
+    </div>
+    <span class="step-arrow">→</span>
+    <div class="step">
+        <span class="step-num">3</span>预览确认，生成合同文件
+    </div>
+</div>
+
+<div class="main">
+    <!-- ===== 左侧：结算内容多选配置 ===== -->
+    <div class="config-panel">
+        <div class="panel-header">结算内容选择</div>
+        <div class="panel-body">
+            <div class="info-row"><span class="info-label">老师姓名</span><span class="info-value">张明月</span></div>
+            <div class="info-row"><span class="info-label">合同模板</span><span class="info-value">团体督导服务协议 V2.3</span></div>
+            <div class="info-row"><span class="info-label">业务类型</span><span class="info-value"><span class="biz-tag">团体督导</span></span></div>
+            <div class="divider"></div>
+            <div class="section-title">结算内容（多选）</div>
+            <div class="section-tip">来源于项目配置，<b>至少勾选一项</b>；比例/金额默认取项目配置值，可按该老师实际约定修改</div>
+            <div class="count-bar">已选择 <b id="selCount">0</b> / <span id="totalCount">5</span> 项</div>
+            <div id="sitemList"></div>
+        </div>
+        <div class="panel-footer">
+            <button class="btn" onclick="resetAll()">重置</button>
+            <button class="btn btn-primary" id="genBtn" onclick="generateContract()">生成合同</button>
+        </div>
+    </div>
+
+    <!-- ===== 右侧：合同实时预览 ===== -->
+    <div class="preview-wrap">
+        <div class="preview-toolbar">
+            <span class="preview-title">合同条款实时预览</span>
+            <span class="legend"><span class="legend-swatch"></span>根据勾选的结算内容动态生成</span>
+        </div>
+        <div class="paper">
+            <h1>团体督导服务协议</h1>
+            <div class="doc-sub">（节选 · 交互原型演示）</div>
+            <div class="ellipsis-line">…… 前 略 ……</div>
+            <h2>三、费用结算与支付</h2>
+            <div class="clause">1. 甲乙双方应当共同协商确定团体督导服务的价格。甲方有权根据实际需求对团体督导服务进行优惠促销活动，原则上团体督导服务的活动价格不得低于原价的90%；否则应当与乙方沟通一致并书面确认。除本协议另有约定外，未经乙方同意，甲方不得以任何方式擅自调整团体督导服务价格。</div>
+            <div id="clauseArea"></div>
+            <div class="ellipsis-line">…… 后 略 ……</div>
+        </div>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+    // ================== 结算项模板（来自项目配置） ==================
+    const SETTLEMENT_ITEM_DB = [
+        {
+            id: 'st1',
+            name: '常规团体督导报酬',
+            calcType: 'ratio',
+            defaultRatio: { 甲方: 30, 乙方: 70 },
+            desc: '以甲方平台实收金额扣除第三方交易手续费后的余额为结算依据，按比例结算'
+        },
+        {
+            id: 'st2',
+            name: '常规团体督导报酬（含税）',
+            calcType: 'fixed',
+            defaultAmount: 1000,
+            unit: '元/次',
+            desc: '固定金额结算'
+        },
+        {
+            id: 'st3',
+            name: '[不固定人数项目]团体督导报酬（含税）',
+            calcType: 'per_person',
+            defaultAmount: 150,
+            unit: '元/人/次',
+            desc: '按实际参与人数结算'
+        },
+        {
+            id: 'st4',
+            name: '[朝阳课程项目]团体督导报酬（含税）',
+            calcType: 'per_phase',
+            defaultAmount: 7000,
+            unit: '元/期',
+            desc: '按课程期数结算'
+        },
+        {
+            id: 'st5',
+            name: '[CBT课程项目]团体督导报酬（含税）',
+            calcType: 'per_phase',
+            defaultAmount: 7000,
+            unit: '元/期',
+            desc: '按课程期数结算'
+        }
+    ];
+
+    // 当前选择状态：{ st1: {checked, ratio:{甲方,乙方}}, st2: {checked, amount}, ... }
+    let state = {};
+
+    function initState() {
+        state = {};
+        SETTLEMENT_ITEM_DB.forEach(tpl => {
+            const s = { checked: false };
+            if (tpl.calcType === 'ratio') s.ratio = { ...tpl.defaultRatio };
+            else s.amount = tpl.defaultAmount;
+            state[tpl.id] = s;
+        });
+        // 演示默认：勾选第1、2项，便于直接看到动态条款效果
+        state.st1.checked = true;
+        state.st2.checked = true;
+    }
+
+    // ================== 数字金额转中文大写 ==================
+    function numToCn(n) {
+        if (n == null || isNaN(n) || n < 0) return '';
+        const digits = ['零','壹','贰','叁','肆','伍','陆','柒','捌','玖'];
+        const units = ['','拾','佰','仟'];
+        const bigUnits = ['','万','亿'];
+        let integer = Math.floor(n);
+        const decimal = Math.round((n - integer) * 100);
+        if (integer === 0 && decimal === 0) return '零元整';
+        let intStr = '';
+        let groupIdx = 0;
+        while (integer > 0) {
+            const group = integer % 10000;
+            let groupStr = '';
+            let g = group, zeroFlag = false;
+            for (let i = 0; i < 4 && g > 0; i++) {
+                const d = g % 10;
+                if (d === 0) {
+                    if (groupStr && !zeroFlag) { groupStr = '零' + groupStr; zeroFlag = true; }
+                } else {
+                    groupStr = digits[d] + units[i] + groupStr;
+                    zeroFlag = false;
+                }
+                g = Math.floor(g / 10);
+            }
+            if (group > 0) intStr = groupStr + bigUnits[groupIdx] + intStr;
+            else if (intStr && !intStr.startsWith('零')) intStr = '零' + intStr;
+            integer = Math.floor(integer / 10000);
+            groupIdx++;
+        }
+        let result = intStr ? intStr + '元' : '';
+        if (decimal > 0) {
+            const jiao = Math.floor(decimal / 10), fen = decimal % 10;
+            if (jiao > 0) result += digits[jiao] + '角';
+            if (fen > 0) result += digits[fen] + '分';
+        } else {
+            result += '整';
+        }
+        return result;
+    }
+    // 单价场景不带"整"字：如 壹仟
+    function numToCnShort(n) {
+        return numToCn(n).replace(/元整?$/, '').replace(/整$/, '');
+    }
+
+    // ================== 条款文案（左右两侧共用，保证文案完全一致） ==================
+    const RATIO_BASE_TEXT = '甲乙双方以【甲方平台实收金额，扣除第三方交易手续费（第三方交易手续费费率 0.6%）后的余额】为结算依据';
+
+    // editable=true 时比例/金额为输入框（左侧配置面板），false 时为加粗文本（右侧合同）
+    function clauseHtml(tpl, s, editable) {
+        const dis = s.checked ? '' : 'disabled';
+        if (tpl.calcType === 'ratio') {
+            const jia = editable
+                ? `<input class="cfg-input cfg-inline" type="number" min="0" max="100" ${dis} value="${s.ratio['甲方']}" onclick="event.stopPropagation()" onchange="updRatio('${tpl.id}','甲方',this.value)">`
+                : s.ratio['甲方'];
+            const yi = editable
+                ? `<input class="cfg-input cfg-inline" type="number" min="0" max="100" ${dis} value="${s.ratio['乙方']}" onclick="event.stopPropagation()" onchange="updRatio('${tpl.id}','乙方',this.value)">`
+                : s.ratio['乙方'];
+            return `常规团体督导报酬：${RATIO_BASE_TEXT}，按<span class="var">【甲方占 ${jia}%】</span>、<span class="var">【乙方占 ${yi}%】</span>（含税）的比例结算，甲方按约定向乙方支付常规团体督导报酬。`;
+        }
+        const suffix = tpl.unit.replace(/^元/, ''); // "/次" "/人/次" "/期"
+        const amt = editable
+            ? `<input class="cfg-input cfg-inline cfg-inline-amt" type="number" min="0" step="0.01" ${dis} value="${s.amount}" onclick="event.stopPropagation()" onchange="updAmount('${tpl.id}',this.value)">`
+            : s.amount;
+        const payTarget = tpl.id === 'st3' ? '不固定人数项目的团体督导报酬'
+            : tpl.id === 'st4' ? '朝阳项目团体督导报酬'
+            : tpl.id === 'st5' ? 'CBT项目团体督导报酬'
+            : '常规团体督导报酬';
+        return `${tpl.name}：甲方按<span class="var">¥【${amt}】元${suffix}</span>（大写：人民币<span class="var">【${numToCnShort(s.amount)}】</span>元${suffix}）向乙方支付${payTarget}。`;
+    }
+
+    // ================== 左侧结算项列表渲染 ==================
+    function renderItems() {
+        const box = document.getElementById('sitemList');
+        box.innerHTML = SETTLEMENT_ITEM_DB.map(tpl => {
+            const s = state[tpl.id];
+            return `
+                <div class="sitem ${s.checked ? 'checked' : ''}" onclick="toggleItem('${tpl.id}')">
+                    <input type="checkbox" ${s.checked ? 'checked' : ''} onclick="event.stopPropagation()" onchange="toggleItem('${tpl.id}')">
+                    <div class="sitem-main">
+                        <div class="sitem-text">${clauseHtml(tpl, s, true)}</div>
+                    </div>
+                </div>`;
+        }).join('');
+        const count = SETTLEMENT_ITEM_DB.filter(t => state[t.id].checked).length;
+        document.getElementById('selCount').textContent = count;
+        document.getElementById('totalCount').textContent = SETTLEMENT_ITEM_DB.length;
+        document.getElementById('genBtn').disabled = count === 0;
+    }
+
+    function toggleItem(id) {
+        state[id].checked = !state[id].checked;
+        renderItems();
+        renderContract();
+    }
+    function updRatio(id, party, val) {
+        state[id].ratio[party] = val === '' ? 0 : parseFloat(val);
+        renderContract();
+    }
+    function updAmount(id, val) {
+        state[id].amount = val === '' ? 0 : parseFloat(val);
+        renderItems(); // 金额变化后左侧大写同步更新
+        renderContract();
+    }
+
+    // ================== 右侧合同条款动态生成 ==================
+    function renderContract() {
+        const area = document.getElementById('clauseArea');
+        const checked = SETTLEMENT_ITEM_DB.filter(t => state[t.id].checked);
+        if (checked.length === 0) {
+            area.innerHTML = '<div class="empty-clause">⚠ 尚未勾选任何结算内容，请在左侧至少选择一项，合同结算条款将在此实时生成</div>';
+            return;
+        }
+        let html = '';
+
+        // ---- 分项结算条款 ----
+        html += `<div class="clause">2. 甲乙双方按约定结算团体督导报酬：</div>`;
+        let subNo = 1;
+        checked.forEach(tpl => {
+            const s = state[tpl.id];
+            html += `<div class="clause-sub dynamic">（${subNo}）${clauseHtml(tpl, s, false)}</div>`;
+            subNo++;
+        });
+        // 固定条款：提升为独立大条款
+        html += `<div class="clause">3. 团督小组类型、形式与设置，以甲乙双方协商一致为准。</div>`;
+        area.innerHTML = html;
+    }
+
+    // ================== 操作 ==================
+    function resetAll() {
+        initState();
+        renderItems();
+        renderContract();
+        showToast('已重置为项目配置默认状态');
+    }
+    function generateContract() {
+        const count = SETTLEMENT_ITEM_DB.filter(t => state[t.id].checked).length;
+        showToast(`合同已生成，共包含 ${count} 项结算内容（原型演示）`);
+    }
+    let toastTimer = null;
+    function showToast(msg) {
+        const t = document.getElementById('toast');
+        t.textContent = msg;
+        t.classList.add('show');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+    }
+
+    // ================== 初始化 ==================
+    initState();
+    renderItems();
+    renderContract();
+</script>
+</body>
+</html>

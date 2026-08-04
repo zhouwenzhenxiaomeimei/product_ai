@@ -273,6 +273,7 @@
         .type-tag.type-multi  { background: #f9f0ff; color: #722ed1; border: 1px solid #d3adf7; }
         .type-tag.type-text   { background: #f6ffed; color: #52c41a; border: 1px solid #b7eb8f; }
         .type-tag.type-time   { background: #fff7e6; color: #fa8c16; border: 1px solid #ffd591; }
+        .type-tag.type-special{ background: #fff1f0; color: #f5222d; border: 1px solid #ffa39e; }
 
         /* 选项值标签 */
         .option-tag {
@@ -489,6 +490,95 @@
         .detail-value { font-size: 14px; color: #333; line-height: 1.7; }
 
         .empty { text-align: center; padding: 60px; color: #bbb; font-size: 14px; }
+
+        /* 时间范围配置 */
+        .time-range-config { display: flex; flex-direction: column; gap: 10px; padding: 10px 12px; background: #fafafa; border: 1px solid #e8e8e8; border-radius: 6px; }
+        .time-range-item { display: flex; align-items: center; gap: 8px; }
+        .time-range-label { font-size: 13px; color: #555; width: 56px; flex-shrink: 0; font-weight: 500; }
+        .time-range-sep { font-size: 13px; color: #999; }
+        .time-range-input {
+            width: 76px;
+            padding: 5px 8px;
+            border: 1px solid #d9d9d9;
+            border-radius: 4px;
+            font-size: 13px;
+            outline: none;
+            text-align: center;
+            transition: border-color 0.2s;
+        }
+        .time-range-input:focus { border-color: #1890ff; box-shadow: 0 0 0 2px rgba(24,144,255,0.1); }
+        .time-range-input::placeholder { color: #bbb; }
+        .time-range-unit { font-size: 13px; color: #555; }
+        .time-range-hint { font-size: 11px; color: #bbb; margin-top: 6px; }
+
+        /* 结算内容配置 */
+        .settlement-section {
+            border: 1px solid #e8e8e8;
+            border-radius: 6px;
+            padding: 12px;
+        }
+        .settlement-section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .settlement-section-title { font-size: 13px; font-weight: 500; color: #555; }
+        .settlement-list { display: flex; flex-direction: column; gap: 8px; }
+        .settlement-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 10px 12px;
+            background: #fafafa;
+            border: 1px solid #e8e8e8;
+            border-radius: 6px;
+            transition: background 0.2s, border-color 0.2s;
+        }
+        .settlement-item:hover { background: #f5f5f5; }
+        .settlement-item-main { flex: 1; }
+        /* 结算项条款文案：与合同正文一致，变量位置内嵌输入框 */
+        .settlement-item-text {
+            font-size: 12.5px;
+            color: #333;
+            line-height: 2;
+            text-align: justify;
+        }
+        .settlement-item-text b { font-weight: 600; }
+        .settlement-config-input {
+            width: 80px;
+            padding: 4px 8px;
+            border: 1px solid #d9d9d9;
+            border-radius: 4px;
+            font-size: 13px;
+            outline: none;
+            text-align: center;
+        }
+        .settlement-config-input:focus { border-color: #1890ff; }
+        .settlement-config-input:disabled { background: #f5f5f5; color: #bbb; cursor: not-allowed; }
+        /* 内嵌在条款文案中的行内输入框 */
+        .settlement-input-inline {
+            width: 48px;
+            padding: 1px 4px;
+            margin: 0 2px;
+            vertical-align: baseline;
+        }
+        .settlement-input-inline-amt { width: 68px; }
+        .settlement-empty { color: #bbb; font-size: 12px; padding: 4px 0; }
+
+        .settlement-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 8px;
+            background: #fff7e6;
+            border: 1px solid #ffd591;
+            border-radius: 4px;
+            font-size: 12px;
+            color: #fa8c16;
+            margin: 2px 2px 2px 0;
+        }
+        .settlement-cell { display: flex; flex-wrap: wrap; gap: 2px; }
     </style>
 </head>
 <body>
@@ -520,12 +610,12 @@
             <table>
                 <thead>
                     <tr>
-                        <th style="width:180px;">项目名称</th>
+                        <th style="width:160px;">项目名称</th>
                         <th style="width:80px;">状态</th>
                         <th style="width:80px;">类型</th>
-                        <th style="width:160px;">选项值</th>
+                        <th style="width:180px;">选项值</th>
                         <th style="width:140px;">注释</th>
-                        <th style="width:200px;">已关联模板</th>
+                        <th style="width:180px;">已关联模板</th>
                         <th style="width:100px;">操作</th>
                     </tr>
                 </thead>
@@ -569,12 +659,50 @@
                         <label class="radio-item">
                             <input type="radio" name="fieldType" value="时间" id="typeRadioTime" onchange="toggleOptionsRow()"> 时间
                         </label>
+                        <label class="radio-item">
+                            <input type="radio" name="fieldType" value="特殊设置" id="typeRadioSpecial" onchange="toggleOptionsRow()"> 特殊设置
+                        </label>
                     </div>
                 </div>
                 <div class="form-row" id="optionsRow">
                     <label class="form-label">选项值</label>
                     <div class="options-editor" id="optionsEditor"></div>
-                    <button class="btn" style="margin-top:8px;font-size:12px;padding:4px 12px;" onclick="addOptionItem()">✚ 添加选项</button>
+                    <button class="btn" style="margin-top:8px;font-size:12px;padding:4px 12px;" onclick="addOptionItem()">+ 添加选项</button>
+                </div>
+                <div class="form-row" id="timeRangeRow" style="display:none;">
+                    <label class="form-label">时间范围限制 <span style="font-size:11px;color:#999;font-weight:normal;margin-left:4px;">（可选，留空表示不限）</span></label>
+                    <div class="time-range-config">
+                        <div class="time-range-item">
+                            <span class="time-range-label">最早可选</span>
+                            <span class="time-range-sep">当前时间前</span>
+                            <input class="time-range-input" type="number" id="timeRangeMin" min="0" placeholder="不限">
+                            <span class="time-range-unit">天</span>
+                        </div>
+                        <div class="time-range-item">
+                            <span class="time-range-label">最晚可选</span>
+                            <span class="time-range-sep">当前时间后</span>
+                            <input class="time-range-input" type="number" id="timeRangeMax" min="0" placeholder="不限">
+                            <span class="time-range-unit">天</span>
+                        </div>
+                        <div class="time-range-hint">示例：最早填 30 天，则用户最早可选择 30 天前的日期；最晚填 7 天，则最晚可选择 7 天后的日期</div>
+                    </div>
+                </div>
+                <div class="form-row" id="settlementRow" style="display:none;">
+                    <label class="form-label">结算内容 <span style="font-size:11px;color:#999;font-weight:normal;margin-left:4px;">（生成合同时可多选，比例/金额可配置）</span></label>
+                    <div class="settlement-section">
+                        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+                            <span style="font-size:13px;color:#555;">业务类型</span>
+                            <select class="filter-select" id="settlementBizType" style="width:140px;" onchange="onSettlementBizTypeChange()">
+                                <option value="团体督导">团体督导</option>
+                            </select>
+                        </div>
+                        <div class="settlement-section-header">
+                            <span class="settlement-section-title">多选</span>
+                        </div>
+                        <div class="settlement-list" id="settlementList">
+                            <span class="settlement-empty">暂无结算内容配置</span>
+                        </div>
+                    </div>
                 </div>
                 <div class="form-row">
                     <label class="form-label">注释</label>
@@ -632,8 +760,76 @@
         { id: 't5', name: '[初心]初心咨询师合作协议202602' },
     ];
 
+    // ===== 结算项模板库 Mock =====
+    const SETTLEMENT_ITEM_DB = [
+        {
+            id: 'st1',
+            name: '常规团体督导报酬',
+            bizType: '团体督导',
+            calcType: 'ratio',
+            defaultRatio: { 甲方: 30, 乙方: 70 },
+            unit: '',
+            desc: '以甲方平台实收金额扣除第三方交易手续费后的余额为结算依据，按比例结算'
+        },
+        {
+            id: 'st2',
+            name: '常规团体督导报酬（含税）',
+            bizType: '团体督导',
+            calcType: 'fixed',
+            defaultAmount: 1000,
+            unit: '元/次',
+            desc: '固定金额结算'
+        },
+        {
+            id: 'st3',
+            name: '[不固定人数项目]团体督导报酬（含税）',
+            bizType: '团体督导',
+            calcType: 'per_person',
+            defaultAmount: 150,
+            unit: '元/人/次',
+            desc: '按实际参与人数结算'
+        },
+        {
+            id: 'st4',
+            name: '[朝阳课程项目]团体督导报酬（含税）',
+            bizType: '团体督导',
+            calcType: 'per_phase',
+            defaultAmount: 7000,
+            unit: '元/期',
+            desc: '按课程期数结算'
+        },
+        {
+            id: 'st5',
+            name: '[CBT课程项目]团体督导报酬（含税）',
+            bizType: '团体督导',
+            calcType: 'per_phase',
+            defaultAmount: 7000,
+            unit: '元/期',
+            desc: '按课程期数结算'
+        }
+    ];
+
     // ===== 项目数据 =====
     let projects = [
+        {
+            id: 9,
+            name: '团体督导结算内容',
+            status: 'valid',
+            notify: false,
+            type: '特殊设置',
+            options: [],
+            detail: '',
+            templates: ['t4'],
+            comment: '生成合同时可勾选4项结算内容中的一项或多项，比例/金额可调整',
+            settlementBizType: '团体督导',
+            settlementItems: [
+                { templateId: 'st1', ratio: { 甲方: 30, 乙方: 70 } },
+                { templateId: 'st2', amount: 1000 },
+                { templateId: 'st3', amount: 150 },
+                { templateId: 'st4', amount: 7000 },
+                { templateId: 'st5', amount: 7000 }
+            ]
+        },
         {
             id: 1,
             name: '朝阳项目个体督导项服务价格',
@@ -643,7 +839,8 @@
             options: ['小时制', '次制', '月制'],
             detail: '乙方为甲方朝阳计划课程项目学员提供个体督导服务的，甲方按¥100元/向乙方支付朝阳计划个体督导报酬',
             templates: ['t1', 't2'],
-            comment: '督导服务统一按小时结算，适用于朝阳计划学员'
+            comment: '督导服务统一按小时结算，适用于朝阳计划学员',
+            settlementItems: []
         },
         {
             id: 2,
@@ -654,7 +851,8 @@
             options: ['小白组', '进阶组', '资深组'],
             detail: '乙方为甲方朝阳计划课程项目学员提供个体督导服务的，甲方按¥200元/向乙方支付朝阳计划个体督导报酬',
             templates: [],
-            comment: ''
+            comment: '',
+            settlementItems: []
         },
         {
             id: 3,
@@ -665,7 +863,8 @@
             options: ['个人咨询', '团体咨询'],
             detail: '乙方为甲方初心项目来访者提供心理咨询服务，甲方按约定标准向乙方支付报酬',
             templates: ['t5'],
-            comment: '来访者可根据需求选择个人或团体咨询形式'
+            comment: '来访者可根据需求选择个人或团体咨询形式',
+            settlementItems: []
         },
         {
             id: 4,
@@ -676,7 +875,8 @@
             options: [],
             detail: '',
             templates: ['t3'],
-            comment: ''
+            comment: '',
+            settlementItems: []
         },
         {
             id: 5,
@@ -687,7 +887,8 @@
             options: ['个体督导', '团体督导'],
             detail: '乙方为甲方此刻计划课程学员提供督导服务，甲方按季度结算报酬',
             templates: ['t4'],
-            comment: '按季度统一结算，需在每季度末提交督导报告'
+            comment: '按季度统一结算，需在每季度末提交督导报告',
+            settlementItems: []
         },
         {
             id: 6,
@@ -698,7 +899,9 @@
             options: [],
             detail: '',
             templates: [],
-            comment: '记录服务开始的具体日期，用于合同生效时间判定'
+            comment: '记录服务开始的具体日期，用于合同生效时间判定',
+            timeRange: { minDays: null, maxDays: 0 },
+            settlementItems: []
         },
         {
             id: 7,
@@ -709,7 +912,8 @@
             options: [],
             detail: '',
             templates: [],
-            comment: '咨询师可自行填写的补充说明，不参与合同计算'
+            comment: '咨询师可自行填写的补充说明，不参与合同计算',
+            settlementItems: []
         },
         {
             id: 8,
@@ -720,12 +924,15 @@
             options: [],
             detail: '',
             templates: [],
-            comment: ''
+            comment: '',
+            timeRange: { minDays: null, maxDays: null },
+            settlementItems: []
         },
     ];
     let nextId = 100;
     let editingId = null;
     let tempTemplates = [];
+    let tempSettlementItems = [];
 
     const statusMap = {
         valid:   { label: '有效',  cls: 'status-valid' },
@@ -733,7 +940,7 @@
     };
 
     function getTypeClass(type) {
-        const map = { '单选': 'single', '多选': 'multi', '文本': 'text', '时间': 'time' };
+        const map = { '单选': 'single', '多选': 'multi', '文本': 'text', '时间': 'time', '特殊设置': 'special' };
         return map[type] || 'single';
     }
 
@@ -741,7 +948,13 @@
         const typeRadio = document.querySelector('input[name="fieldType"]:checked');
         const type = typeRadio ? typeRadio.value : '单选';
         const row = document.getElementById('optionsRow');
-        if (row) row.style.display = (type === '文本' || type === '时间') ? 'none' : '';
+        const timeRow = document.getElementById('timeRangeRow');
+        const settlementRow = document.getElementById('settlementRow');
+        if (row) row.style.display = (type === '单选' || type === '多选') ? '' : 'none';
+        if (timeRow) timeRow.style.display = (type === '时间') ? '' : 'none';
+        if (settlementRow) settlementRow.style.display = (type === '特殊设置') ? '' : 'none';
+        // 切到特殊设置时刷新结算项复选框列表
+        if (type === '特殊设置') renderSettlementList();
     }
 
     function toggleStatus(id) {
@@ -766,6 +979,39 @@
 
     function getTemplate(id) {
         return TEMPLATE_DB.find(t => t.id === id);
+    }
+
+    function getTimeRangeHtml(timeRange) {
+        if (!timeRange || (timeRange.minDays == null && timeRange.maxDays == null)) {
+            return '<span style="color:#bbb;">不限</span>';
+        }
+        const parts = [];
+        if (timeRange.minDays != null) parts.push(`前 ${timeRange.minDays} 天`);
+        if (timeRange.maxDays != null) parts.push(`后 ${timeRange.maxDays} 天`);
+        return parts.map(s => `<span class="option-tag">${s}</span>`).join('');
+    }
+
+    function getSettlementItem(templateId) {
+        return SETTLEMENT_ITEM_DB.find(x => x.id === templateId);
+    }
+
+    function getSettlementSummary(items, bizType) {
+        if (!items || items.length === 0) return '<span style="color:#bbb;">—</span>';
+        const bizTag = bizType ? `<span class="option-tag" style="background:#e6f7ff;border-color:#91d5ff;color:#1890ff;">${bizType}</span>` : '';
+        const tags = items.map(item => {
+            const tpl = getSettlementItem(item.templateId);
+            if (!tpl) return '';
+            let valueText = '';
+            if (tpl.calcType === 'ratio' && item.ratio) {
+                valueText = `甲方${item.ratio.甲方}%·乙方${item.ratio.乙方}%`;
+            } else if (item.amount != null) {
+                valueText = `¥${item.amount}${tpl.unit ? ' ' + tpl.unit.replace(/^元/, '') : ''}`;
+            }
+            const name = tpl.name.length > 12 ? tpl.name.slice(0, 12) + '…' : tpl.name;
+            return `<span class="settlement-tag" title="${tpl.name}${valueText ? '：' + valueText : ''}">${name}${valueText ? ' ' + valueText : ''}</span>`;
+        }).filter(Boolean);
+        if (tags.length === 0) return '<span style="color:#bbb;">—</span>';
+        return `<div class="settlement-cell">${bizTag}${tags.join('')}</div>`;
     }
 
     // ===== 渲染 =====
@@ -801,11 +1047,15 @@
                         const t = getTemplate(tid);
                         return t ? `<span class="template-tag" title="${t.name}">${t.name.length > 16 ? t.name.slice(0,16)+'…' : t.name}</span>` : '';
                     }).join('');
-                const optionsHtml = (p.type === '文本' || p.type === '时间')
+                const optionsHtml = (p.type === '文本')
                     ? '<span style="color:#bbb;">—</span>'
-                    : ((p.options && p.options.length > 0)
-                        ? p.options.map(o => `<span class="option-tag">${o}</span>`).join('')
-                        : '<span style="color:#bbb;">—</span>');
+                    : (p.type === '时间')
+                        ? getTimeRangeHtml(p.timeRange)
+                        : (p.type === '特殊设置')
+                            ? getSettlementSummary(p.settlementItems, p.settlementBizType)
+                            : ((p.options && p.options.length > 0)
+                                ? p.options.map(o => `<span class="option-tag">${o}</span>`).join('')
+                                : '<span style="color:#bbb;">—</span>');
                 const commentShort = p.comment ? (p.comment.length > 20 ? p.comment.slice(0, 20) + '…' : p.comment) : '<span style="color:#bbb;">—</span>';
                 return `
                     <tr>
@@ -889,19 +1139,129 @@
         renderOptionsEditor();
     }
 
+    // ===== 结算内容配置 =====
+    function onSettlementBizTypeChange() {
+        // 切换业务类型时清空已勾选的结算项，重新渲染对应列表
+        tempSettlementItems = [];
+        renderSettlementList();
+    }
+
+    // 数字金额转中文大写（单价场景不带"元整"，如 壹仟）
+    function numToCnShort(n) {
+        if (n == null || isNaN(n) || n < 0) return '';
+        const digits = ['零','壹','贰','叁','肆','伍','陆','柒','捌','玖'];
+        const units = ['','拾','佰','仟'];
+        const bigUnits = ['','万','亿'];
+        let integer = Math.floor(n);
+        if (integer === 0) return '零';
+        let intStr = '';
+        let groupIdx = 0;
+        while (integer > 0) {
+            const group = integer % 10000;
+            let groupStr = '';
+            let g = group, zeroFlag = false;
+            for (let i = 0; i < 4 && g > 0; i++) {
+                const d = g % 10;
+                if (d === 0) {
+                    if (groupStr && !zeroFlag) { groupStr = '零' + groupStr; zeroFlag = true; }
+                } else {
+                    groupStr = digits[d] + units[i] + groupStr;
+                    zeroFlag = false;
+                }
+                g = Math.floor(g / 10);
+            }
+            if (group > 0) intStr = groupStr + bigUnits[groupIdx] + intStr;
+            else if (intStr && !intStr.startsWith('零')) intStr = '零' + intStr;
+            integer = Math.floor(integer / 10000);
+            groupIdx++;
+        }
+        return intStr;
+    }
+
+    // 条款文案：与合同正文保持一致，比例/金额位置内嵌输入框
+    const RATIO_BASE_TEXT = '甲乙双方以【甲方平台实收金额，扣除第三方交易手续费（第三方交易手续费费率 0.6%）后的余额】为结算依据';
+
+    function settlementClauseHtml(tpl, item) {
+        if (tpl.calcType === 'ratio') {
+            const ratio = item.ratio || { ...tpl.defaultRatio };
+            const jia = `<input class="settlement-config-input settlement-input-inline" type="number" min="0" max="100" value="${ratio['甲方'] != null ? ratio['甲方'] : ''}" onchange="updateSettlementRatio('${tpl.id}', '甲方', this.value)">`;
+            const yi = `<input class="settlement-config-input settlement-input-inline" type="number" min="0" max="100" value="${ratio['乙方'] != null ? ratio['乙方'] : ''}" onchange="updateSettlementRatio('${tpl.id}', '乙方', this.value)">`;
+            return `常规团体督导报酬：${RATIO_BASE_TEXT}，按<b>【甲方占 ${jia}%】</b>、<b>【乙方占 ${yi}%】</b>（含税）的比例结算，甲方按约定向乙方支付常规团体督导报酬。`;
+        }
+        const amount = item.amount != null ? item.amount : tpl.defaultAmount;
+        const suffix = (tpl.unit || '元').replace(/^元/, ''); // "/次" "/人/次" "/期"
+        const amt = `<input class="settlement-config-input settlement-input-inline settlement-input-inline-amt" type="number" min="0" step="0.01" value="${amount}" onchange="updateSettlementAmount('${tpl.id}', this.value)">`;
+        const payTarget = tpl.id === 'st3' ? '不固定人数项目的团体督导报酬'
+            : tpl.id === 'st4' ? '朝阳项目团体督导报酬'
+            : tpl.id === 'st5' ? 'CBT项目团体督导报酬'
+            : '常规团体督导报酬';
+        return `${tpl.name}：甲方按<b>¥【${amt}】元${suffix}</b>（大写：人民币<b>【${numToCnShort(amount)}】</b>元${suffix}）向乙方支付${payTarget}。`;
+    }
+
+    function renderSettlementList() {
+        const box = document.getElementById('settlementList');
+        if (!box) return;
+        const bizTypeSel = document.getElementById('settlementBizType');
+        const bizType = bizTypeSel ? bizTypeSel.value : '团体督导';
+        const list = SETTLEMENT_ITEM_DB.filter(t => t.bizType === bizType);
+        if (list.length === 0) {
+            box.innerHTML = '<span class="settlement-empty">该业务类型暂无结算项模板</span>';
+            return;
+        }
+        box.innerHTML = list.map(tpl => {
+            // 未配置的结算项按模板默认值自动初始化，全部常显可编辑
+            let item = tempSettlementItems.find(x => x.templateId === tpl.id);
+            if (!item) {
+                item = { templateId: tpl.id };
+                if (tpl.calcType === 'ratio') {
+                    item.ratio = { ...tpl.defaultRatio };
+                } else {
+                    item.amount = tpl.defaultAmount;
+                }
+                tempSettlementItems.push(item);
+            }
+            return `
+                <div class="settlement-item">
+                    <div class="settlement-item-main">
+                        <div class="settlement-item-text">${settlementClauseHtml(tpl, item)}</div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function updateSettlementRatio(templateId, party, value) {
+        const item = tempSettlementItems.find(x => x.templateId === templateId);
+        if (!item || !item.ratio) return;
+        item.ratio[party] = value === '' ? null : parseFloat(value);
+    }
+
+    function updateSettlementAmount(templateId, value) {
+        const item = tempSettlementItems.find(x => x.templateId === templateId);
+        if (!item) return;
+        item.amount = value === '' ? null : parseFloat(value);
+        renderSettlementList(); // 金额变化后同步刷新大写金额
+    }
+
     function openAdd() {
         editingId = null;
         tempTemplates = [];
         tempOptions = [];
+        tempSettlementItems = [];
         document.getElementById('editModalTitle').textContent = '新增项目';
         document.getElementById('fieldName').value = '';
         document.getElementById('fieldStatus').value = 'valid';
         document.getElementById('fieldComment').value = '';
+        document.getElementById('timeRangeMin').value = '';
+        document.getElementById('timeRangeMax').value = '';
         document.querySelector('input[name="fieldType"][value="单选"]').checked = true;
+        const bizSel = document.getElementById('settlementBizType');
+        if (bizSel) bizSel.value = '团体督导';
         toggleOptionsRow();
         renderOptionsEditor();
         renderTplList();
         renderTplOptions();
+        renderSettlementList();
         openModal('editModal');
     }
 
@@ -911,17 +1271,24 @@
         editingId = id;
         tempTemplates = [...p.templates];
         tempOptions = [...(p.options || [])];
+        tempSettlementItems = JSON.parse(JSON.stringify(p.settlementItems || []));
         document.getElementById('editModalTitle').textContent = '编辑项目';
         document.getElementById('fieldName').value = p.name;
         document.getElementById('fieldStatus').value = p.status;
         document.getElementById('fieldComment').value = p.comment || '';
+        const tr = p.timeRange || {};
+        document.getElementById('timeRangeMin').value = (tr.minDays != null) ? tr.minDays : '';
+        document.getElementById('timeRangeMax').value = (tr.maxDays != null) ? tr.maxDays : '';
         const typeVal = p.type || '单选';
         const typeRadio = document.querySelector(`input[name="fieldType"][value="${typeVal}"]`);
         if (typeRadio) typeRadio.checked = true;
+        const bizSel = document.getElementById('settlementBizType');
+        if (bizSel) bizSel.value = p.settlementBizType || '团体督导';
         toggleOptionsRow();
         renderOptionsEditor();
         renderTplList();
         renderTplOptions();
+        renderSettlementList();
         openModal('editModal');
     }
 
@@ -933,13 +1300,34 @@
         const status = document.getElementById('fieldStatus').value;
         const typeRadio = document.querySelector('input[name="fieldType"]:checked');
         const type = typeRadio ? typeRadio.value : '单选';
-        const options = (type === '文本' || type === '时间') ? [] : tempOptions.filter(Boolean);
+        const options = (type === '单选' || type === '多选') ? tempOptions.filter(Boolean) : [];
         const comment = document.getElementById('fieldComment').value.trim();
+        let timeRange = null;
+        if (type === '时间') {
+            const minVal = document.getElementById('timeRangeMin').value;
+            const maxVal = document.getElementById('timeRangeMax').value;
+            timeRange = {
+                minDays: minVal !== '' ? parseInt(minVal) : null,
+                maxDays: maxVal !== '' ? parseInt(maxVal) : null
+            };
+        }
+        const settlementBizType = (type === '特殊设置') ? document.getElementById('settlementBizType').value : null;
+        const settlementItems = (type !== '特殊设置') ? [] : tempSettlementItems.map(item => {
+            const tpl = getSettlementItem(item.templateId);
+            if (!tpl) return null;
+            if (tpl.calcType === 'ratio') {
+                if (!item.ratio || item.ratio['甲方'] == null || item.ratio['乙方'] == null) return null;
+                return { templateId: item.templateId, ratio: { '甲方': item.ratio['甲方'], '乙方': item.ratio['乙方'] } };
+            } else {
+                if (item.amount == null) return null;
+                return { templateId: item.templateId, amount: item.amount };
+            }
+        }).filter(Boolean);
         if (editingId) {
             const p = projects.find(x => x.id === editingId);
-            if (p) { p.name = name; p.status = status; p.templates = [...tempTemplates]; p.type = type; p.options = options; p.comment = comment; }
+            if (p) { p.name = name; p.status = status; p.templates = [...tempTemplates]; p.type = type; p.options = options; p.comment = comment; p.timeRange = timeRange; p.settlementBizType = settlementBizType; p.settlementItems = settlementItems; }
         } else {
-            projects.unshift({ id: nextId++, name, status, templates: [...tempTemplates], notify: false, type, options, detail: '', comment });
+            projects.unshift({ id: nextId++, name, status, templates: [...tempTemplates], notify: false, type, options, detail: '', comment, timeRange, settlementBizType, settlementItems });
         }
         closeModal('editModal');
         render();
@@ -1017,6 +1405,28 @@
                 const t = getTemplate(tid);
                 return t ? `<span class="template-tag">${t.name}</span>` : '';
             }).join('');
+        const settlementDetailHtml = (!p.settlementItems || p.settlementItems.length === 0)
+            ? '<span style="color:#bbb;">—</span>'
+            : p.settlementItems.map(item => {
+                const tpl = getSettlementItem(item.templateId);
+                if (!tpl) return '';
+                let valueText = '';
+                if (tpl.calcType === 'ratio' && item.ratio) {
+                    valueText = `甲方 ${item.ratio['甲方']}% / 乙方 ${item.ratio['乙方']}%`;
+                } else if (item.amount != null) {
+                    valueText = `¥${item.amount} ${tpl.unit}`;
+                }
+                return `<div style="margin-bottom:6px;"><strong>${tpl.name}</strong><span style="color:#666;margin-left:8px;">${valueText}</span></div>`;
+            }).join('');
+        const settlementSection = (p.type === '特殊设置') ? `
+            <div class="detail-section">
+                <div class="detail-label">业务类型</div>
+                <div class="detail-value">${p.settlementBizType || '—'}</div>
+            </div>
+            <div class="detail-section">
+                <div class="detail-label">结算内容</div>
+                <div class="detail-value">${settlementDetailHtml}</div>
+            </div>` : '';
         document.getElementById('detailBody').innerHTML = `
             <div class="detail-section">
                 <div class="detail-label">项目名称</div>
@@ -1032,12 +1442,17 @@
             </div>
             <div class="detail-section">
                 <div class="detail-label">选项值</div>
-                <div class="detail-value">${(p.type === '文本' || p.type === '时间') ? '—' : ((p.options && p.options.length > 0) ? p.options.map(o => `<span class="option-tag">${o}</span>`).join('') : '—')}</div>
+                <div class="detail-value">${
+                    (p.type === '文本' || p.type === '特殊设置') ? '—' :
+                    (p.type === '时间') ? getTimeRangeHtml(p.timeRange) :
+                    ((p.options && p.options.length > 0) ? p.options.map(o => `<span class="option-tag">${o}</span>`).join('') : '—')
+                }</div>
             </div>
             <div class="detail-section">
                 <div class="detail-label">注释</div>
                 <div class="detail-value" style="white-space:pre-wrap;">${p.comment || '—'}</div>
             </div>
+            ${settlementSection}
             <div class="detail-section">
                 <div class="detail-label">已关联模板</div>
                 <div class="detail-value">${tplHtml}</div>
