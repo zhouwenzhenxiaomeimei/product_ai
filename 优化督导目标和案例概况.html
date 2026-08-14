@@ -1,0 +1,1144 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI润色督导目标和案例概况</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif; background: #f0f2f5; color: #333; height: 100vh; overflow: hidden; }
+
+  /* === 三栏布局 === */
+  .layout { display: flex; height: 100vh; }
+
+  /* 左侧导航 */
+  .sidebar { width: 220px; background: #fff; border-right: 1px solid #e8e8e8; flex-shrink: 0; display: flex; flex-direction: column; }
+  .sidebar-title { padding: 20px 20px 12px; font-size: 12px; color: #999; text-transform: uppercase; letter-spacing: 2px; font-weight: 600; }
+  .sidebar-menu { list-style: none; padding: 0 8px; }
+  .sidebar-menu li { padding: 12px 16px; border-radius: 8px; cursor: pointer; font-size: 14px; color: #555; display: flex; align-items: center; gap: 10px; transition: all .2s; margin-bottom: 2px; }
+  .sidebar-menu li:hover { background: #fff8ec; color: #d48806; }
+  .sidebar-menu li.active { background: linear-gradient(135deg, #fff7e6, #fff1cc); color: #d48806; font-weight: 600; }
+  .sidebar-menu li .icon { width: 20px; text-align: center; font-size: 16px; }
+  .sidebar-footer { margin-top: auto; padding: 16px 20px; border-top: 1px solid #f0f0f0; font-size: 12px; color: #bbb; }
+
+  /* 中间工作区 */
+  .main-workspace { flex: 1; overflow-y: auto; padding: 28px 32px; background: #f5f6fa; }
+  .main-workspace::-webkit-scrollbar { width: 6px; }
+  .main-workspace::-webkit-scrollbar-thumb { background: #d9d9d9; border-radius: 3px; }
+
+  /* 右侧PRD面板 */
+  .prd-panel { width: 380px; background: #fff; border-left: 1px solid #e8e8e8; flex-shrink: 0; overflow-y: auto; display: flex; flex-direction: column; }
+  .prd-panel::-webkit-scrollbar { width: 6px; }
+  .prd-panel::-webkit-scrollbar-thumb { background: #d9d9d9; border-radius: 3px; }
+
+  /* === 工作区内容 === */
+  .page-header { margin-bottom: 24px; }
+  .page-header h1 { font-size: 22px; font-weight: 700; color: #1a1a2e; margin-bottom: 6px; }
+  .page-header p { font-size: 13px; color: #888; }
+
+  /* 预约单信息卡片 */
+  .appt-card { background: #fff; border-radius: 12px; padding: 20px 24px; margin-bottom: 20px; box-shadow: 0 1px 4px rgba(0,0,0,.06); display: flex; gap: 32px; flex-wrap: wrap; }
+  .appt-card .field { display: flex; flex-direction: column; min-width: 140px; }
+  .appt-card .field .label { font-size: 12px; color: #999; margin-bottom: 4px; }
+  .appt-card .field .value { font-size: 14px; color: #333; font-weight: 500; }
+  .appt-card .field .value.highlight { color: #d48806; }
+
+  /* 区块卡片 */
+  .section-card { background: #fff; border-radius: 12px; padding: 24px; margin-bottom: 20px; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+  .section-card .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .section-card .section-title { font-size: 16px; font-weight: 600; color: #1a1a2e; display: flex; align-items: center; gap: 8px; }
+  .section-card .section-title .dot { width: 4px; height: 18px; background: #f5a623; border-radius: 2px; }
+
+  /* 输入区域 */
+  .input-area textarea { width: 100%; border: 1.5px solid #e8e8e8; border-radius: 8px; padding: 14px 16px; font-size: 14px; line-height: 1.7; resize: vertical; transition: border-color .2s; font-family: inherit; color: #333; background: #fafafa; }
+  .input-area textarea:focus { outline: none; border-color: #f5a623; background: #fff; box-shadow: 0 0 0 3px rgba(245,166,35,.1); }
+  .input-area textarea::placeholder { color: #c0c0c0; }
+  .input-area .char-count { text-align: right; font-size: 12px; color: #bbb; margin-top: 6px; }
+
+  /* AI 按钮组 */
+  .btn-group { display: flex; gap: 10px; margin-top: 14px; }
+  .btn-ai { display: inline-flex; align-items: center; gap: 6px; padding: 10px 22px; border-radius: 8px; border: none; cursor: pointer; font-size: 14px; font-weight: 600; transition: all .25s; }
+  .btn-ai.primary { background: linear-gradient(135deg, #f5a623, #e8950a); color: #fff; box-shadow: 0 4px 12px rgba(245,166,35,.3); }
+  .btn-ai.primary:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(245,166,35,.4); }
+  .btn-ai.primary:active { transform: translateY(0); }
+  .btn-ai.primary.loading { opacity: .7; pointer-events: none; }
+  .btn-ai.secondary { background: #f5f5f5; color: #666; border: 1px solid #e8e8e8; }
+  .btn-ai.secondary:hover { background: #eee; }
+  .btn-ai .sparkle { font-size: 16px; }
+
+  /* 优化结果区 */
+  .result-area { margin-top: 18px; display: none; }
+  .result-area.show { display: block; animation: slideDown .35s ease; }
+  @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+  .result-box { background: linear-gradient(135deg, #fffbf0, #fff7e6); border: 1.5px solid #f5d89a; border-radius: 10px; padding: 18px 20px; position: relative; }
+  .result-box .result-label { font-size: 12px; color: #d48806; font-weight: 600; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+  .result-box .result-text { font-size: 14px; line-height: 1.8; color: #444; white-space: pre-wrap; }
+  .result-actions { display: flex; gap: 10px; margin-top: 14px; }
+  .result-actions .btn-sm { padding: 7px 18px; border-radius: 6px; border: none; cursor: pointer; font-size: 13px; font-weight: 500; transition: all .2s; }
+  .btn-adopt { background: #f5a623; color: #fff; }
+  .btn-adopt:hover { background: #e8950a; }
+  .btn-regen { background: #fff; color: #888; border: 1px solid #ddd !important; }
+  .btn-regen:hover { background: #f5f5f5; }
+  .btn-discard { background: transparent; color: #bbb; }
+  .btn-discard:hover { color: #999; }
+
+  /* Diff 对比 */
+  .diff-toggle { margin-top: 12px; font-size: 12px; color: #f5a623; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; }
+  .diff-toggle:hover { text-decoration: underline; }
+  .diff-view { margin-top: 10px; display: none; background: #fff; border-radius: 8px; padding: 14px; border: 1px solid #eee; }
+  .diff-view.show { display: block; }
+  .diff-view .diff-line { font-size: 13px; line-height: 1.7; font-family: 'Consolas', monospace; }
+  .diff-del { background: #ffeef0; color: #b31d28; text-decoration: line-through; padding: 1px 3px; border-radius: 2px; }
+  .diff-add { background: #e6ffed; color: #22863a; padding: 1px 3px; border-radius: 2px; }
+
+  /* === PRD 面板内容 === */
+  .prd-header { padding: 20px 24px 16px; border-bottom: 1px solid #f0f0f0; position: sticky; top: 0; background: #fff; z-index: 10; }
+  .prd-header h2 { font-size: 16px; font-weight: 700; color: #1a1a2e; display: flex; align-items: center; gap: 8px; }
+  .prd-header h2 .badge { font-size: 11px; background: #f5a623; color: #fff; padding: 2px 8px; border-radius: 10px; font-weight: 500; }
+  .prd-body { padding: 20px 24px; flex: 1; }
+  .prd-section { margin-bottom: 24px; }
+  .prd-section h3 { font-size: 14px; font-weight: 700; color: #1a1a2e; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 2px solid #f5a623; display: inline-block; }
+  .prd-section p, .prd-section li { font-size: 13px; line-height: 1.8; color: #555; }
+  .prd-section ul { padding-left: 18px; }
+  .prd-section li { margin-bottom: 4px; }
+
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 12px 0; }
+  .stat-item { background: #f9f9f9; border-radius: 8px; padding: 14px; text-align: center; }
+  .stat-item .stat-num { font-size: 22px; font-weight: 700; color: #1a1a2e; }
+  .stat-item .stat-num.warn { color: #e8453c; }
+  .stat-item .stat-num.ok { color: #52c41a; }
+  .stat-item .stat-label { font-size: 11px; color: #999; margin-top: 4px; }
+
+  .ratio-bar { height: 8px; border-radius: 4px; background: #ffeef0; margin: 8px 0 4px; overflow: hidden; }
+  .ratio-bar .fill { height: 100%; background: linear-gradient(90deg, #52c41a, #73d13d); border-radius: 4px; }
+  .ratio-text { font-size: 11px; color: #999; text-align: right; }
+
+  .field-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 10px; }
+  .field-table th { background: #fafafa; text-align: left; padding: 8px 10px; color: #888; font-weight: 600; border-bottom: 1px solid #eee; }
+  .field-table td { padding: 8px 10px; border-bottom: 1px solid #f5f5f5; color: #555; }
+  .field-table tr:hover td { background: #fffbf0; }
+
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; }
+  .tag-required { background: #fff1f0; color: #cf1322; }
+  .tag-optional { background: #f6ffed; color: #389e0d; }
+  .tag-ai { background: #fff7e6; color: #d48806; }
+
+  .callout { background: #fffbf0; border-left: 3px solid #f5a623; padding: 12px 14px; border-radius: 0 8px 8px 0; margin: 12px 0; }
+  .callout p { font-size: 12px; color: #666; line-height: 1.7; }
+  .callout strong { color: #d48806; }
+
+  .solution-card { background: linear-gradient(135deg, #fffbf0, #fff7e6); border: 1px solid #f5d89a; border-radius: 10px; padding: 16px; margin: 12px 0; }
+  .solution-card h4 { font-size: 13px; color: #d48806; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+  .solution-card p { font-size: 12px; color: #666; line-height: 1.7; }
+
+  /* 隐藏非活动面板 */
+  .panel-content { display: none; }
+  .panel-content.active { display: block; }
+
+  /* === 手机模拟框架 === */
+  .phone-frame { width: 375px; min-height: 680px; background: #f5f5f5; border-radius: 32px; border: 6px solid #1a1a1a; overflow: hidden; position: relative; box-shadow: 0 20px 60px rgba(0,0,0,.2); margin: 0 auto; }
+  .phone-status-bar { height: 40px; background: #fff; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; font-size: 12px; font-weight: 600; color: #333; }
+  .phone-status-bar .carrier { font-size: 14px; font-weight: 700; }
+  .phone-status-bar .time { font-size: 14px; font-weight: 700; position: absolute; left: 50%; transform: translateX(-50%); }
+  .phone-status-bar .battery { display: flex; align-items: center; gap: 4px; font-size: 12px; }
+  .phone-status-bar .battery-icon { width: 24px; height: 12px; border: 1.5px solid #333; border-radius: 3px; position: relative; display: inline-block; }
+  .phone-status-bar .battery-icon::after { content: ''; position: absolute; right: -4px; top: 2.5px; width: 2px; height: 5px; background: #333; border-radius: 0 1px 1px 0; }
+  .phone-status-bar .battery-icon .battery-fill { width: 47%; height: 100%; background: #333; border-radius: 1px; }
+  .phone-nav-bar { height: 48px; background: #fff; display: flex; align-items: center; padding: 0 16px; border-bottom: 1px solid #ebebeb; }
+  .phone-nav-bar .back-arrow { font-size: 28px; color: #333; cursor: pointer; margin-right: 4px; font-weight: 300; }
+  .phone-nav-bar .nav-title { font-size: 17px; font-weight: 600; color: #1a1a1a; }
+  .phone-content { overflow-y: auto; background: #f2f2f7; padding-bottom: 20px; }
+  .phone-content::-webkit-scrollbar { width: 0; }
+
+  /* 手机端表单样式 - 1:1复刻 */
+  .m-form-section { background: #fff; margin: 10px 16px; border-radius: 10px; padding: 14px 16px; }
+  .m-form-section-title { font-size: 16px; font-weight: 600; color: #1a1a1a; margin-bottom: 10px; }
+  .m-form-user-row { display: flex; align-items: center; justify-content: space-between; }
+  .m-form-user-info { display: flex; align-items: center; gap: 12px; }
+  .m-form-user-avatar { width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, #f5a623, #e8950a); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 18px; font-weight: 600; }
+  .m-form-user-name { font-size: 16px; font-weight: 600; color: #1a1a1a; }
+  .m-form-user-detail { font-size: 13px; color: #8e8e93; margin-top: 2px; }
+  .m-form-user-arrow { color: #c7c7cc; font-size: 22px; font-weight: 300; }
+
+  .m-form-field { }
+  .m-form-field-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .m-form-field-label { font-size: 16px; font-weight: 500; color: #1a1a1a; }
+  .m-required { color: #ff3b30; margin-right: 2px; }
+  .m-form-field-right { display: flex; align-items: center; gap: 8px; }
+  .m-form-field-badge { width: 26px; height: 26px; border-radius: 50%; background: #ff9500; color: #fff; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+  .m-form-field-tag { padding: 3px 10px; border-radius: 4px; background: #e5e5ea; font-size: 12px; color: #636366; font-weight: 500; }
+  .m-form-textarea { width: 100%; border: none; border-radius: 8px; padding: 12px 0; font-size: 15px; line-height: 1.65; resize: none; background: transparent; color: #1a1a1a; font-family: -apple-system, 'PingFang SC', sans-serif; border-top: 1px solid #f0f0f0; }
+  .m-form-textarea:focus { outline: none; }
+  .m-form-textarea::placeholder { color: #c7c7cc; }
+  .m-form-char-count { text-align: right; font-size: 13px; color: #c7c7cc; margin-top: 2px; }
+
+  /* AI 润色按钮（手机端） */
+  .m-ai-btn { min-width: 84px; height: 28px; padding: 0 12px; border-radius: 14px; border: 1px solid #0d47a1; background: #e8f0fb; color: #0d47a1; font-size: 13px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 4px; transition: all .2s; font-family: inherit; }
+  .m-ai-btn:hover { background: #d6e4f7; }
+  .m-ai-btn:active { transform: scale(0.96); }
+  .m-ai-btn.loading { pointer-events: none; background: #e8f0fb; }
+  .m-ai-btn.undo { border-color: #c7c7cc; background: #f2f2f7; color: #636366; }
+  .m-ai-btn.undo:hover { background: #e5e5ea; }
+  /* 字数不足门槛时置灰不可点 */
+  .m-ai-btn:disabled { border-color: #e5e5ea; background: #f2f2f7; color: #c7c7cc; cursor: not-allowed; }
+  .m-ai-btn:disabled:hover { background: #f2f2f7; }
+
+  /* 转圈加载动画 */
+  .m-spinner { width: 14px; height: 14px; border: 2px solid #b3c9e6; border-top-color: #0d47a1; border-radius: 50%; animation: mSpin .7s linear infinite; display: inline-block; }
+  @keyframes mSpin { to { transform: rotate(360deg); } }
+
+  .m-form-submit-area { padding: 20px 16px 30px; }
+  .m-form-submit-btn { width: 100%; height: 50px; border-radius: 25px; border: none; background: #1a1a2e; color: #fff; font-size: 17px; font-weight: 600; cursor: pointer; transition: all .2s; letter-spacing: 1px; }
+  .m-form-submit-btn:hover { background: #2d2d4e; }
+  .m-form-submit-btn:active { transform: scale(0.98); }
+
+  /* Toast 提示 */
+  .toast { position: fixed; top: 80px; left: 50%; transform: translateX(-50%); background: #333; color: #fff; padding: 10px 24px; border-radius: 8px; font-size: 13px; z-index: 999; opacity: 0; transition: opacity .3s; pointer-events: none; }
+  .toast.show { opacity: 1; }
+
+  /* 模板选择 */
+  .template-row { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+  .template-chip { padding: 6px 14px; border-radius: 16px; border: 1px solid #e8e8e8; background: #fff; font-size: 12px; color: #666; cursor: pointer; transition: all .2s; }
+  .template-chip:hover { border-color: #f5a623; color: #d48806; }
+  .template-chip.active { background: #fff7e6; border-color: #f5a623; color: #d48806; font-weight: 600; }
+
+  /* === 预约信息表（PC）- Element UI 风格复刻 === */
+  .pc-page { background: #fff; border: 1px solid #ebeef5; border-radius: 4px; padding: 8px 20px 28px; }
+
+  /* 顶部 Tab 标签栏 */
+  .pc-tabs { display: flex; gap: 6px; border-bottom: 1px solid #e4e7ed; margin-bottom: 22px; }
+  .pc-tab { display: flex; align-items: center; gap: 10px; padding: 6px 12px; background: #f4f4f5; border: 1px solid #d3d4d6; border-bottom: none; border-radius: 3px 3px 0 0; font-size: 12px; color: #909399; cursor: pointer; position: relative; top: 1px; }
+  .pc-tab.active { background: #fff; color: #409eff; border-color: #e4e7ed; }
+  .pc-tab .pc-tab-close { color: #c0c4cc; font-size: 13px; line-height: 1; }
+  .pc-tab .pc-tab-close:hover { color: #909399; }
+
+  /* 区块标题 */
+  .pc-block-title { font-size: 15px; font-weight: 700; color: #303133; margin: 26px 0 16px; }
+  .pc-block-title.first { margin-top: 6px; }
+
+  /* 信息展示网格 */
+  .pc-info-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px 20px; }
+  .pc-info-grid.col4 { grid-template-columns: repeat(4, 1fr); }
+  .pc-info-item { font-size: 13px; display: flex; align-items: flex-start; gap: 8px; }
+  .pc-info-label { color: #909399; flex-shrink: 0; }
+  .pc-info-value { color: #303133; font-weight: 600; }
+
+  /* 案例报告上传区 */
+  .pc-upload-btn { padding: 8px 16px; background: #6b7aa8; color: #fff; border: none; border-radius: 4px; font-size: 13px; cursor: pointer; font-family: inherit; }
+  .pc-upload-btn:hover { background: #7d8bb5; }
+  .pc-help-icon { display: inline-flex; align-items: center; justify-content: center; width: 14px; height: 14px; border-radius: 50%; background: #c0c4cc; color: #fff; font-size: 10px; margin-bottom: 4px; }
+  .pc-link { color: #409eff; font-size: 12px; cursor: pointer; text-decoration: none; }
+  .pc-link:hover { text-decoration: underline; }
+  .pc-tip-red { color: #f56c6c; font-size: 12px; }
+
+  /* 表单字段与输入框 */
+  .pc-field { width: 410px; margin-bottom: 4px; }
+  .pc-field-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; min-height: 28px; }
+  .pc-field-label { font-size: 13px; color: #606266; }
+  .pc-textarea-wrap { position: relative; }
+  .pc-textarea { width: 100%; height: 100px; padding: 10px 12px 26px; border: 1px solid #dcdfe6; border-radius: 4px; font-size: 13px; color: #606266; line-height: 1.6; resize: vertical; font-family: inherit; box-sizing: border-box; }
+  .pc-textarea:focus { outline: none; border-color: #409eff; }
+  .pc-textarea::placeholder { color: #c0c4cc; }
+  .pc-char-count { position: absolute; right: 12px; bottom: 8px; font-size: 12px; color: #909399; pointer-events: none; }
+
+  /* PC 端 AI 润色按钮（与手机端同一深蓝体系） */
+  .pc-ai-btn { min-width: 84px; height: 26px; padding: 0 12px; border-radius: 13px; border: 1px solid #0d47a1; background: #e8f0fb; color: #0d47a1; font-size: 12px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 4px; transition: all .2s; font-family: inherit; }
+  .pc-ai-btn:hover { background: #d6e4f7; }
+  .pc-ai-btn:active { transform: scale(0.96); }
+  .pc-ai-btn.loading { pointer-events: none; background: #e8f0fb; }
+  .pc-ai-btn.undo { border-color: #c0c4cc; background: #f4f4f5; color: #606266; }
+  .pc-ai-btn.undo:hover { background: #e9e9eb; }
+  /* 字数不足门槛时置灰不可点 */
+  .pc-ai-btn:disabled { border-color: #e4e7ed; background: #f5f7fa; color: #c0c4cc; cursor: not-allowed; }
+  .pc-ai-btn:disabled:hover { background: #f5f7fa; }
+
+  /* 提交 / 返回按钮 */
+  .pc-btn { padding: 8px 20px; background: #6b7aa8; color: #fff; border: none; border-radius: 4px; font-size: 13px; cursor: pointer; font-family: inherit; }
+  .pc-btn:hover { background: #7d8bb5; }
+  .pc-submit-row { width: 410px; display: flex; justify-content: flex-end; margin-top: 14px; }
+  .pc-back-row { display: flex; justify-content: center; margin-top: 30px; }
+</style>
+</head>
+<body>
+
+<!-- 三栏布局 -->
+<div class="layout">
+
+  <!-- ===== 左侧导航 ===== -->
+  <div class="sidebar">
+    <div class="sidebar-title">功能模块</div>
+    <ul class="sidebar-menu">
+      <li class="active" data-panel="background"><span class="icon">📋</span> 背景知识</li>
+      <li data-panel="appointment"><span class="icon">📱</span> 预约信息表APP</li>
+      <li data-panel="appointment-pc"><span class="icon">💻</span> 预约信息表（PC）</li>
+    </ul>
+    <div class="sidebar-footer">v1.0.0 · 2026-08-14</div>
+  </div>
+
+  <!-- ===== 中间工作区 ===== -->
+  <div class="main-workspace">
+
+    <!-- 面板：背景知识 -->
+    <div class="panel-content active" id="panel-background">
+      <div class="page-header">
+        <h1>业务背景与痛点分析</h1>
+        <p>了解当前督导预约中案例报告缺失的现状与解决方案</p>
+      </div>
+
+      <div class="section-card">
+        <div class="section-header">
+          <div class="section-title"><span class="dot"></span> 案例报告上传统计</div>
+        </div>
+        <div style="display:flex; gap:20px; flex-wrap:wrap;">
+          <div style="flex:1; min-width:200px;">
+            <div class="stat-grid">
+              <div class="stat-item">
+                <div class="stat-num ok">9,708</div>
+                <div class="stat-label">有案例报告</div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-num warn">139,288</div>
+                <div class="stat-label">无案例报告</div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-num">6.52%</div>
+                <div class="stat-label">有报告占比</div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-num warn">93.48%</div>
+                <div class="stat-label">无报告占比</div>
+              </div>
+            </div>
+            <div class="ratio-bar"><div class="fill" style="width:6.52%"></div></div>
+            <div class="ratio-text">有报告 : 无报告 ≈ 1 : 14.3</div>
+          </div>
+          <div style="flex:1; min-width:240px;">
+            <div style="background:#fff5f5; border-radius:10px; padding:18px; border:1px solid #ffd6d6;">
+              <div style="font-size:14px; font-weight:600; color:#cf1322; margin-bottom:10px;">⚠️ 核心结论</div>
+              <p style="font-size:13px; line-height:1.8; color:#555;">
+                大约每 <strong style="color:#cf1322;">15</strong> 个预约中，仅有 <strong style="color:#52c41a;">1</strong> 个上传了案例报告。
+                绝大多数咨询师在没有完整案例报告的情况下依然进行督导。
+              </p>
+              <p style="font-size:13px; line-height:1.8; color:#555; margin-top:10px;">
+                当咨询师未上传案例报告时，督导师可主动提供<strong style="color:#d48806;">督导目标优化</strong>和<strong style="color:#d48806;">案例优化</strong>，助力督导师高效开展工作。
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-card">
+        <div class="section-header">
+          <div class="section-title"><span class="dot"></span> 解决方案</div>
+        </div>
+        <div style="display:flex; gap:16px; flex-wrap:wrap;">
+          <div style="flex:1; min-width:220px; background:linear-gradient(135deg,#fffbf0,#fff7e6); border-radius:10px; padding:20px; border:1px solid #f5d89a;">
+            <div style="font-size:28px; margin-bottom:10px;">✨</div>
+            <div style="font-size:15px; font-weight:600; color:#d48806; margin-bottom:8px;">督导目标润色</div>
+            <p style="font-size:13px; color:#666; line-height:1.7;">通过 AI 辅助或结构化引导，帮助咨询师明确本次督导的核心目标，提升督导的针对性和效率。</p>
+          </div>
+          <div style="flex:1; min-width:220px; background:linear-gradient(135deg,#fffbf0,#fff7e6); border-radius:10px; padding:20px; border:1px solid #f5d89a;">
+            <div style="font-size:28px; margin-bottom:10px;">📋</div>
+            <div style="font-size:15px; font-weight:600; color:#d48806; margin-bottom:8px;">案例概况润色</div>
+            <p style="font-size:13px; color:#666; line-height:1.7;">通过 AI 辅助生成结构化的案例概况描述，降低输入门槛，提升案例报告的填写率和质量。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 面板：预约信息表 -->
+    <div class="panel-content" id="panel-appointment">
+      <div class="page-header">
+        <h1>预约信息表APP</h1>
+        <p>咨询师端 · 1:1 复刻手机端预约信息填写表单</p>
+      </div>
+      <div style="display:flex; justify-content:center; padding: 10px 0 30px;">
+        <div class="phone-frame">
+          <!-- 状态栏 -->
+          <div class="phone-status-bar">
+            <span class="carrier">中国移动</span>
+            <span class="time">14:54</span>
+            <span class="battery"><span class="battery-icon"><span class="battery-fill"></span></span> 47%</span>
+          </div>
+          <!-- 导航栏 -->
+          <div class="phone-nav-bar">
+            <span class="back-arrow">‹</span>
+            <span class="nav-title">预约信息表</span>
+          </div>
+          <!-- 表单内容 -->
+          <div class="phone-content">
+            <!-- 我的专业信息 -->
+            <div class="m-form-section">
+              <div class="m-form-section-title">我的专业信息</div>
+              <div class="m-form-user-row">
+                <div class="m-form-user-info">
+                  <div class="m-form-user-avatar">文</div>
+                  <div>
+                    <div class="m-form-user-name">文珍</div>
+                    <div class="m-form-user-detail">女 30岁</div>
+                  </div>
+                </div>
+                <span class="m-form-user-arrow">›</span>
+              </div>
+            </div>
+
+            <!-- 督导期待和收获 -->
+            <div class="m-form-section">
+              <div class="m-form-field">
+                <div class="m-form-field-header">
+                  <span class="m-form-field-label"><span class="m-required">*</span> 督导期待和收获</span>
+                  <button class="m-ai-btn" id="mAiBtnGoal" onclick="mToggleAi('goal')"><span>✨</span> AI润色</button>
+                </div>
+                <textarea class="m-form-textarea" id="mGoalInput" rows="6" maxlength="500" placeholder="请描述您对本次督导的期待和收获..." oninput="mUpdateCount('goal')">希望通过本次督导，学习如何更好地处理来访者的阻抗问题，提升咨询技巧</textarea>
+                <div class="m-form-char-count"><span id="mGoalCount">86</span>/500</div>
+              </div>
+            </div>
+
+            <!-- 案例概况 -->
+            <div class="m-form-section">
+              <div class="m-form-field">
+                <div class="m-form-field-header">
+                  <span class="m-form-field-label"><span class="m-required">*</span> 案例概况</span>
+                  <button class="m-ai-btn" id="mAiBtnCase" onclick="mToggleAi('case')"><span>✨</span> AI润色</button>
+                </div>
+                <textarea class="m-form-textarea" id="mCaseInput" rows="4" maxlength="50" placeholder="请简要描述案例情况..." oninput="mUpdateCount('case')">女，32岁，婚姻冲突，已做5次咨询</textarea>
+                <div class="m-form-char-count"><span id="mCaseCount">38</span>/50</div>
+              </div>
+            </div>
+
+            <!-- 提交按钮 -->
+            <div class="m-form-submit-area">
+              <button class="m-form-submit-btn">提交预约信息</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 面板：预约信息表（PC） -->
+    <div class="panel-content" id="panel-appointment-pc">
+      <div class="page-header">
+        <h1>预约信息表（PC）</h1>
+        <p>督导管理后台 · 预约详情页，两个文本字段支持 AI 润色</p>
+      </div>
+      <div class="pc-page">
+        <!-- 顶部 Tab 标签栏 -->
+        <div class="pc-tabs">
+          <div class="pc-tab">待完成 <span class="pc-tab-close">×</span></div>
+          <div class="pc-tab active">预约记录 <span class="pc-tab-close">×</span></div>
+        </div>
+
+        <!-- 预约信息 -->
+        <div class="pc-block-title first">预约信息</div>
+        <div class="pc-info-grid">
+          <div class="pc-info-item"><span class="pc-info-label">预约类型：</span><span class="pc-info-value">个体督导</span></div>
+          <div class="pc-info-item"><span class="pc-info-label">受督者：</span><span class="pc-info-value">钱祠才(钱祠才)</span></div>
+          <div class="pc-info-item"><span class="pc-info-label">性别：</span><span class="pc-info-value">男</span></div>
+          <div class="pc-info-item"><span class="pc-info-label">教育和工作经历：</span><span class="pc-info-value">464646</span></div>
+          <div></div>
+          <div class="pc-info-item">
+            <span class="pc-info-label">案例报告：</span>
+            <div>
+              <div style="text-align:center; margin-bottom:2px;"><span class="pc-help-icon">?</span></div>
+              <button class="pc-upload-btn">上传案例报告</button>
+            </div>
+          </div>
+          <div></div>
+          <div></div>
+          <div style="display:flex; align-items:center; gap:10px;">
+            <a class="pc-link">下载案例报告模版</a>
+            <span class="pc-tip-red">支持 .doc、.docx、.pdf 格式</span>
+          </div>
+        </div>
+
+        <!-- 督导期待和收获 -->
+        <div class="pc-field" style="margin-top:24px;">
+          <div class="pc-field-header">
+            <span class="pc-field-label">督导期待和收获</span>
+            <button class="pc-ai-btn" id="pcAiBtnGoal" onclick="mToggleAi('goalPc')"><span>✨</span> AI润色</button>
+          </div>
+          <div class="pc-textarea-wrap">
+            <textarea class="pc-textarea" id="pcGoalInput" maxlength="500" placeholder="请描述您对本次督导的期待和收获..." oninput="mUpdateCount('goalPc')">111111</textarea>
+            <span class="pc-char-count"><span id="pcGoalCount">6</span>/500</span>
+          </div>
+        </div>
+
+        <!-- 案例概况 -->
+        <div class="pc-field" style="margin-top:16px;">
+          <div class="pc-field-header">
+            <span class="pc-field-label">案例概况</span>
+            <button class="pc-ai-btn" id="pcAiBtnCase" onclick="mToggleAi('casePc')"><span>✨</span> AI润色</button>
+          </div>
+          <div class="pc-textarea-wrap">
+            <textarea class="pc-textarea" id="pcCaseInput" maxlength="50" placeholder="请简要描述案例情况..." oninput="mUpdateCount('casePc')" style="height:90px;">哈哈哈</textarea>
+            <span class="pc-char-count"><span id="pcCaseCount">3</span>/50</span>
+          </div>
+        </div>
+
+        <div class="pc-submit-row">
+          <button class="pc-btn">提交</button>
+        </div>
+
+        <!-- 预约记录 -->
+        <div class="pc-block-title">预约记录</div>
+        <div class="pc-info-grid">
+          <div class="pc-info-item"><span class="pc-info-label">督导时间：</span><span class="pc-info-value">2026-08-03 16:00 - 16:50</span></div>
+          <div class="pc-info-item"><span class="pc-info-label">督导方式：</span><span class="pc-info-value">视频</span></div>
+          <div class="pc-info-item"><span class="pc-info-label">预约状态：</span><span class="pc-info-value">待完成</span></div>
+        </div>
+
+        <!-- 订单信息 -->
+        <div class="pc-block-title">订单信息</div>
+        <div class="pc-info-grid col4">
+          <div class="pc-info-item"><span class="pc-info-label">订单编号：</span><span class="pc-info-value">20251011173925144007</span></div>
+          <div class="pc-info-item"><span class="pc-info-label">下单时间：</span><span class="pc-info-value">2025-10-11 17:39:26</span></div>
+          <div class="pc-info-item"><span class="pc-info-label">订单状态：</span><span class="pc-info-value">已确认</span></div>
+          <div class="pc-info-item"><span class="pc-info-label">支付方式：</span><span class="pc-info-value"></span></div>
+          <div class="pc-info-item"><span class="pc-info-label">订单总额：</span><span class="pc-info-value">350</span></div>
+          <div class="pc-info-item"><span class="pc-info-label">支付金额：</span><span class="pc-info-value">0</span></div>
+        </div>
+
+        <div class="pc-back-row">
+          <button class="pc-btn">返回</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 面板：督导目标润色 -->
+    <div class="panel-content" id="panel-goal">
+      <div class="page-header">
+        <h1>🎯 督导目标润色</h1>
+        <p>明确本次督导的核心目标，AI 将帮助您优化表述</p>
+      </div>
+
+      <div class="appt-card">
+        <div class="field"><span class="label">预约单号</span><span class="value">SUP-2026081401</span></div>
+        <div class="field"><span class="label">咨询师</span><span class="value">李晓明</span></div>
+        <div class="field"><span class="label">来访者</span><span class="value">王女士（匿名）</span></div>
+        <div class="field"><span class="label">咨询次数</span><span class="value highlight">第 5 次</span></div>
+        <div class="field"><span class="label">案例报告</span><span class="value" style="color:#e8453c;">未上传</span></div>
+      </div>
+
+      <div class="section-card">
+        <div class="section-header">
+          <div class="section-title"><span class="dot"></span> 原始督导目标</div>
+        </div>
+        <div class="template-row">
+          <span class="template-chip active" onclick="selectGoalTemplate(this, '想讨论一下来访者的阻抗问题')">🔹 阻抗处理</span>
+          <span class="template-chip" onclick="selectGoalTemplate(this, '想了解如何更好地建立咨访关系')">🔹 咨访关系</span>
+          <span class="template-chip" onclick="selectGoalTemplate(this, '希望获得对个案概念化的指导')">🔹 个案概念化</span>
+          <span class="template-chip" onclick="selectGoalTemplate(this, '想讨论反移情的处理方式')">🔹 反移情处理</span>
+        </div>
+        <div class="input-area">
+          <textarea id="goalInput" rows="4" placeholder="请输入您本次督导的目标，例如：&#10;想讨论一下来访者的阻抗问题">想讨论一下来访者的阻抗问题</textarea>
+          <div class="char-count"><span id="goalCount">17</span> / 500 字</div>
+        </div>
+        <div class="btn-group">
+          <button class="btn-ai primary" id="btnPolishGoal" onclick="polishGoal()">
+            <span class="sparkle">✨</span> AI 润色优化
+          </button>
+          <button class="btn-ai secondary" onclick="clearInput('goal')">
+            <span>🗑️</span> 清空
+          </button>
+        </div>
+
+        <div class="result-area" id="goalResult">
+          <div class="result-box">
+            <div class="result-label">✨ AI 优化结果</div>
+            <div class="result-text" id="goalResultText"></div>
+            <div class="diff-toggle" onclick="toggleDiff('goal')">📄 查看修改对比</div>
+            <div class="diff-view" id="goalDiff"></div>
+            <div class="result-actions">
+              <button class="btn-sm btn-adopt" onclick="adoptResult('goal')">✅ 采用此版本</button>
+              <button class="btn-sm btn-regen" onclick="polishGoal()">🔄 重新生成</button>
+              <button class="btn-sm btn-discard" onclick="discardResult('goal')">✕ 放弃</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 面板：案例概况润色 -->
+    <div class="panel-content" id="panel-case">
+      <div class="page-header">
+        <h1>📝 案例概况润色</h1>
+        <p>描述来访者的基本情况和咨询进展，AI 将帮助您完善内容</p>
+      </div>
+
+      <div class="appt-card">
+        <div class="field"><span class="label">预约单号</span><span class="value">SUP-2026081401</span></div>
+        <div class="field"><span class="label">咨询师</span><span class="value">李晓明</span></div>
+        <div class="field"><span class="label">来访者</span><span class="value">王女士（匿名）</span></div>
+        <div class="field"><span class="label">咨询次数</span><span class="value highlight">第 5 次</span></div>
+        <div class="field"><span class="label">案例报告</span><span class="value" style="color:#e8453c;">未上传</span></div>
+      </div>
+
+      <div class="section-card">
+        <div class="section-header">
+          <div class="section-title"><span class="dot"></span> 原始案例概况</div>
+        </div>
+        <div class="input-area">
+          <textarea id="caseInput" rows="8" placeholder="请输入案例概况，建议包含以下信息：&#10;• 来访者基本情况（年龄、性别、主诉问题）&#10;• 咨询进展和关键发现&#10;• 遇到的困难或疑问&#10;• 希望督导师重点关注的方面">女，32岁，因为和老公吵架来的，已经做了5次了。感觉她总是抱怨别人，但不愿意看自己的问题。最近两次开始不愿意说话，我不知道怎么办。</textarea>
+          <div class="char-count"><span id="caseCount">62</span> / 2000 字</div>
+        </div>
+        <div class="btn-group">
+          <button class="btn-ai primary" id="btnPolishCase" onclick="polishCase()">
+            <span class="sparkle">✨</span> AI 润色优化
+          </button>
+          <button class="btn-ai secondary" onclick="clearInput('case')">
+            <span>🗑️</span> 清空
+          </button>
+        </div>
+
+        <div class="result-area" id="caseResult">
+          <div class="result-box">
+            <div class="result-label">✨ AI 优化结果</div>
+            <div class="result-text" id="caseResultText"></div>
+            <div class="diff-toggle" onclick="toggleDiff('case')">📄 查看修改对比</div>
+            <div class="diff-view" id="caseDiff"></div>
+            <div class="result-actions">
+              <button class="btn-sm btn-adopt" onclick="adoptResult('case')">✅ 采用此版本</button>
+              <button class="btn-sm btn-regen" onclick="polishCase()">🔄 重新生成</button>
+              <button class="btn-sm btn-discard" onclick="discardResult('case')">✕ 放弃</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 面板：润色历史 -->
+    <div class="panel-content" id="panel-history">
+      <div class="page-header">
+        <h1>📊 润色历史记录</h1>
+        <p>查看过往的 AI 润色记录</p>
+      </div>
+      <div class="section-card">
+        <div class="section-header">
+          <div class="section-title"><span class="dot"></span> 最近润色记录</div>
+        </div>
+        <table class="field-table">
+          <thead>
+            <tr>
+              <th>时间</th>
+              <th>类型</th>
+              <th>预约单号</th>
+              <th>原始字数</th>
+              <th>润色后字数</th>
+              <th>状态</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>2026-08-14 10:32</td>
+              <td><span class="tag tag-ai">督导目标</span></td>
+              <td>SUP-2026081401</td>
+              <td>17</td>
+              <td>89</td>
+              <td style="color:#52c41a;">✅ 已采用</td>
+            </tr>
+            <tr>
+              <td>2026-08-14 10:35</td>
+              <td><span class="tag tag-ai">案例概况</span></td>
+              <td>SUP-2026081401</td>
+              <td>62</td>
+              <td>318</td>
+              <td style="color:#52c41a;">✅ 已采用</td>
+            </tr>
+            <tr>
+              <td>2026-08-13 16:20</td>
+              <td><span class="tag tag-ai">督导目标</span></td>
+              <td>SUP-2026081305</td>
+              <td>24</td>
+              <td>105</td>
+              <td style="color:#999;">❌ 已放弃</td>
+            </tr>
+            <tr>
+              <td>2026-08-13 14:10</td>
+              <td><span class="tag tag-ai">案例概况</span></td>
+              <td>SUP-2026081302</td>
+              <td>45</td>
+              <td>276</td>
+              <td style="color:#52c41a;">✅ 已采用</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ===== 右侧PRD面板 ===== -->
+  <div class="prd-panel">
+    <div class="prd-header">
+      <h2>📄 PRD 产品需求文档 <span class="badge">v1.0</span></h2>
+    </div>
+    <div class="prd-body" id="prdContent">
+      <!-- 动态渲染 -->
+    </div>
+  </div>
+
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ========== 侧边栏切换 ==========
+const menuItems = document.querySelectorAll('.sidebar-menu li');
+const panels = document.querySelectorAll('.panel-content');
+
+menuItems.forEach(item => {
+  item.addEventListener('click', () => {
+    const panel = item.dataset.panel;
+    menuItems.forEach(m => m.classList.remove('active'));
+    item.classList.add('active');
+    panels.forEach(p => p.classList.remove('active'));
+    document.getElementById('panel-' + panel).classList.add('active');
+    renderPRD(panel);
+  });
+});
+
+// ========== PRD 内容渲染 ==========
+const prdData = {
+  background: `
+    <div class="prd-section">
+      <h3>一、业务痛点分析</h3>
+      <p>根据数据库统计，当前督导预约单表中存在严重的"案例报告缺失"现象：</p>
+      <div class="stat-grid">
+        <div class="stat-item"><div class="stat-num ok">9,708</div><div class="stat-label">有案例报告</div></div>
+        <div class="stat-item"><div class="stat-num warn">139,288</div><div class="stat-label">无案例报告</div></div>
+      </div>
+      <div class="ratio-bar"><div class="fill" style="width:6.52%"></div></div>
+      <div class="ratio-text">有报告 6.52% ：无报告 93.48% ≈ 1 : 14.3</div>
+      <div class="callout">
+        <p><strong>结论：</strong>绝大多数咨询师在没有完整案例报告的情况下依然进行督导。当咨询师未上传报告时，<strong>督导师可主动提供督导目标和案例概况</strong>，助力督导师一臂之力。</p>
+      </div>
+    </div>
+    <div class="prd-section">
+      <h3>二、解决方案</h3>
+      <div class="solution-card">
+        <h4>✨ 督导目标润色</h4>
+        <p>通过 AI 辅助或结构化引导，帮助不擅长表达的用户快速生成高质量的督导目标。核心价值：明确督导方向，提升督导效率。</p>
+      </div>
+      <div class="solution-card">
+        <h4>📋 案例概况润色</h4>
+        <p>通过 AI 辅助生成结构化的案例概况描述，降低输入门槛，提升案例报告的填写率和质量。</p>
+      </div>
+    </div>
+    <div class="prd-section">
+      <h3>三、预期效果</h3>
+      <ul>
+        <li>降低咨询师的输入门槛，减少"不知道写什么"的焦虑</li>
+        <li>提升案例报告填写率，从 6.52% 逐步提升至 30%+</li>
+        <li>提高督导质量，让督导师提前了解案例背景</li>
+        <li>积累结构化的督导数据，为后续分析提供支持</li>
+      </ul>
+    </div>
+  `,
+  goal: `
+    <div class="prd-section">
+      <h3>一、字段定义</h3>
+      <table class="field-table">
+        <thead><tr><th>字段名</th><th>类型</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td>督导目标</td><td><span class="tag tag-required">必填</span></td><td>本次督导希望解决的核心问题或达成的目标</td></tr>
+          <tr><td>字数限制</td><td><span class="tag tag-optional">约束</span></td><td>最大 500 字，建议 50~200 字</td></tr>
+          <tr><td>AI 润色结果</td><td><span class="tag tag-ai">AI生成</span></td><td>基于原始输入优化后的专业化表述</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="prd-section">
+      <h3>二、交互逻辑</h3>
+      <ul>
+        <li><strong>快捷模板：</strong>提供常用督导目标模板（阻抗处理、咨访关系等），点击自动填充</li>
+        <li><strong>AI 润色：</strong>点击按钮后，展示加载动画（1~2秒），显示优化结果</li>
+        <li><strong>修改对比：</strong>可展开查看原文与润色结果的 Diff 对比</li>
+        <li><strong>采用/放弃：</strong>采用后替换原始输入框内容；放弃则关闭结果区域</li>
+        <li><strong>重新生成：</strong>不满意可重新请求 AI 生成新版本</li>
+      </ul>
+    </div>
+    <div class="prd-section">
+      <h3>三、业务规则</h3>
+      <div class="callout">
+        <p><strong>规则1：</strong>输入内容不能为空才能触发 AI 润色，否则提示"请先输入督导目标"</p>
+      </div>
+      <div class="callout">
+        <p><strong>规则2：</strong>润色结果保留用户原始意图，仅优化表达方式和专业度</p>
+      </div>
+      <div class="callout">
+        <p><strong>规则3：</strong>用户可在润色结果基础上手动二次编辑</p>
+      </div>
+    </div>
+    <div class="prd-section">
+      <h3>四、AI Prompt 策略</h3>
+      <p>系统 Prompt 应引导 AI 扮演<strong>资深督导师助手</strong>角色：</p>
+      <ul>
+        <li>理解咨询师的口语化表达</li>
+        <li>转化为专业、结构化的督导目标描述</li>
+        <li>补充可能遗漏的关键维度（如评估要点、干预策略方向）</li>
+        <li>保持简洁，避免过度学术化</li>
+      </ul>
+    </div>
+  `,
+  case: `
+    <div class="prd-section">
+      <h3>一、字段定义</h3>
+      <table class="field-table">
+        <thead><tr><th>字段名</th><th>类型</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td>案例概况</td><td><span class="tag tag-required">必填</span></td><td>来访者基本情况、咨询进展、遇到困难</td></tr>
+          <tr><td>字数限制</td><td><span class="tag tag-optional">约束</span></td><td>最大 2000 字，建议 200~800 字</td></tr>
+          <tr><td>AI 润色结果</td><td><span class="tag tag-ai">AI生成</span></td><td>基于原始输入优化后的结构化案例描述</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="prd-section">
+      <h3>二、结构化模板</h3>
+      <p>AI 润色后的案例概况应包含以下结构化要素：</p>
+      <table class="field-table">
+        <thead><tr><th>模块</th><th>内容</th><th>示例</th></tr></thead>
+        <tbody>
+          <tr><td>来访者信息</td><td>年龄、性别、主诉</td><td>女性，32岁，主诉婚姻关系冲突</td></tr>
+          <tr><td>咨询进展</td><td>已进行次数、阶段</td><td>已完成 5 次咨询，处于中期阶段</td></tr>
+          <tr><td>关键发现</td><td>核心议题、模式</td><td>来访者存在外归因倾向</td></tr>
+          <tr><td>当前困难</td><td>咨询中的卡点</td><td>来访者近期出现阻抗</td></tr>
+          <tr><td>督导诉求</td><td>希望获得什么帮助</td><td>希望获得处理阻抗的策略指导</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="prd-section">
+      <h3>三、交互逻辑</h3>
+      <ul>
+        <li><strong>AI 润色：</strong>将口语化描述转化为专业、结构化的案例概况</li>
+        <li><strong>修改对比：</strong>可展开查看原文与润色结果的 Diff 对比</li>
+        <li><strong>采用/放弃：</strong>采用后替换原始输入框内容</li>
+        <li><strong>重新生成：</strong>不满意可多次重新生成</li>
+      </ul>
+    </div>
+    <div class="prd-section">
+      <h3>四、业务规则</h3>
+      <div class="callout">
+        <p><strong>规则1：</strong>输入内容不能为空才能触发 AI 润色</p>
+      </div>
+      <div class="callout">
+        <p><strong>规则2：</strong>润色过程中应自动脱敏，不出现来访者真实姓名等敏感信息</p>
+      </div>
+      <div class="callout">
+        <p><strong>规则3：</strong>AI 生成内容仅作为参考，最终内容以咨询师确认提交的版本为准</p>
+      </div>
+    </div>
+  `,
+  appointment: `
+    <div class="prd-section">
+      <h3>三个状态循环</h3>
+      <ul>
+        <li><strong>✨ AI润色</strong> — 深蓝色描边按钮（#0d47a1）</li>
+        <li><strong>点击后</strong> → 按钮内容替换为纯转圈 spinner，pointer-events: none 防重复点击，按钮 min-width: 84px 保证不发生布局跳动</li>
+        <li><strong>1.5秒后</strong> → 结果直接替换 textarea 内容，字数同步更新，按钮切为灰色 ↩︎ 回撤</li>
+        <li><strong>点击回撤</strong> → 恢复润色前原文，按钮复原为 ✨ AI润色，可再次润色</li>
+      </ul>
+    </div>
+    <div class="prd-section">
+      <h3>字数门槛（按钮置灰规则）</h3>
+      <ul>
+        <li><strong>置灰条件：</strong>输入内容不足 <strong>3 字</strong>时，AI润色按钮置灰且不可点击（cursor: not-allowed）</li>
+        <li><strong>启用条件：</strong>达到 <strong>≥ 3 字</strong>时按钮自动恢复可用，随用户输入实时切换，无需失焦或提交</li>
+        <li><strong>字数算法：</strong>按去除首尾空白后的长度计算，纯空格不视为有效输入</li>
+        <li><strong>例外规则：</strong>按钮处于「↩︎ 回撤」态时<strong>不受字数限制</strong>，始终保持可点。否则用户润色后手动删字至 3 字以下时，将无法回撤到原始文案</li>
+        <li><strong>初始状态：</strong>页面加载时根据字段已有内容长度判定，而非统一默认可用</li>
+      </ul>
+    </div>
+  `,
+  'appointment-pc': `
+    <div class="prd-section">
+      <h3>三个状态循环</h3>
+      <ul>
+        <li><strong>✨ AI润色</strong> — 深蓝色描边按钮（#0d47a1），位于字段标题行右侧</li>
+        <li><strong>点击后</strong> → 按钮内容替换为纯转圈 spinner，pointer-events: none 防重复点击，按钮 min-width: 84px 保证不发生布局跳动</li>
+        <li><strong>1.5秒后</strong> → 结果直接替换 textarea 内容，字数同步更新，按钮切为灰色 ↩︎ 回撤</li>
+        <li><strong>点击回撤</strong> → 恢复润色前原文，按钮复原为 ✨ AI润色，可再次润色</li>
+      </ul>
+    </div>
+    <div class="prd-section">
+      <h3>字数门槛（按钮置灰规则）</h3>
+      <ul>
+        <li><strong>置灰条件：</strong>输入内容不足 <strong>3 字</strong>时，AI润色按钮置灰且不可点击（cursor: not-allowed）</li>
+        <li><strong>启用条件：</strong>达到 <strong>≥ 3 字</strong>时按钮自动恢复可用，随用户输入实时切换，无需失焦或提交</li>
+        <li><strong>字数算法：</strong>按去除首尾空白后的长度计算，纯空格不视为有效输入</li>
+        <li><strong>例外规则：</strong>按钮处于「↩︎ 回撤」态时<strong>不受字数限制</strong>，始终保持可点。否则用户润色后手动删字至 3 字以下时，将无法回撤到原始文案</li>
+        <li><strong>初始状态：</strong>页面加载时根据字段已有内容长度判定，而非统一默认可用</li>
+      </ul>
+    </div>
+  `,
+  history: `
+    <div class="prd-section">
+      <h3>一、功能说明</h3>
+      <p>润色历史记录用于追溯所有 AI 润色操作，便于：</p>
+      <ul>
+        <li>回顾过往润色结果，评估 AI 生成质量</li>
+        <li>统计润色功能的采纳率</li>
+        <li>为 AI Prompt 优化提供数据支撑</li>
+      </ul>
+    </div>
+    <div class="prd-section">
+      <h3>二、记录字段</h3>
+      <table class="field-table">
+        <thead><tr><th>字段</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td>时间</td><td>润色操作的时间戳</td></tr>
+          <tr><td>类型</td><td>督导目标 / 案例概况</td></tr>
+          <tr><td>预约单号</td><td>关联的督导预约单</td></tr>
+          <tr><td>原始字数</td><td>用户输入的原始文本字数</td></tr>
+          <tr><td>润色后字数</td><td>AI 生成文本的字数</td></tr>
+          <tr><td>状态</td><td>已采用 / 已放弃</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="prd-section">
+      <h3>三、统计指标（规划中）</h3>
+      <ul>
+        <li>润色功能使用次数（日/周/月）</li>
+        <li>AI 结果采纳率</li>
+        <li>平均润色增益（字数增幅）</li>
+        <li>按咨询师维度的使用频次</li>
+      </ul>
+    </div>
+  `
+};
+
+function renderPRD(panel) {
+  document.getElementById('prdContent').innerHTML = prdData[panel] || '';
+}
+renderPRD('background');
+
+// ========== 字数统计 ==========
+document.getElementById('goalInput').addEventListener('input', function() {
+  document.getElementById('goalCount').textContent = this.value.length;
+});
+document.getElementById('caseInput').addEventListener('input', function() {
+  document.getElementById('caseCount').textContent = this.value.length;
+});
+
+// ========== 模板选择 ==========
+function selectGoalTemplate(el, text) {
+  document.querySelectorAll('.template-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('goalInput').value = text;
+  document.getElementById('goalCount').textContent = text.length;
+}
+
+// ========== 清空输入 ==========
+function clearInput(type) {
+  const input = document.getElementById(type + 'Input');
+  input.value = '';
+  document.getElementById(type + 'Count').textContent = '0';
+  document.getElementById(type + 'Result').classList.remove('show');
+}
+
+// ========== AI 润色模拟 ==========
+const goalPolished = `本次督导希望重点探讨来访者在咨询过程中表现出的阻抗现象。具体而言，来访者在触及核心议题时出现回避、沉默或话题转移等防御性行为，影响了咨询的深入推进。
+
+希望督导师能够协助分析：
+1. 来访者阻抗背后的潜在心理动因（如恐惧、羞耻感或信任问题）
+2. 当前咨询关系中是否存在需要调整的互动模式
+3. 适用于突破阻抗的具体干预策略和技术建议`;
+
+const casePolished = `【来访者基本信息】
+女性，32岁，已婚，因婚姻关系冲突（频繁与丈夫发生争吵）主动求助，目前已完成 5 次个体咨询。
+
+【咨询进展与关键发现】
+在前几次咨询中，来访者能够较为开放地描述与丈夫的冲突场景，但在探索其自身在冲突中的角色和责任时，表现出明显的"外归因"倾向——倾向于将问题归咎于丈夫的行为，而较难审视自身的互动模式。
+
+这一模式在人际关系中可能具有普遍性，值得深入探索其早期经验根源。
+
+【当前困难】
+近两次咨询中，来访者出现明显的阻抗反应，表现为长时间沉默、回避深入话题。咨询推进遇到瓶颈，咨询师在以下方面感到困惑：
+• 如何在不破坏咨访关系的前提下，温和地引导来访者觉察自身的互动模式
+• 面对沉默阻抗时，应选择等待还是主动干预
+• 是否需要调整当前的咨询策略或引入新的技术
+
+【督导诉求】
+希望获得关于处理来访者阻抗的策略指导，特别是如何在维护安全感的同时推动咨询深入。`;
+
+function polishGoal() {
+  const input = document.getElementById('goalInput').value.trim();
+  if (!input) { showToast('请先输入督导目标'); return; }
+  simulateAI('goal', input, goalPolished);
+}
+
+function polishCase() {
+  const input = document.getElementById('caseInput').value.trim();
+  if (!input) { showToast('请先输入案例概况'); return; }
+  simulateAI('case', input, casePolished);
+}
+
+function simulateAI(type, original, polished) {
+  const btn = document.getElementById('btnPolish' + capitalize(type));
+  btn.classList.add('loading');
+  btn.innerHTML = '<span class="sparkle">⏳</span> AI 润色中...';
+
+  setTimeout(() => {
+    btn.classList.remove('loading');
+    btn.innerHTML = '<span class="sparkle">✨</span> AI 润色优化';
+    document.getElementById(type + 'ResultText').textContent = polished;
+    document.getElementById(type + 'Result').classList.add('show');
+    generateDiff(type, original, polished);
+  }, 1500);
+}
+
+function capitalize(s) {
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+// ========== Diff 对比 ==========
+function generateDiff(type, original, polished) {
+  const diffEl = document.getElementById(type + 'Diff');
+  diffEl.innerHTML = `
+    <div class="diff-line" style="margin-bottom:8px;"><span class="diff-del">${escapeHtml(original.substring(0, 80))}${original.length > 80 ? '...' : ''}</span></div>
+    <div class="diff-line"><span class="diff-add">${escapeHtml(polished.substring(0, 120))}${polished.length > 120 ? '...' : ''}</span></div>
+    <div style="margin-top:8px; font-size:11px; color:#999;">
+      原始 ${original.length} 字 → 润色后 ${polished.length} 字（增幅 ${Math.round((polished.length / original.length - 1) * 100)}%）
+    </div>
+  `;
+}
+
+function toggleDiff(type) {
+  document.getElementById(type + 'Diff').classList.toggle('show');
+}
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+// ========== 采用/放弃 ==========
+function adoptResult(type) {
+  const result = document.getElementById(type + 'ResultText').textContent;
+  document.getElementById(type + 'Input').value = result;
+  document.getElementById(type + 'Count').textContent = result.length;
+  document.getElementById(type + 'Result').classList.remove('show');
+  showToast('✅ 已采用 AI 润色结果');
+}
+
+function discardResult(type) {
+  document.getElementById(type + 'Result').classList.remove('show');
+  showToast('已放弃润色结果');
+}
+
+// ========== Toast ==========
+function showToast(msg) {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 2000);
+}
+
+// ========== 预约信息表（手机端）AI 润色 ==========
+// 润色状态：original 保存润色前原文，polished 标记当前是否处于已润色状态
+const mAiState = {
+  goal: { original: '', polished: false },
+  case: { original: '', polished: false }
+};
+
+// 字段配置：输入框/按钮/字数 id、字数上限、模拟润色结果
+const mAiConfig = {
+  goal: {
+    inputId: 'mGoalInput', btnId: 'mAiBtnGoal', countId: 'mGoalCount', max: 500,
+    emptyTip: '请先输入督导期待和收获',
+    polished: '希望本次督导聚焦来访者的阻抗议题。来访者在触及核心问题时出现回避、沉默等防御反应，咨询推进受阻。期待督导师协助我：一、分析阻抗背后的心理动因；二、评估当前咨访关系中需要调整的互动模式；三、提供突破阻抗的具体干预策略与技术建议。同时希望提升自身识别和处理阻抗的临床敏感度。'
+  },
+  case: {
+    inputId: 'mCaseInput', btnId: 'mAiBtnCase', countId: 'mCaseCount', max: 50,
+    emptyTip: '请先输入案例概况',
+    // 案例概况上限 50 字，润色结果只做表达精炼不做扩写
+    polished: '女性，32岁，因婚姻关系冲突求助，已完成5次咨询，近期出现阻抗反应'
+  },
+  // PC 端两个字段，复用同一套润色逻辑
+  goalPc: {
+    inputId: 'pcGoalInput', btnId: 'pcAiBtnGoal', countId: 'pcGoalCount', max: 500,
+    emptyTip: '请先输入督导期待和收获',
+    polished: '希望本次督导聚焦来访者的阻抗议题。来访者在触及核心问题时出现回避、沉默等防御反应，咨询推进受阻。期待督导师协助我：一、分析阻抗背后的心理动因；二、评估当前咨访关系中需要调整的互动模式；三、提供突破阻抗的具体干预策略与技术建议。同时希望提升自身识别和处理阻抗的临床敏感度。'
+  },
+  casePc: {
+    inputId: 'pcCaseInput', btnId: 'pcAiBtnCase', countId: 'pcCaseCount', max: 50,
+    emptyTip: '请先输入案例概况',
+    polished: '女性，32岁，因婚姻关系冲突求助，已完成5次咨询，近期出现阻抗反应'
+  }
+};
+
+// 润色所需最少字数：不足则 AI 润色按钮置灰
+const M_AI_MIN_CHARS = 3;
+
+// 根据当前字数刷新按钮可用状态
+function mRefreshAiBtn(type) {
+  const cfg = mAiConfig[type];
+  const btn = document.getElementById(cfg.btnId);
+  // 回撤态不受字数限制，否则用户删字后就无法恢复原文
+  if (mAiState[type].polished) { btn.disabled = false; return; }
+  btn.disabled = document.getElementById(cfg.inputId).value.trim().length < M_AI_MIN_CHARS;
+}
+
+// 更新字数统计
+function mUpdateCount(type) {
+  const cfg = mAiConfig[type];
+  document.getElementById(cfg.countId).textContent = document.getElementById(cfg.inputId).value.length;
+  mRefreshAiBtn(type);
+}
+
+// 按钮双态切换：未润色 -> 执行润色；已润色 -> 回撤
+function mToggleAi(type) {
+  mAiState[type].polished ? mUndoPolish(type) : mDoPolish(type);
+}
+
+// 执行 AI 润色
+function mDoPolish(type) {
+  const cfg = mAiConfig[type];
+  const input = document.getElementById(cfg.inputId);
+  const btn = document.getElementById(cfg.btnId);
+
+  if (!input.value.trim()) { showToast(cfg.emptyTip); return; }
+
+  // 保存润色前原文，用于后续回撤
+  mAiState[type].original = input.value;
+
+  // 按钮进入加载态：仅显示转圈
+  btn.classList.add('loading');
+  btn.innerHTML = '<span class="m-spinner"></span>';
+
+  setTimeout(() => {
+    // 润色结果直接替换输入框内容
+    input.value = cfg.polished;
+    mUpdateCount(type);
+
+    // 按钮切为回撤态
+    btn.classList.remove('loading');
+    btn.classList.add('undo');
+    btn.innerHTML = '↩︎ 回撤';
+    mAiState[type].polished = true;
+    mRefreshAiBtn(type);
+    showToast('✨ AI 润色完成');
+  }, 1500);
+}
+
+// 回撤到润色前的原始文案
+function mUndoPolish(type) {
+  const cfg = mAiConfig[type];
+  const input = document.getElementById(cfg.inputId);
+  const btn = document.getElementById(cfg.btnId);
+
+  input.value = mAiState[type].original;
+  mUpdateCount(type);
+
+  btn.classList.remove('undo');
+  btn.innerHTML = '<span>✨</span> AI润色';
+  mAiState[type].polished = false;
+  mRefreshAiBtn(type);
+  showToast('已回撤到原始文案');
+}
+
+// 页面加载后按初始字数确定四个按钮的可用状态
+Object.keys(mAiConfig).forEach(type => mRefreshAiBtn(type));
+</script>
+</body>
+</html>
