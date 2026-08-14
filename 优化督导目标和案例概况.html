@@ -401,8 +401,8 @@
                   <span class="m-form-field-label"><span class="m-required">*</span> 案例概况</span>
                   <button class="m-ai-btn" id="mAiBtnCase" onclick="mToggleAi('case')"><span>✨</span> AI润色</button>
                 </div>
-                <textarea class="m-form-textarea" id="mCaseInput" rows="4" maxlength="50" placeholder="请简要描述案例情况..." oninput="mUpdateCount('case')">女，32岁，婚姻冲突，已做5次咨询</textarea>
-                <div class="m-form-char-count"><span id="mCaseCount">38</span>/50</div>
+                <textarea class="m-form-textarea" id="mCaseInput" rows="4" maxlength="200" placeholder="请简要描述案例情况..." oninput="mUpdateCount('case')">女，32岁，婚姻冲突，已做5次咨询</textarea>
+                <div class="m-form-char-count"><span id="mCaseCount">38</span>/200</div>
               </div>
             </div>
 
@@ -470,8 +470,8 @@
             <button class="pc-ai-btn" id="pcAiBtnCase" onclick="mToggleAi('casePc')"><span>✨</span> AI润色</button>
           </div>
           <div class="pc-textarea-wrap">
-            <textarea class="pc-textarea" id="pcCaseInput" maxlength="50" placeholder="请简要描述案例情况..." oninput="mUpdateCount('casePc')" style="height:90px;">哈哈哈</textarea>
-            <span class="pc-char-count"><span id="pcCaseCount">3</span>/50</span>
+            <textarea class="pc-textarea" id="pcCaseInput" maxlength="200" placeholder="请简要描述案例情况..." oninput="mUpdateCount('casePc')" style="height:90px;">哈哈哈</textarea>
+            <span class="pc-char-count"><span id="pcCaseCount">3</span>/200</span>
           </div>
         </div>
 
@@ -728,10 +728,7 @@ const prdData = {
     <div class="prd-section">
       <h3>三、预期效果</h3>
       <ul>
-        <li>降低咨询师的输入门槛，减少"不知道写什么"的焦虑</li>
-        <li>提升案例报告填写率，从 6.52% 逐步提升至 30%+</li>
-        <li>提高督导质量，让督导师提前了解案例背景</li>
-        <li>积累结构化的督导数据，为后续分析提供支持</li>
+        <li>降低咨询师的输入门槛，减少“不知道写什么”的焦虑</li>
       </ul>
     </div>
   `,
@@ -848,6 +845,14 @@ const prdData = {
         <li><strong>初始状态：</strong>页面加载时根据字段已有内容长度判定，而非统一默认可用</li>
       </ul>
     </div>
+    <div class="prd-section">
+      <h3>字数上限备注</h3>
+      <ul>
+        <li><strong>督导期待和收获：</strong>最大 <strong>500 字</strong></li>
+        <li><strong>案例概况：</strong>最大 <strong>200 字</strong>（由原 50 字放宽）。原 50 字上限下 AI 润色只能做同义精练，无法输出“人口学信息 + 主诉 + 咨询进程 + 既往史”的完整结构，润色价值受限</li>
+        <li>两个字段均通过 textarea 的 maxlength 硬限制，超出无法继续输入</li>
+      </ul>
+    </div>
   `,
   'appointment-pc': `
     <div class="prd-section">
@@ -867,6 +872,14 @@ const prdData = {
         <li><strong>字数算法：</strong>按去除首尾空白后的长度计算，纯空格不视为有效输入</li>
         <li><strong>例外规则：</strong>按钮处于「↩︎ 回撤」态时<strong>不受字数限制</strong>，始终保持可点。否则用户润色后手动删字至 3 字以下时，将无法回撤到原始文案</li>
         <li><strong>初始状态：</strong>页面加载时根据字段已有内容长度判定，而非统一默认可用</li>
+      </ul>
+    </div>
+    <div class="prd-section">
+      <h3>字数上限备注</h3>
+      <ul>
+        <li><strong>督导期待和收获：</strong>最大 <strong>500 字</strong></li>
+        <li><strong>案例概况：</strong>最大 <strong>200 字</strong>（由原 50 字放宽）。原 50 字上限下 AI 润色只能做同义精练，无法输出“人口学信息 + 主诉 + 咨询进程 + 既往史”的完整结构，润色价值受限</li>
+        <li>两个字段均通过 textarea 的 maxlength 硬限制，超出无法继续输入</li>
       </ul>
     </div>
   `,
@@ -1049,10 +1062,10 @@ const mAiConfig = {
     polished: '希望本次督导聚焦来访者的阻抗议题。来访者在触及核心问题时出现回避、沉默等防御反应，咨询推进受阻。期待督导师协助我：一、分析阻抗背后的心理动因；二、评估当前咨访关系中需要调整的互动模式；三、提供突破阻抗的具体干预策略与技术建议。同时希望提升自身识别和处理阻抗的临床敏感度。'
   },
   case: {
-    inputId: 'mCaseInput', btnId: 'mAiBtnCase', countId: 'mCaseCount', max: 50,
+    inputId: 'mCaseInput', btnId: 'mAiBtnCase', countId: 'mCaseCount', max: 200,
     emptyTip: '请先输入案例概况',
-    // 案例概况上限 50 字，润色结果只做表达精炼不做扩写
-    polished: '女性，32岁，因婚姻关系冲突求助，已完成5次咨询，近期出现阻抗反应'
+    // 案例概况上限放宽到 200 字，润色结果补全为人口学信息 + 主诉 + 咨询进程 + 既往史的结构化描述
+    polished: '女性，32岁，已婚5年，因婚姻关系冲突主动求助。主诉与配偶沟通模式恶化、频繁争执，伴有情绪低落与睡眠障碍。目前已完成 5 次咨询，前期建立咨访关系较顺利，第 4 次起在触及原生家庭议题时出现回避、沉默等阻抗表现，咨询推进受阻。无精神科就诊史及药物使用史。'
   },
   // PC 端两个字段，复用同一套润色逻辑
   goalPc: {
@@ -1061,9 +1074,9 @@ const mAiConfig = {
     polished: '希望本次督导聚焦来访者的阻抗议题。来访者在触及核心问题时出现回避、沉默等防御反应，咨询推进受阻。期待督导师协助我：一、分析阻抗背后的心理动因；二、评估当前咨访关系中需要调整的互动模式；三、提供突破阻抗的具体干预策略与技术建议。同时希望提升自身识别和处理阻抗的临床敏感度。'
   },
   casePc: {
-    inputId: 'pcCaseInput', btnId: 'pcAiBtnCase', countId: 'pcCaseCount', max: 50,
+    inputId: 'pcCaseInput', btnId: 'pcAiBtnCase', countId: 'pcCaseCount', max: 200,
     emptyTip: '请先输入案例概况',
-    polished: '女性，32岁，因婚姻关系冲突求助，已完成5次咨询，近期出现阻抗反应'
+    polished: '女性，32岁，已婚5年，因婚姻关系冲突主动求助。主诉与配偶沟通模式恶化、频繁争执，伴有情绪低落与睡眠障碍。目前已完成 5 次咨询，前期建立咨访关系较顺利，第 4 次起在触及原生家庭议题时出现回避、沉默等阻抗表现，咨询推进受阻。无精神科就诊史及药物使用史。'
   }
 };
 
