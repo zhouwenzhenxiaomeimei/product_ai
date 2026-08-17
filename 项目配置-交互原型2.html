@@ -694,6 +694,7 @@
                             <span style="font-size:13px;color:#555;">业务类型</span>
                             <select class="filter-select" id="settlementBizType" style="width:140px;" onchange="onSettlementBizTypeChange()">
                                 <option value="团体督导">团体督导</option>
+                                <option value="个体督导">个体督导</option>
                             </select>
                         </div>
                         <div class="settlement-section-header">
@@ -806,6 +807,24 @@
             defaultAmount: 7000,
             unit: '元/期',
             desc: '按课程期数结算'
+        },
+        {
+            id: 'si1',
+            name: '常规个体督导报酬',
+            bizType: '个体督导',
+            calcType: 'ratio',
+            defaultRatio: { 甲方: 30, 乙方: 70 },
+            unit: '',
+            desc: '以甲方平台实收金额扣除第三方交易手续费后的余额为结算依据，按比例结算'
+        },
+        {
+            id: 'si2',
+            name: '[朝阳课程项目]个体督导报酬',
+            bizType: '个体督导',
+            calcType: 'fixed',
+            defaultAmount: 245.35,
+            unit: '元/次',
+            desc: '按次固定金额结算'
         }
     ];
 
@@ -828,6 +847,22 @@
                 { templateId: 'st3', amount: 150 },
                 { templateId: 'st4', amount: 7000 },
                 { templateId: 'st5', amount: 7000 }
+            ]
+        },
+        {
+            id: 10,
+            name: '个体督导结算内容',
+            status: 'valid',
+            notify: false,
+            type: '特殊设置',
+            options: [],
+            detail: '',
+            templates: ['t4'],
+            comment: '生成合同时可勾选个体督导结算内容，比例/金额可调整',
+            settlementBizType: '个体督导',
+            settlementItems: [
+                { templateId: 'si1', ratio: { 甲方: 30, 乙方: 70 } },
+                { templateId: 'si2', amount: 245.35 }
             ]
         },
         {
@@ -1178,6 +1213,23 @@
         return intStr;
     }
 
+    // 完整金额大写（带元角分，如 贰佰肆拾伍元叁角伍分），个体督导条款使用
+    function numToCnAmount(n) {
+        if (n == null || isNaN(n) || n < 0) return '';
+        const digits = ['零','壹','贰','叁','肆','伍','陆','柒','捌','玖'];
+        const integer = Math.floor(n);
+        const decimal = Math.round((n - integer) * 100);
+        let result = (integer === 0 ? '零' : numToCnShort(integer)) + '元';
+        if (decimal > 0) {
+            const jiao = Math.floor(decimal / 10), fen = decimal % 10;
+            if (jiao > 0) result += digits[jiao] + '角';
+            if (fen > 0) result += digits[fen] + '分';
+        } else {
+            result += '整';
+        }
+        return result;
+    }
+
     // 条款文案：与合同正文保持一致，比例/金额位置内嵌输入框
     const RATIO_BASE_TEXT = '甲乙双方以【甲方平台实收金额，扣除第三方交易手续费（第三方交易手续费费率 0.6%）后的余额】为结算依据';
 
@@ -1186,11 +1238,16 @@
             const ratio = item.ratio || { ...tpl.defaultRatio };
             const jia = `<input class="settlement-config-input settlement-input-inline" type="number" min="0" max="100" value="${ratio['甲方'] != null ? ratio['甲方'] : ''}" onchange="updateSettlementRatio('${tpl.id}', '甲方', this.value)">`;
             const yi = `<input class="settlement-config-input settlement-input-inline" type="number" min="0" max="100" value="${ratio['乙方'] != null ? ratio['乙方'] : ''}" onchange="updateSettlementRatio('${tpl.id}', '乙方', this.value)">`;
-            return `常规团体督导报酬：${RATIO_BASE_TEXT}，按<b>【甲方占 ${jia}%】</b>、<b>【乙方占 ${yi}%】</b>（含税）的比例结算，甲方按约定向乙方支付常规团体督导报酬。`;
+            return `${tpl.name}：${RATIO_BASE_TEXT}，按<b>【甲方占 ${jia}%】</b>、<b>【乙方占 ${yi}%】</b>（含税）的比例结算，甲方按约定向乙方支付${tpl.name}。`;
         }
         const amount = item.amount != null ? item.amount : tpl.defaultAmount;
         const suffix = (tpl.unit || '元').replace(/^元/, ''); // "/次" "/人/次" "/期"
         const amt = `<input class="settlement-config-input settlement-input-inline settlement-input-inline-amt" type="number" min="0" step="0.01" value="${amount}" onchange="updateSettlementAmount('${tpl.id}', this.value)">`;
+        // 个体督导：大写带元角分，含税说明写在括号内
+        if (tpl.bizType === '个体督导') {
+            const payTargetSolo = tpl.id === 'si2' ? '朝阳课程项目个体督导报酬' : '常规个体督导报酬';
+            return `${tpl.name}：甲方按<b>¥【${amt}】元${suffix}</b>（大写：人民币<b>【${numToCnAmount(amount)}】</b>${suffix}，含税）向乙方支付${payTargetSolo}。`;
+        }
         const payTarget = tpl.id === 'st3' ? '不固定人数项目的团体督导报酬'
             : tpl.id === 'st4' ? '朝阳项目团体督导报酬'
             : tpl.id === 'st5' ? 'CBT项目团体督导报酬'
